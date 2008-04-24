@@ -1,0 +1,391 @@
+0.8.4
+(2008-x-x)
+    PLUGINS:
+    macro.py:
+        hooke does not crash if it doesn't have permissions to create the folder
+
+0.8.3
+(2008-04-16)
+    PLUGINS:
+    generalvclamp.py:
+        fixed autopeak header 
+        fixed autopeak slope (now unwanted slope values are discarded)
+
+0.8.2
+(2008-04-10)
+    PLUGINS:
+    flatfilts.py:
+        convfilt does not crash if a file is not a curve
+    generalvclamp.py:
+        autopeak now saves curve data correctly
+        autopeak now generates a dummy note (so that copylog/notelog is aware you measured the curve)
+
+0.8.1
+(2008-04-07)
+    PLUGINS:
+    generalvclamp.py:
+        fixed DeprecationWarning in flatten
+    flatfilts.py
+        convfilt now working
+        
+
+0.8.0:
+(2008-04-04)
+    hooke.py:
+        sanity check of CLI plugins to avoid function overloading at startup
+    hooke_cli.py ; libhooke.py:
+        now playlists keep the index (when you reload the playlist, it starts from the
+            last observed curve)
+        updated plot to use _send_plot()
+        hooke.conf accepts lists as arguments for variables in <display>
+        txt, export now have consistent argument order (thanks to A.G.Casado for pointing me that)
+        txt crashes no more if no filename is given (thanks to A.G.Casado for pointing me that)
+    libhookecurve.py:
+        added add_set() , remove_set() methods to make life easier for plugin writers
+    procplots.py:
+        plotmanip_correct() works with new picoforce.py deflection output (see)
+    PLUGINS:
+    fit.py:
+        updated wlc to use _send_plot()
+        wlc noauto now keeps the contact point
+        wlc reclick to click again the contact point
+        temperature now set in hooke.conf
+    generalvclamp.py:
+        implemented slope (thanks to Marco Brucale)
+        implemented autopeak
+    flatfilts.py:
+        convfilt,peaks use flattened curve
+    macro.py:
+        (new) added macro plugin (thanks to Alberto Gomez Casado)
+    DRIVERS:
+    picoforce.py:
+        fixed trigger bug! (thanks to Alberto Gomez Casado)
+        better deflection output (separated extension,retraction)
+
+0.7.5:
+(2008-03-27)
+    hooke_cli.py:
+        removed outdated size command
+    PLUGINS:
+    generalvclamp.py:
+        implemented flatten
+    DRIVERS:
+    added tutorialdriver.py driver
+    csvdriver.py:
+        fixed (forgot close_all() method)
+
+0.7.4:
+(2008-03-19)
+    added csvdriver driver
+    hooke_cli.py:
+        fixed plot manipulators handling (now it's safe to comment a
+              plot manipulator on hooke.conf)
+    PLUGINS:
+    fit.py:
+        fixed possible crash when clicking two times the same point on wlc
+
+0.7.3:
+(2008-01-10)
+    hooke_cli.py:
+        fixed crash on copylog
+    PLUGINS:
+        massanalysis.py:
+            Initial release
+        tutorial.py:
+            Tutorial plugin, initial release
+
+0.7.2.1:
+(2007-11-30)
+    PLUGINS:
+        flatfilt.py:
+            fixed crash on Windows
+
+0.7.2:
+(2007-11-29)
+    hooke.py:
+        new configuration variable hookedir
+    hooke_cli.py:
+        copylog now checks if the destination is a real directory
+        fixed crashes in set
+    PLUGINS:
+        generalvclamp.py:
+            fixed a crash in forcebase when picking two times the same point
+        flatfilt.py:
+            fixed crash due to convfilt.conf impossible to load
+            initial implementation of the blind window for convfilt
+            initial data set maps (NOT FINISHED)
+
+0.7.1:
+(2007-11-26)
+    PLUGINS:
+        flatfilts.py:
+            fixed possible crash in convfilt
+            implemented configuration file convfilt.conf
+            convfilt defaults are now 5 peaks 5 times more the noise absdev
+            implemented convconf
+            implemented setconf
+        libpeakspot.py:
+            fixed:now it really uses noise_absdev
+
+0.7.0:
+(2007-11-15)
+    hooke_cli.py:
+        implemented _send_plot() helper API function
+    PLUGINS:
+        generalvclamp.py:
+            fixed forcebase to work with subtplot
+        flatfilts.py:
+            implemented convfilt!
+            added libpeakspot.py (helping library for convolution filter)
+
+0.6.5:
+(2007-11-06)
+    hooke_cli.py, hooke.py:
+        plateau and contact (unmaintained) deleted and scheduled for re-release in generalvramp
+        implemented _measure_N_points()
+    PLUGINS:
+    generalvclamp.py:
+        implemented forcebase
+    fit.py:
+        wlc now accepts and uses temperature as an argument
+        wlc has been cleaned and uses new APIs
+
+0.6.4:
+(2007-10-23)
+    hooke_cli.py, libhooke.py:
+        implemented support for defining order of plotmanip methods in hooke.conf
+    hooke_cli.py:
+        implemented delta
+        implemented point
+        attempted fix to bug 0033 (notelog crashing Hooke when using Unicode characters)
+    PLUGINS:
+    generalvramp.py:
+        began to move velocity ramp force spectroscopy-specific things in separate plugin
+    procplots.py:
+        added detriggerize; "set detrigger" 0/1 disables/enables it.
+    DRIVERS:
+    picoforce.py:
+        removed detriggerize() from driver
+
+0.6.3:
+(2007-10-02)
+    hooke_cli.py:
+        rewritten txt command, now working
+    DRIVERS:
+    picoforce.py:
+        implemented detriggerize() to bypass the Picoforce trigger bug
+    PLUGINS:
+    superimpose.py:
+        implemented plotavgimpose
+
+0.6.2:
+(2007-09-27)
+    hooke_cli.py:
+        fixed error handling in notelog
+        smarter handling of directory names in genlist
+        unexpected error handling in do_plot() 
+    hooke.py:
+        implemented GetDisplayedPlot event and handlers
+    PLUGINS:
+    fit.py:
+        fixed (bug 0029) about replotting of wlc on a subtplot curve
+        multiple fitting displayed (to refine...)
+
+0.6.1:
+(2007-08-06)
+    libhooke.py , hooke.py:
+        initial support for workdir configuration variable
+    libhooke.py:
+        fixed Driver() etc. semantics for gracefully handling unrecognized plots
+    hooke_cli.py:
+        fixed export namehandling
+        fixed plot error handling
+    PLUGINS:
+    flatfilts.py:
+        fixed memory leak
+    generalclamp.py:
+        fixed step command
+
+0.6.0 "Anko":
+(2007-07-25)
+    hooke.py:
+        initial plugin support for the gui
+        wlc fitting now 100% plugin
+        measure_points replaces measure_couple etc. and provides much better extensibility
+    hooke_cli.py:
+	curves are sorted at beginning
+    PLUGINS:
+    procplots.py:
+        fft now allows for user selection of curve segment; select the plot; etc.
+    fit.py:
+        added gui section of plugin, now completely independent
+        fixed bug of wlc output
+    superimpose.py:
+        new plugin for superimposition of curve segments (still in development)
+    generalclamp.py:
+        all clamp commands now in a single plugin
+        implemented step
+
+0.5.4:
+(2007-06-15)
+    procplots.py:
+        fixed fft crash with Numpy 1.0.1
+    hooke.py:
+        fixed crashes if plot.scatter[] was empty
+        fixed management of multiple plots (bug #0025)
+    hooke_cli.py
+        fixed zpiezo error in measurement
+    hemingclamp.py, picoforce.py:
+        implemented close_all() method in drivers to avoid too many open files error
+    flatfilts.py:
+        fixed memory leak
+0.5.3:
+(2007-06-06)
+    wlc.py, hooke.py:
+        fixing and cleaning fit code: now the fit is part of a PlotObject and 100% coded in wlc.py
+        plotting of the wlc.py clicked points also begin to be part of a PlotObject
+        management of 'scatter' style property of plots
+    hooke_cli.py
+        fixed measuring error in defl, zpiezo
+    flatfilts.py:
+        slightly optimized has_features() routine
+    procplots.py:
+        fixed derivplot for every number of vectors
+        fixed possible crash of subtplot if applied on a file with != 2 plots
+        added fft command
+    libhookecurve.py:
+        fixed xaxis, yaxis for non-default plots: now defined from PlotObject
+        PlotObject now defines a styles[] vector
+0.5.2:
+(2007-05-21)
+    versioning a bit cleaned
+    fixed bug in hemingclamp.py preventing filename to appear
+    fixed wxversion problem for 2.8
+    fixed too many open files bug (bug 0024)
+    added index command
+0.5.1:
+(2007-05-09)
+    using wxversion to choose from multiple wx versions
+    fixed old dependencies remaining
+0.5.0 "Ingyo":
+(2007-05-03)
+    general code updating and rewriting due to plugin support/better plot management
+    hooke.py:
+        initial plugin architecture for the command line.
+        initial plugin architecture for file drivers
+        initial plugin architecture for processing plots
+        export can now export both top and bottom plot (not together)
+    hooke_cli.py:
+        wlc fitting moved to fit.py plugin
+        flatfilt moved to flatfilts.py plugin
+        subtplot, derivplot moved to procplots.py plugin
+        double plot temporarily fixed for previous commands
+        export can now export both top and bottom plot (not together)
+
+0.4.1:
+(2007-02-13)
+    hooke_cli.py:
+        double plot now default for clamp experiments
+    libhooke.py:
+        fixed bug that prevented flatfilt to work
+        (maybe) fixed memory leak in flatfilt
+    
+0.4.0 "Hanzei":
+(2007-02-08)
+    general code updating and rewriting due to double plot/force clamp supports
+    hooke.py:
+        initial dummy menu sketch
+    hooke.py, hooke_cli.py:
+        first general support in code for double plot: 
+        - derivplot now in separate plot
+        - implemented show and close commands
+        - all functions should be double plot-aware
+        - clicking a point is double plot-aware
+    libhooke.py, hooke_cli.py:
+        general code cleanup: vectors_to_plot(), subtract_plot(), find_contact_point() and derivplot routines are now methods of class HookeCurve
+    hooke_cli.py:
+        implemented quit (alias of exit)
+        implemented version
+    libhooke.py, hooke.py, hooke_cli.py:
+        initial support for force clamp experiments:
+        - hemingclamp driver supported
+        - "experiment" flag describes what kind of experiment is a curve
+        - time, zpiezo, defl commands implemented
+    libhemingclamp.py:
+        inital release.
+
+0.3.1:
+    hooke.py:
+        fixed stupid bug in plateau
+        fixed bug in derivplot and subtplot not taking into account xaxes/yaxes variables
+0.3.0:
+    from now on, all changelog is stored in CHANGELOG
+    hooke.py, libhooke.py, hooke_cli.py:
+        fixed plot and flatfilt crash when processing corrupt files
+        flatfilt output now more verbose
+        implemented system (execute an external OS command)
+        implemented copylog (copies annotated curves to a given directory) (todo 0033)
+        initial txt implementation (exports the current curve as a text file) (todo 0023)
+        fixed exit behaviour (bug 0013)
+        xaxes and yaxes variables now control visualization of plot (todo 0018)
+        new (better) contact point algorithm + workaround for the picoforce trigger bug
+0.2.2 :
+    hooke.py, hooke_cli.py, libhooke.py:
+        support for fixed persistent length in WLC
+0.2.1 :
+    hooke.py , libhooke.py:
+        fixed 'wlc noauto' bug (0012) preventing correct contact point to be used
+0.2.0 : 
+    hooke_cli.py:
+        implemented getlist (alias of genlist)
+        implemented contact (to plot the contact point)
+        fixed bug 0001 (Hooke crashes when opening a non-pf file)
+        fixed bug 0008  (Hooke crashes when generating a playlist with malformed namefiles/nonexistent files)
+        now the plot is refreshed after a "set" command (todo 0014)
+        wlc fit can use the (new) automatic contact point detection (old behaviour is preserved with "noauto" option)
+    hooke.py:
+        fixed versioning printing
+        complete refactoring of contact point routines
+        wlc fit adapted to use the (new) automatic contact point detection
+        wlc fit code a bit cleaned; parts moved to libhooke.py
+    libhooke.py:
+        new contact point algorithm (new algorithm)
+        wlc fit now uses a fancier domain (from contact point to a bit more than last point); initial chunk preparation section moved from hooke.py
+    
+
+OLDER CHANGELOGS:
+
+hooke.py:
+0.1.1   : 
+    From now on, all changelog is stored in hooke.py
+    hooke_cli.py:
+        corrected bug 0010 (addtolist bug), alerts when hitting start/end of playlist
+2006_09_15_devel=0.1.0: initial WLC fit support. We hit 0.1 milestone :D
+2006_08_28_devel: refactoring of plot interaction
+2006_06_14_devel: fixed libhooke calls
+2006_06_08_devel: initial automatic contact point finding
+2006_05_30_devel: configuration file support
+
+hooke_cli.py:
+0.1.1 : from now on, all changelog is in hooke.py
+2006_09_15_devel: implemented wlc; 0.1.0 milestone.
+2006_08_28_devel: refactoring of plot interaction
+2006_07_23_devel: implemented note; implemented flatfilt; implemented notelog; exit now warns if playlist/notes 
+                  have not been saved.
+2006_07_18_devel: implemented subtplot; bug 0007 ("cd" crashing) fixed
+2006_06_16_devel: moved math helper functions in libhooke.py
+2006_06_14_devel: fixed "jump" output; fixed "exit" (now it works!); fixed off-by-one bug in deflection-correction
+2006_06_08_devel: fixed "loadlist" output;
+2006_05_30_devel: initial configuration file support; added "set" command; initial deflection-correction support; added "ls" command as an alias of "dir"
+2006_05_23_devel: rewriting of playlist-handling code due to major rewrite of hooke_playlist.py
+
+libhooke.py
+0.1.1   : from now on, all changelog is in hooke.py
+2006_09_15_devel : initial WLC support
+2006_09_14_devel : initial support for Hemingway velocity clamp files, minor refactorings
+2006_07_22_devel : implemented math function has_features
+2006_06_16_devel : math functions moved here
+2006_06_08_devel : hooke_playlist.py becomes libhooke.py
+2006_05_30_devel : support for deflection in HookeCurve
+2006_05_29_devel : Initial configuration file support
+2006_05_23_devel : Major rewrite. Fixed bug 0002
