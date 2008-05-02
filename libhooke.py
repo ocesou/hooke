@@ -25,7 +25,7 @@ import os
 import string
 import csv
 
-HOOKE_VERSION=['0.8.3', 'Seinei', '2008-04-16']
+HOOKE_VERSION=['0.8.3_devel', 'Seinei', '2008-04-16']
 WX_GOOD=['2.6','2.8'] 
     
 class PlaylistXML:
