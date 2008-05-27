@@ -70,31 +70,51 @@ class hemingclampDriver(lhc.Driver):
         
     def _getdata_all(self):
         time = []
+        phase = []
         zpiezo = []
         defl = []
-                
+        imposed = []
+        trim_indexes = []
+        trim_counter = 0.0
+                        
         for i in self.data:
             temp = string.split(i)
-            #time.append(float(temp[0])*(1.0e-3))
+            #time.append(float(temp[0])*(1.0e-3)) # This is managed differently now, since each data point = 1ms: see below
+            phase.append(float(temp[1])*(1.0e-7)) # The nonsensical (e-7) multiplier is just there to make phase data nicely plottable along other data
             zpiezo.append(float(temp[2])*(1.0e-9))
             defl.append(float(temp[3])*(1.0e-9))
-        
+            imposed.append(float(temp[4])*(1.0e-9))
+
+        for x in range (0,len(phase)):
+            if phase[x] != trim_counter:
+                trim_indexes.append(x)
+                trim_counter = phase[x]
+       
         #we rebuild the time counter assuming 1 point = 1 millisecond
         c=0.0
         for z in zpiezo:
             time.append(c)
-            c+=(1.0e-3)
+            c+=(1.0e-3)            
             
-        return time,zpiezo,defl
+        return time,phase,zpiezo,defl,imposed,trim_indexes
         
     def time(self):
         return DataChunk(self._getdata_all()[0])
-     
-    def zpiezo(self):
+
+    def phase(self):
         return DataChunk(self._getdata_all()[1])
+    
+    def zpiezo(self):
+        return DataChunk(self._getdata_all()[2])
      
     def deflection(self):
-        return DataChunk(self._getdata_all()[2])
+        return DataChunk(self._getdata_all()[3])
+
+    def imposed(self):
+        return DataChunk(self._getdata_all()[4])
+
+    def trimindexes(self):
+        return DataChunk(self._getdata_all()[5])
     
     def close_all(self):
         '''
@@ -107,17 +127,19 @@ class hemingclampDriver(lhc.Driver):
         defl_plot=lhc.PlotObject()
         
         time=self.time()
+        phase=self.phase()
         zpiezo=self.zpiezo()
         deflection=self.deflection()
-        
-        main_plot.vectors=[[time,zpiezo]]
+        imposed=self.imposed()
+                
+        main_plot.vectors=[[time,zpiezo],[time,phase]]
         main_plot.units=['seconds','meters']
         main_plot.destination=0
         main_plot.title=self.filename
         
-        defl_plot.vectors=[[time,deflection]]
+        defl_plot.vectors=[[time,deflection],[time,imposed]]
         defl_plot.units=['seconds','Newtons']
         defl_plot.destination=1
-        
+ 
         return [main_plot, defl_plot]
     
