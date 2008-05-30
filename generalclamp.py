@@ -3,6 +3,8 @@
 '''
 GENERALCLAMP.py
 
+(c) 2008 Marco Brucale, Massimo Sandal
+
 Plugin regarding general force clamp measurements
 '''
 from libhooke import WX_GOOD, ClickedPoint

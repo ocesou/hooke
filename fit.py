@@ -305,6 +305,7 @@ class fitCommands:
         endlength=int(len(xret)/2)
     
         ok=False
+        
         while not ok:
             xchunk=yext[endlength:monlength]
             ychunk=yext[endlength:monlength]
@@ -316,6 +317,7 @@ class fitCommands:
             else:
                 ok=True  
                   
+        
         ymean=scipy.mean(ychunk) #baseline
     
         index=0
@@ -329,6 +331,8 @@ class fitCommands:
             except IndexError:
                 #The algorithm didn't find anything below the baseline! It should NEVER happen
                 index=0            
+                return index
+            
         return index
                         
     
@@ -366,6 +370,7 @@ class fitCommands:
         xchunk=xext[endlength:monlength]
         ychunk=yext[endlength:monlength]
         regr=scipy.polyfit(xchunk,ychunk,1)[0:2]
+        
         '''
         while not ok:
             xchunk=yext[endlength:monlength]

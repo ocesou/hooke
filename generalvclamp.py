@@ -146,11 +146,13 @@ class generalvclampCommands:
             max_cycles=self.config['flatten'] #Using > 1 usually doesn't help and can give artefacts. However, it could be useful too.
         
         contact_index=self.find_contact_point()
+        
         valn=[[] for item in range(max_exponent)]
         yrn=[0.0 for item in range(max_exponent)]
         errn=[0.0 for item in range(max_exponent)]
         
         for i in range(int(max_cycles)):
+            
             x_ext=plot.vectors[0][0][contact_index+delta_contact:]
             y_ext=plot.vectors[0][1][contact_index+delta_contact:]
             x_ret=plot.vectors[1][0][contact_index+delta_contact:]
