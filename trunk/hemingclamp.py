@@ -5,7 +5,7 @@ libhemingclamp.py
 
 Library for interpreting Hemingway force spectroscopy files.
 
-Copyright (C) 2006 Massimo Sandal (University of Bologna, Italy) 
+Copyright (C) 2008 Massimo Sandal, Marco Brucale (University of Bologna, Italy) 
 
 This program is released under the GNU General Public License version 2.
 '''
