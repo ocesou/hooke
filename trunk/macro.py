@@ -9,6 +9,7 @@ Records, saves and executes batches of commands
 
 import libhookecurve as lhc
 import os.path
+import string
 
 class macroCommands:
 
@@ -25,11 +26,11 @@ class macroCommands:
 		if not os.path.exists(os.path.join(self.macrodir,'macros')):
                     try:
                         os.mkdir('macros')
-                        self.macrodir=os.path.join(self.macrodir,'macros')
-                    except:
+		    except:
 		        print 'Warning: cannot create macros folder.'
                         print 'Probably you do not have permissions in your Hooke folder, use macro at your own risk.'
-	
+		self.macrodir=os.path.join(self.macrodir,'macros')
+		
 	def collect(self):
 				
 		print 'Enter STOP / PAUSE to go back to normal mode\nUNDO to remove last command'
@@ -174,7 +175,7 @@ class macroCommands:
 			return 0
 		args=args.split()
 
-		print 'args ' + ' '.join(args)
+		#print 'args ' + ' '.join(args)
 		
 		if len(args)>1:
 			if args[1] == 'playlist':
@@ -185,12 +186,12 @@ class macroCommands:
 			else:
 				if args[1] == 'v':
 					verbose=1	
-		print cycle
-		print verbose	
+		#print cycle
+		#print verbose	
 
 		macropath=os.path.join(self.macrodir,args[0]+'.hkm')
 		if not os.path.exists(macropath):
-			print 'Could not find a macro with that name'
+			print 'Could not find a macro named '+macropath
 			return 0
 		txtfile=open(macropath)
 		if cycle ==1: 
@@ -216,12 +217,12 @@ class macroCommands:
 			for command in txtfile:
 					testcmd=command.split()
 					w=0
-					if verbose==1:
-						print 'Executing command '+command
 					for word in testcmd:
 						if word=='__curve__':
-							testcmd[w]=os.path.splitext(os.path.basename(self.current.path))[0]
-						w=w+1
+							w=w+1
+							testcmd[w]=os.path.splitext(os.path.basename(self.current.path))[0]+'-'+string.lstrip(os.path.splitext(os.path.basename(self.current.path))[1],'.')
+					if verbose==1:
+						print 'Executing command '+' '.join(testcmd)
 					self.onecmd(' '.join(testcmd))
 		
 	
