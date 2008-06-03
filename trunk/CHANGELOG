@@ -6,6 +6,9 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
     PLUGINS:
     macro.py:
         hooke does not crash if it doesn't have permissions to create the folder
+	fixed overwriting of export for curves with the same name and different numerical extension
+	fixed macrodir (out of try-catch)
+	cleaned debug output in execmacro
 
 0.8.3
 (2008-04-16)
