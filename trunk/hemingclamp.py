@@ -18,17 +18,6 @@ __changelog__='''
 import string
 import libhookecurve as lhc 
 
-def hemingclamp_magic(filepath):
-    '''
-    we define our magic heuristic for HemingClamp files
-    '''
-    myfile=file(filepath)
-    headerlines=myfile.readlines()[0:3]
-    if headerlines[0][0:10]=='#Hemingway' and headerlines[1][0:19]=='#Experiment: FClamp':
-        return True
-    else:
-        return False
-
 class DataChunk(list):
     '''Dummy class to provide ext and ret methods to the data list.
     In this case ext and self can be equal.
