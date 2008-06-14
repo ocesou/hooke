@@ -108,12 +108,14 @@ class jpkDriver(lhc.Driver):
         force_ext=force.ext()
         force_ret=force.ret()
         #reverse the return data, to make it coherent with hooke standard
-        height_ms_ret.reverse
-        force_ret.reverse
+        height_ms_ret.reverse()
+        force_ret.reverse()
         
         main_plot=lhc.PlotObject()  
         main_plot.add_set(height_ms_ext,force_ext)
         main_plot.add_set(height_ms_ret,force_ret)
+        
+        
         
         if self.springconstant != 0:
             main_plot.units=['meters','force']
