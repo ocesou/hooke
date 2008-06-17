@@ -9,6 +9,9 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
 	fixed overwriting of export for curves with the same name and different numerical extension
 	fixed macrodir (out of try-catch)
 	cleaned debug output in execmacro
+    DRIVERS:
+	alternative version of picoforce driver
+
 
 0.8.3
 (2008-04-16)

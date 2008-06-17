@@ -452,7 +452,6 @@ class picoforceDriver(lhc.Driver):
             print 'picoforce.py: Warning. xext, xret domains cannot be extracted.'
                 
         if not (len(xext)==len(xret)):
-            xext=xret
             if self.debug:
                 #print warning
                 print "picoforce.py: Warning. Extension and retraction domains have different sizes."
@@ -460,7 +459,7 @@ class picoforceDriver(lhc.Driver):
                 print "length retraction: ", len(xret)
                 print "You cannot trust the resulting curve."
                 print "Until a solution is found, I substitute the ext domain with the ret domain. Sorry."
-            
+            xext=xret
         
         return DataChunk(xext.tolist()+xret.tolist())
         
