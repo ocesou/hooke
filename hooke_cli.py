@@ -14,6 +14,9 @@ This program is released under the GNU General Public License version 2.
 from libhooke import * #FIXME
 import libhookecurve as lhc
 
+import libinput as linp
+import liboutlet as lout
+
 from libhooke import WX_GOOD
 from libhooke import HOOKE_VERSION
 
@@ -99,6 +102,9 @@ class HookeCli(cmd.Cmd):
         self.playlist_saved=0
         self.playlist_name=''
         self.notes_saved=1
+
+        #create outlet
+        self.outlet=lout.Outlet()
         
         #Data that must be saved in the playlist, related to the whole playlist (not individual curves)
         self.playlist_generics={} 
@@ -207,7 +213,7 @@ Syntax: loadlist [playlist file]
     def do_loadlist(self, args):
         #checking for args: if nothing is given as input, we warn and exit.
         while len(args)==0:
-            args=raw_input('File to load?')
+            args=linp.alphainput('File to load?','',0,[])
         
         arglist=args.split()
         play_to_load=arglist[0]
@@ -263,7 +269,7 @@ Syntax: genlist [input files]
     def do_genlist(self,args):
         #args list is: input path, output name
         if len(args)==0:
-            args=raw_input('Input files?')
+            args=linp.alphainput('Input files?','',1,[])
                     
         arglist=args.split()      
         list_path=arglist[0]
@@ -314,7 +320,7 @@ Syntax: genlist [input files]
         Syntax: savelist [filename]
         '''
         while len(args)==0:
-            args=raw_input('Input files?')
+            args=linp.alphainput('Output files?','',1,[])
     
         output_filename=args
         
@@ -380,7 +386,7 @@ If the curve is not in the current playlist, it politely asks if we want to add 
         '''
         
         if filename=='':
-            filename=raw_input('Jump to?')
+            filename=linp.alphainput('Jump to?','',0,[])
             
         filepath=os.path.abspath(filename)
         print filepath
@@ -399,7 +405,7 @@ If the curve is not in the current playlist, it politely asks if we want to add 
                     c+=1  
             except IndexError:
                 #We've found the end of the list.
-                answer=raw_input('Curve not found in playlist. Add it to list?')
+                answer=linp.alphainput('Curve not found in playlist. Add it to list?','y',0,[])
                 if answer.lower()[0]=='y':
                     try:
                         self.do_addtolist(filepath)
@@ -555,7 +561,8 @@ Syntax: plot
         x,unitx,y,unity=self._point()
         print str(x)+' '+unitx
         print str(y)+' '+unity
-            
+        to_dump='point '+self.current.path+' '+str(x)+' '+unitx+', '+str(y)+' '+unity
+        self.outlet.push(to_dump)    
    
         
     def do_close(self,args=None):
@@ -603,7 +610,7 @@ If you have a multiple plot, the optional plot to export argument tells Hooke wh
         
         dest=0
         if args=='':
-            name=raw_input('Filename?')
+            name=linp.alphainput('Filename?',self.current.path+'.png',0,[])
         else:
             args=args.split()
             name=args[0]
@@ -638,9 +645,9 @@ Syntax: txt [filename] {plot to export}
         whichplot=0
         args=args.split()
         if len(args)==0:
-            filename=raw_input('Filename?')
+            filename=linp.alphainput('Filename?',self.current.path+'.txt',0,[])
         else:
-            filename=args[0]
+            filename=linp.checkalphainput(args[0],self.current.path+'.txt',[])
             try:
                 whichplot=int(args[1])
             except:
@@ -698,7 +705,7 @@ Syntax notelog [filename]
     def do_notelog(self,args):
         
         if len(args)==0:
-            args=raw_input('Notelog filename?')
+            args=linp.alphainput('Notelog filename?','notelog.txt',0,[])
             
         note_lines='Notes taken at '+time.asctime()+'\n'
         for item in self.current_list:
@@ -728,7 +735,7 @@ Syntax copylog [directory]
     def do_copylog(self,args):
         
         if len(args)==0:
-            args=raw_input('Destination directory?')
+            args=linp.alphainput('Destination directory?','',0,[])  #TODO default
         
         mydir=os.path.abspath(args)
         if not os.path.isdir(mydir):
@@ -741,6 +748,25 @@ Syntax copylog [directory]
                     shutil.copy(item.path, mydir)
                 except OSError:
                     print 'OSError. Cannot copy file. Perhaps you gave me a wrong directory?'
+
+#OUTLET management
+
+
+	def do_outlet_show(self,args):
+		self.outlet.printbuf()
+
+    def do_outlet_undo(self, args):
+        print 'Erasing last entry'
+        self.outlet.pop()
+
+	def do_outlet_delete(self, args):
+		if len(args)==0:
+			print 'Index needed!, use outlet_show to know it'
+		else:
+			self.outlet.delete(args)
+
+
+
 
 
 #OS INTERACTION COMMANDS
@@ -849,9 +875,9 @@ Syntax: quit
         we_exit='N'
         
         if (not self.playlist_saved) or (not self.notes_saved):
-            we_exit=raw_input('You did not save your playlist and/or notes. Exit?')
+            we_exit=linp.alphainput('You did not save your playlist and/or notes. Exit?','n',0,[])
         else:
-            we_exit=raw_input('Exit?')
+            we_exit=linp.alphainput('Exit?','y',0,[])
         
         if we_exit[0].upper()=='Y':
             wx.CallAfter(self.frame.Close)
@@ -863,6 +889,8 @@ Syntax: quit
         self.help_exit()
     def do_quit(self,args):
         self.do_exit(args)
+
+
 
 
 

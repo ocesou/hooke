@@ -240,8 +240,12 @@ class fitCommands:
             return
         
         print 'Contour length: ',params[0]*(1.0e+9),' nm'
+        to_dump='contour '+self.current.path+' '+str(params[0]*(1.0e+9))+' nm'
+        self.outlet.push(to_dump)
         if len(params)==2: #if we did choose 2-value fit
             print 'Persistent length: ',params[1]*(1.0e+9),' nm'
+            to_dump='persistent '+self.current.path+' '+str(params[1]*(1.0e+9))+' nm'
+            self.outlet.push(to_dump)
         
         #add the clicked points in the final PlotObject
         clickvector_x, clickvector_y=[], []

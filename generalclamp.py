@@ -98,6 +98,8 @@ class generalclampCommands:
             points=self._measure_N_points(N=2)
             zpiezo=abs(points[0].graph_coords[1]-points[1].graph_coords[1])
             print str(zpiezo*(10**9))+' nm'
+            to_dump='zpiezo '+self.current.path+' '+str(zpiezo*(10**9))+' nm'
+            self.outlet.push(to_dump)
         else:
             print 'This command makes no sense for a non-force clamp experiment.'
             
@@ -115,6 +117,8 @@ class generalclampCommands:
             points=self._measure_N_points(N=2)
             defl=abs(points[0].graph_coords[1]-points[1].graph_coords[1])
             print str(defl*(10**12))+' pN'
+            to_dump='deflection '+self.current.path+' '+str(defl*(10**12))+' pN'
+            self.outlet.push(to_dump)
         else:
             print 'This command makes no sense for a non-force clamp experiment.'
             
@@ -137,6 +141,8 @@ class generalclampCommands:
             dt=abs(points[1].graph_coords[0]-points[0].graph_coords[0])
             print 'dZ: ',dz,' nm'
             print 'dT: ',dt,' s'
+            to_dump='step '+self.current.path+' '+'dZ: '+str(dz)+' nm'+' dT: '+str(dt)+' s'
+            self.outlet.push(to_dump)
             
         else:
             print 'This command makes no sense for a non-force clamp experiment.'

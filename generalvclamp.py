@@ -44,6 +44,8 @@ class generalvclampCommands:
         else:
             dx,unitx,dy,unity=self._delta(set=1)
             print str(dx*(10**9))+' nm'
+            to_dump='distance '+self.current.path+' '+str(dx*(10**9))+' nm'
+            self.outlet.push(to_dump)
 
 
     def do_force(self,args):
@@ -59,6 +61,8 @@ class generalvclampCommands:
             return
         dx,unitx,dy,unity=self._delta(set=1)
         print str(dy*(10**12))+' pN'
+        to_dump='force '+self.current.path+' '+str(dy*(10**12))+' pN'
+        self.outlet.push(to_dump)
         
         
     def do_forcebase(self,args):
@@ -114,6 +118,8 @@ class generalvclampCommands:
         avg=np.mean(to_average)
         forcebase=abs(y-avg)
         print str(forcebase*(10**12))+' pN'
+        to_dump='forcebase '+self.current.path+' '+str(forcebase*(10**12))+' pN'
+        self.outlet.push(to_dump)
         
     
     def plotmanip_flatten(self, plot, current, customvalue=False):
@@ -226,6 +232,8 @@ class generalvclampCommands:
         # Outputs the relevant slope parameter
         print 'Slope:'
         print str(parameters[0])
+        to_dump='slope '+self.current.path+' '+str(parameters[0])
+        self.outlet.push(to_dump)
                 
         # Makes a vector with the fitted parameters and sends it to the GUI
         xtoplot=parameters[2]
