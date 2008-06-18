@@ -21,9 +21,9 @@ class Outlet(object):
     def push(self, args):
         self.buffer.append(args)
 
-    def pop(self, args):
+    def pop(self):
 	return self.buffer.pop();
-     
+
     def printbuf(self):
 	j=1;
         for i in self.buffer:
