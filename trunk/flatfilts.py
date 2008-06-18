@@ -239,6 +239,8 @@ class flatfiltsCommands:
         
         peak_location,peak_size=self.has_peaks(defplots,abs_devs)
         print 'Found '+str(len(peak_location))+' peaks.'
+        to_dump='peaks '+self.current.path+' '+str(len(peak_location))
+        self.outlet.push(to_dump)
         #print peak_location
         
         #if no peaks, we have nothing to plot. exit.

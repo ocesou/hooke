@@ -11,6 +11,10 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
 	cleaned debug output in execmacro
     DRIVERS:
 	alternative version of picoforce driver
+    INPUT
+	merged (partially) libinput (so far in hooke_cli)
+    OUTLET	
+	merged liboutlet
 
 
 0.8.3
