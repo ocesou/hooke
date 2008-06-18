@@ -752,18 +752,30 @@ Syntax copylog [directory]
 #OUTLET management
 
 
-	def do_outlet_show(self,args):
-		self.outlet.printbuf()
+    def do_outlet_show(self,args):
+        '''OUTLET_SHOW
+        ---------
+        Shows current content of outlet with index for reference
+        '''
+        self.outlet.printbuf()
 
     def do_outlet_undo(self, args):
+        '''OUTLET_UNDO
+        ---------
+        Eliminates last entry in outlet
+        '''
         print 'Erasing last entry'
         self.outlet.pop()
 
-	def do_outlet_delete(self, args):
-		if len(args)==0:
-			print 'Index needed!, use outlet_show to know it'
-		else:
-			self.outlet.delete(args)
+    def do_outlet_delete(self, args):
+        '''OUTLET_DELETE
+        Eliminates a particular entry from outlet
+        Syntax: outlet_delete n
+        '''
+        if len(args)==0:
+            print 'Index needed!, use outlet_show to know it'
+        else:
+            self.outlet.delete(args)
 
 
 
