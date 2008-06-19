@@ -259,8 +259,6 @@ class picoforcealtDriver(lhc.Driver):
         '''
         creates the default PlotObject
         '''
-        
-                
         force=self._force()
         zdomain=self._Z()
         samples=self._get_samples_line()
