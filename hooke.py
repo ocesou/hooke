@@ -162,7 +162,7 @@ class CliThread(Thread):
     def run(self):
         print '\n\nThis is Hooke, version',__version__ , __release_name__
 	print
-        print '(c) Massimo Sandal, 2006. Released under the GNU General Public License Version 2'
+        print '(c) Massimo Sandal & others, 2006-2008. Released under the GNU Lesser General Public License Version 3'
         print 'Hooke is Free software.'
         print '----'
         print ''
