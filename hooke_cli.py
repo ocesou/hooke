@@ -102,6 +102,7 @@ class HookeCli(cmd.Cmd):
         self.playlist_saved=0
         self.playlist_name=''
         self.notes_saved=1
+        self.notes_filename=None
 
         #create outlet
         self.outlet=lout.Outlet()
@@ -670,16 +671,20 @@ Syntax: txt [filename] {plot to export}
         
     
     #LOGGING, REPORTING, NOTETAKING
-    def help_note(self):
-        print '''
-NOTE
-Writes or displays a note about the current curve.
-If [anything] is empty, it displays the note, otherwise it adds a note.
-The note is then saved in the playlist if you issue a savelist command
----------------
-Syntax: note [anything]        
-'''
-    def do_note(self,args):
+    
+
+    def do_note_old(self,args):
+        '''
+        NOTE_OLD
+        **deprecated**: Use note instead. Will be removed in 0.9
+        
+        Writes or displays a note about the current curve.
+        If [anything] is empty, it displays the note, otherwise it adds a note.
+        The note is then saved in the playlist if you issue a savelist command
+        ---------------
+        Syntax: note_old [anything]        
+
+        '''
         if args=='':
             print self.current_list[self.pointer].notes
         else:
@@ -694,6 +699,42 @@ Syntax: note [anything]
             self.current_list[self.pointer].notes=args
         self.notes_saved=0
             
+            
+    def do_note(self,args):
+        '''
+        NOTE
+        
+        Writes or displays a note about the current curve.
+        If [anything] is empty, it displays the note, otherwise it adds a note.
+        The note is then saved in the playlist if you issue a savelist command.
+        ---------------
+        Syntax: note_old [anything]        
+
+        '''
+        if args=='':
+            print self.current_list[self.pointer].notes
+        else:
+            if self.notes_filename == None:
+                self.notes_filename=raw_input('Filename? ')
+                title_line='Notes taken at '+time.asctime()+'\n'
+                f=open(self.notes_filename,'w')
+                f.write(title_line)
+                f.close()
+                
+            #bypass UnicodeDecodeError troubles    
+            try:
+               args=args.decode('ascii')
+            except:
+               args=args.decode('ascii','ignore')
+               if len(args)==0:
+                   args='?'
+            self.current_list[self.pointer].notes=args
+            
+            f=open(self.notes_filename,'a+')
+            note_string=(self.current.path+'  |  '+self.current.notes+'\n')
+            f.write(note_string)
+            f.close()
+                           
     def help_notelog(self):
         print '''
 NOTELOG
