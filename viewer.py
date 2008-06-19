@@ -10,25 +10,29 @@ This program is released under the GNU General Public License version 2.
 
 
 import libviewer as lview
+import libinput as limput
 
 class viewerCommands:
 	
     def _plug_init(self):
-	self.viewerlist=[]
+        self.viewerlist=[]
+        #we keep a list of different viewers so it's possible to retrieve different data
+        #or process the same data differently
 		
 
     def do_vwnew(self,args):
-	self.viewerlist.append(lview.Ascii(self.outlet))
-	dt=raw_input('What type of data will this viewer handle? (force/distance/all)')
-	print dt
-	self.viewerlist[-1].setdtype(dt)
+        #creates a new viewer
+        self.viewerlist.append(lview.Ascii(self.outlet))
+        dt=limput.alphainput('What type of data will this viewer handle? (force/distance/all)','',1,['force', 'distance', 'all']) #TODO update types, make a list somewhere?
+        print dt
+        self.viewerlist[-1].setdtype(dt)
 
 
     def do_vwaction(self,args):
-	'''
-	triggers default action of viewer number n (default 0)
-	'''
+        '''
+        triggers default action of viewer number n (default 0)
+        '''
 
-	if len(args)==0:
-		args=0
-	self.viewerlist[int(args)].action()
+        if len(args)==0:
+            args=0
+        self.viewerlist[int(args)].action()
