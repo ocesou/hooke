@@ -232,7 +232,6 @@ class fitCommands:
         print 'Click edges of chunk'
         points=self._measure_N_points(N=2, whatset=1)
         points=[contact_point]+points
-        params, yfit, xfit = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T)
         try:
             params, yfit, xfit = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T)
         except:
