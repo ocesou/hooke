@@ -33,7 +33,7 @@ class jpkDriver(lhc.Driver):
         Of course, all other variables you like can be defined in the class.
         '''
         self.filetype = 'jpk'
-        self.experiment = 'smfsz'
+        self.experiment = 'smfs'
                   
         
 
@@ -93,15 +93,24 @@ class jpkDriver(lhc.Driver):
         else: #we have measured no spring constant :(
             force=v_deflection
             
-        height_ms=[item*-1 for item in height_ms]
-        height_m=[item*-1 for item in height_m]
-        height=[item*-1 for item in height]
+        height_ms=DataChunk([item*-1 for item in height_ms])
+        height_m=DataChunk([item*-1 for item in height_m])
+        height=DataChunk([item*-1 for item in height])
+        deflection=DataChunk(v_deflection)
+        force=DataChunk(force)
         
-        return DataChunk(height_ms),DataChunk(height_m),DataChunk(height),DataChunk(v_deflection),DataChunk(force)
+        return height_ms,height_m,height,deflection,force
+        
+    def deflection(self):
+        height_ms,height_m,height,deflection,force=self._read_data_segment()
+        deflection_ext=deflection.ext()
+        deflection_ret=deflection.ret()
+        deflection_ret.reverse()
+        return deflection_ext,deflection_ret
         
     def default_plots(self):
         
-        height_ms,height_m,height,v_deflection,force=self._read_data_segment()
+        height_ms,height_m,height,deflection,force=self._read_data_segment()
         
         height_ms_ext=height_ms.ext()
         height_ms_ret=height_ms.ret()
