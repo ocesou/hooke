@@ -270,7 +270,7 @@ Syntax: genlist [input files]
     def do_genlist(self,args):
         #args list is: input path, output name
         if len(args)==0:
-            args=linp.safeinput('Input files?',[])
+            args=linp.safeinput('Input files?')
                     
         arglist=args.split()      
         list_path=arglist[0]
@@ -930,7 +930,7 @@ Syntax: quit
         if (not self.playlist_saved) or (not self.notes_saved):
             we_exit=linp.safeinput('You did not save your playlist and/or notes. Exit?',['n'])
         else:
-            we_exit=linp.alphainput('Exit?',['y'])
+            we_exit=linp.safeinput('Exit?',['y'])
         
         if we_exit[0].upper()=='Y':
             wx.CallAfter(self.frame.Close)
