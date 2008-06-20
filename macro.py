@@ -23,14 +23,14 @@ class macroCommands:
 	def _plug_init(self):
 		self.currentmacro=[]
 		self.auxprompt=self.prompt
-		self.macrodir=os.curdir
+		self.macrodir=self.config['workdir']
 		if not os.path.exists(os.path.join(self.macrodir,'macros')):
                     try:
                         os.mkdir('macros')
                     except:
                         print 'Warning: cannot create macros folder.'
                         print 'Probably you do not have permissions in your Hooke folder, use macro at your own risk.'
-                        self.macrodir=os.path.join(self.macrodir,'macros')
+                self.macrodir=os.path.join(self.macrodir,'macros')
 
 	def collect(self):
 				
