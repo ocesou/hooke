@@ -254,17 +254,16 @@ class ClickedPoint:
         corresponds to the clicked point.
         '''
                    
-        #Ye Olde sorting algorithm...
-        index=0
         best_index=0
-        best_diff=10^9 #FIXME:hope we never go over this magic number, doing best_diff=max(xvector)-min(xvector) can be better...
-        for point in xvector:
-            diff=abs(point-self.absolute_coords[0])
-            if diff<best_diff:
+        best_dist=10**9 #should be more than enough given the scale
+                
+        for index in scipy.arange(1,len(xvector),1):
+            dist=((self.absolute_coords[0]-xvector[index])**2)+(100*((self.absolute_coords[1]-yvector[index])))**2
+                        #TODO, generalize? y coordinate is multiplied by 100 due to scale differences in the plot
+            if dist<best_dist:
                 best_index=index
-                best_diff=diff
-            index+=1
-            
+                best_dist=dist
+                        
         self.index=best_index
         self.graph_coords=(xvector[best_index],yvector[best_index])
         return
