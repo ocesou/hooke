@@ -46,7 +46,7 @@ class Ascii(Viewer):
 	def dump(self):
 		#retrieves and saves data
 		self.getdata()
-		destination=linput.alphainput('Enter filename:','results.txt',0,[])
+		destination=linput.safeinput('Enter filename:',['results.txt'])
 		destfile=open(destination,'w+')
 		destfile.write('\n'.join(self.data))
 		destfile.close()

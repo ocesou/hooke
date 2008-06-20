@@ -10,7 +10,7 @@ This program is released under the GNU General Public License version 2.
 
 
 import libviewer as lview
-import libinput as limput
+import libinput as linput
 
 class viewerCommands:
 	
@@ -23,7 +23,8 @@ class viewerCommands:
     def do_vwnew(self,args):
         #creates a new viewer
         self.viewerlist.append(lview.Ascii(self.outlet))
-        dt=limput.alphainput('What type of data will this viewer handle? (force/distance/all)','',1,['force', 'distance', 'all']) #TODO update types, make a list somewhere?
+        dt=linput.safeinput('What type of data will this viewer handle? (force/distance/all)',['force', 'distance', 'all']) 
+                    #TODO update types, make a list somewhere?
         print dt
         self.viewerlist[-1].setdtype(dt)
 

@@ -214,7 +214,7 @@ Syntax: loadlist [playlist file]
     def do_loadlist(self, args):
         #checking for args: if nothing is given as input, we warn and exit.
         while len(args)==0:
-            args=linp.alphainput('File to load?','',0,[])
+            args=linp.safeinput('File to load?')
         
         arglist=args.split()
         play_to_load=arglist[0]
@@ -270,7 +270,7 @@ Syntax: genlist [input files]
     def do_genlist(self,args):
         #args list is: input path, output name
         if len(args)==0:
-            args=linp.alphainput('Input files?','',1,[])
+            args=linp.safeinput('Input files?',[])
                     
         arglist=args.split()      
         list_path=arglist[0]
@@ -321,7 +321,7 @@ Syntax: genlist [input files]
         Syntax: savelist [filename]
         '''
         while len(args)==0:
-            args=linp.alphainput('Output files?','',1,[])
+            args=linp.safeinput('Output file?',['savedlist.txt'])
     
         output_filename=args
         
@@ -387,7 +387,7 @@ If the curve is not in the current playlist, it politely asks if we want to add 
         '''
         
         if filename=='':
-            filename=linp.alphainput('Jump to?','',0,[])
+            filename=linp.safeinput('Jump to?')
             
         filepath=os.path.abspath(filename)
         print filepath
@@ -406,7 +406,7 @@ If the curve is not in the current playlist, it politely asks if we want to add 
                     c+=1  
             except IndexError:
                 #We've found the end of the list.
-                answer=linp.alphainput('Curve not found in playlist. Add it to list?','y',0,[])
+                answer=linp.safeinput('Curve not found in playlist. Add it to list?',['y'])
                 if answer.lower()[0]=='y':
                     try:
                         self.do_addtolist(filepath)
@@ -611,7 +611,7 @@ If you have a multiple plot, the optional plot to export argument tells Hooke wh
         
         dest=0
         if args=='':
-            name=linp.alphainput('Filename?',self.current.path+'.png',0,[])
+            name=linp.safeinput('Filename?',[self.current.path+'.png'])
         else:
             args=args.split()
             name=args[0]
@@ -646,7 +646,7 @@ Syntax: txt [filename] {plot to export}
         whichplot=0
         args=args.split()
         if len(args)==0:
-            filename=linp.alphainput('Filename?',self.current.path+'.txt',0,[])
+            filename=linp.safeinput('Filename?',[self.current.path+'.txt'])
         else:
             filename=linp.checkalphainput(args[0],self.current.path+'.txt',[])
             try:
@@ -746,7 +746,7 @@ Syntax notelog [filename]
     def do_notelog(self,args):
         
         if len(args)==0:
-            args=linp.alphainput('Notelog filename?','notelog.txt',0,[])
+            args=linp.safeinput('Notelog filename?',['notelog.txt'])
             
         note_lines='Notes taken at '+time.asctime()+'\n'
         for item in self.current_list:
@@ -776,7 +776,7 @@ Syntax copylog [directory]
     def do_copylog(self,args):
         
         if len(args)==0:
-            args=linp.alphainput('Destination directory?','',0,[])  #TODO default
+            args=linp.safeinput('Destination directory?')  #TODO default
         
         mydir=os.path.abspath(args)
         if not os.path.isdir(mydir):
@@ -928,9 +928,9 @@ Syntax: quit
         we_exit='N'
         
         if (not self.playlist_saved) or (not self.notes_saved):
-            we_exit=linp.alphainput('You did not save your playlist and/or notes. Exit?','n',0,[])
+            we_exit=linp.safeinput('You did not save your playlist and/or notes. Exit?',['n'])
         else:
-            we_exit=linp.alphainput('Exit?','y',0,[])
+            we_exit=linp.alphainput('Exit?',['y'])
         
         if we_exit[0].upper()=='Y':
             wx.CallAfter(self.frame.Close)

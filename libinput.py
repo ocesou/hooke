@@ -8,6 +8,38 @@ Copyright (C) 2008 Alberto Gomez-Casado (University of Twente).
 This program is released under the GNU General Public License version 2.
 '''
 
+from types import *
+
+
+
+def safeinput (message, valid=[]):
+    '''
+    friendlier frontend for alphainput and numinput
+    valid should be a list of 0...n values
+    '''
+
+    #if possible values are not listed we just ask for any non-null input 
+    if len(valid)==0:
+        return alphainput(message, '',1,[])
+    
+    
+    if len(valid)>0:
+        #if valid values are string we use alphainput, if it is only one we take as default
+        if type(valid[0]) is StringType:
+            if len(valid)==1:
+                return alphainput(message, valid[0], 0,[])
+            else:
+                return alphainput(message,'', 1,valid)
+            
+        #if valid values are numbers we use numinput
+        if type(valid[0]) is IntType:
+            if len(valid)==1:
+                return numinput(message,valid[0],1,[])
+            else:
+                return numinput(message,'',1,valid)
+    
+    
+
 def alphainput (message, default, repeat, valid):
     '''
     message: prompt for the user
@@ -65,35 +97,46 @@ def numinput(message, default, repeat, limits):
     limits: pair of values, input is checked to be between them, empty list for "any number"
     ''' 
     if default and not repeat:
-        print 'Enter for default: '+str(default)
+        print 'Press [enter] for default: '+str(default)
+        
     reply=raw_input(message)
-    if reply:
-        reply=int(reply)
+    
+    try:
+        intreply=int(reply)
+    except:
+        intreply=None
+              
     if len(limits)==2:
         high=int(limits.pop())
         low=int(limits.pop())
-        if reply>=low and reply <= high:
-            return reply
+        if intreply>=low and intreply <= high:
+            return intreply
         else:
             if repeat==1:
-                while reply<low or reply>high :
+                while intreply<low or intreply>high :
                     reply=raw_input('You should enter values between: '+ str(low)+' and '+str(high) +'\n'+ message)
-                    if reply:
-                        reply=int(reply)
-                return reply
+                    try:
+                        intreply=int(reply)
+                    except:
+                        intreply=None
+                return intreply
             else:
                 return default
     else:
-        if len(reply)>0:
-            return int(reply)
+        if intreply!=None:
+            return intreply
         else:
             if not repeat:
                 return default
             else:
-                while len(reply)==0:
+                while intreply==None:
                     print 'Try again'
                     reply=raw_input(message)
-                return reply
+                    try:
+                        intreply=int(reply)
+                    except:
+                        intreply=None
+                return intreply
 
 def checknuminput(test,default,limits):
     #useful when input was taken from command args
