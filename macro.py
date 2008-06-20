@@ -8,6 +8,7 @@ Records, saves and executes batches of commands
 '''
 
 import libhookecurve as lhc
+import libinput as linput
 import os.path
 import string
 
@@ -26,11 +27,11 @@ class macroCommands:
 		if not os.path.exists(os.path.join(self.macrodir,'macros')):
                     try:
                         os.mkdir('macros')
-		    except:
-		        print 'Warning: cannot create macros folder.'
+                    except:
+                        print 'Warning: cannot create macros folder.'
                         print 'Probably you do not have permissions in your Hooke folder, use macro at your own risk.'
-		self.macrodir=os.path.join(self.macrodir,'macros')
-		
+                        self.macrodir=os.path.join(self.macrodir,'macros')
+
 	def collect(self):
 				
 		print 'Enter STOP / PAUSE to go back to normal mode\nUNDO to remove last command'
@@ -89,7 +90,7 @@ class macroCommands:
 			self.pause=0
 			self.prompt=self.auxprompt
 			if len(self.currentmacro) != 0: 
-				answer=raw_input('Do you want to save this macro? ')
+				answer=linput.safeinput('Do you want to save this macro? ',['y'])
 				if answer[0].lower() == 'y':
 					self.do_savemacro('')
 				else:
@@ -105,7 +106,7 @@ class macroCommands:
 				self.collect()	
 			else:
 				if len(self.currentmacro) != 0: 
-					answer=raw_input('Another macro is already beign recorded\nDo you want to save it?')
+					answer=linput.safeinput('Another macro is already beign recorded\nDo you want to save it?',['y'])
 					if answer[0].lower() == 'y':
 						self.do_savemacro('')
 					else:
@@ -129,13 +130,13 @@ class macroCommands:
 			print 'No macro is being recorded!'
 			return 0
 		if len(macroname)==0: 
-			macroname=raw_input('Enter new macro name: ')
+			macroname=linput.safeinput('Enter new macro name: ')
 			if len(macroname) == 0:
 				print 'Invalid name'
 				
 		macroname=os.path.join(self.macrodir,macroname+'.hkm')
 		if os.path.exists(macroname):
-			overwrite=raw_input('That name is in use, overwrite?')
+			overwrite=linput.safeinput('That name is in use, overwrite?',['n'])
 			if overwrite[0].lower()!='y':
 				print 'Cancelled save'
 				return 0
