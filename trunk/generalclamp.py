@@ -3,8 +3,6 @@
 '''
 GENERALCLAMP.py
 
-(c) 2008 Marco Brucale, Massimo Sandal
-
 Plugin regarding general force clamp measurements
 '''
 from libhooke import WX_GOOD, ClickedPoint
@@ -72,14 +70,12 @@ class generalclampCommands:
       
     def do_time(self,args):
         '''
-        TIME
-        Measure the time difference (in seconds) between two points
+        Measures the time difference (in seconds) between two points
         Implemented only for force clamp
         ----
         Syntax: time
         '''
         if self.current.curve.experiment == 'clamp':
-            print 'Click two points.'
             time=self._delta(set=0)[0]
             print str(time*1000)+' ms'
         else:
@@ -87,45 +83,34 @@ class generalclampCommands:
             
     def do_zpiezo(self,args):
         '''
-        ZPIEZO
-        Measure the zpiezo difference (in nm) between two points
+        Measures the zpiezo difference (in nm) between two points
         Implemented only for force clamp
         ----
         Syntax: zpiezo
         '''
         if self.current.curve.experiment == 'clamp':
-            print 'Click two points.'
-            points=self._measure_N_points(N=2)
-            zpiezo=abs(points[0].graph_coords[1]-points[1].graph_coords[1])
+            zpiezo=self._delta(set=0)[2]
             print str(zpiezo*(10**9))+' nm'
-            to_dump='zpiezo '+self.current.path+' '+str(zpiezo*(10**9))+' nm'
-            self.outlet.push(to_dump)
         else:
             print 'This command makes no sense for a non-force clamp experiment.'
             
     def do_defl(self,args):
         '''
-        DEFL
-        Measure the deflection difference (in nm) between two points
+        Measures the deflection difference (in nm) between two points
         Implemented only for force clamp
         NOTE: It makes sense only on the time VS defl plot; it is still not masked for the other plot...
         -----
         Syntax: defl
         '''
         if self.current.curve.experiment == 'clamp':
-            print 'Click two points.'
-            points=self._measure_N_points(N=2)
-            defl=abs(points[0].graph_coords[1]-points[1].graph_coords[1])
+            print "Warning - don't use on the zpiezo plot!"
+            defl=self._delta(set=1)[2]
             print str(defl*(10**12))+' pN'
-            to_dump='deflection '+self.current.path+' '+str(defl*(10**12))+' pN'
-            self.outlet.push(to_dump)
         else:
             print 'This command makes no sense for a non-force clamp experiment.'
             
     def do_step(self,args):
         '''
-        STEP
-        
         Measures the length and time duration of a time-Z step
         -----
         Syntax: step
@@ -141,8 +126,124 @@ class generalclampCommands:
             dt=abs(points[1].graph_coords[0]-points[0].graph_coords[0])
             print 'dZ: ',dz,' nm'
             print 'dT: ',dt,' s'
-            to_dump='step '+self.current.path+' '+'dZ: '+str(dz)+' nm'+' dT: '+str(dt)+' s'
-            self.outlet.push(to_dump)
             
         else:
             print 'This command makes no sense for a non-force clamp experiment.'
+
+    def do_fcfilt(self,args):
+        '''
+        Filters out featureless force clamp curves of the current playlist.
+        It's very similar to 'flatfilt' for velocity clamp curves.
+        Creates a new playlist only containing non-empty curves.
+
+        WARNING - Only works if you set an appropriate fc_interesting config variable!
+        WARNING - arguments are NOT optional at the moment!
+
+        Syntax: fcfilt maxretraction(nm) mindeviation (pN)
+
+        Suggested values for an (i27)8 experiment with our setup are 200nm and 10-15 pN
+        '''
+
+        if self.config['fc_interesting'] == 0:
+            print 'You must specify the phase of interest (using set fc_interesing X) prior to running fcfilt!'
+            return
+        
+        maxretraction=0
+        threshold=0
+        args=args.split(' ')
+        if len(args)==2:
+            maxretraction=int(args[0])
+            threshold=int(args[1])
+        else:
+            print 'Arguments are not optional for fcfilt. You should pass two numbers:'
+            print '(1) the maximum plausible piezo retraction in NANOMETERS (e.g. the length of the protein)'
+            print "(2) the threshold, in PICONEWTONS. If signal deviates from imposed more than this, it's an event"
+            return
+        
+
+        print 'Processing playlist... go get yourself a cup of coffee.'
+        notflat_list=[]
+
+        c=0
+
+        for item in self.current_list:
+            c+=1
+            try:
+                notflat=self.has_stuff(item,maxretraction,threshold)
+                print 'Curve',item.path,'is',c,'of',len(self.current_list),'--->Has Stuff =',notflat
+            except:
+                notflat=False
+                print 'Curve',item.path,'is',c,'of',len(self.current_list),'--->could not be processed'
+            if notflat:
+                item.features=notflat
+                item.curve=None
+                notflat_list.append(item)
+
+        if len(notflat_list)==0:
+            print 'Nothing interesting here. Reconsider either your filtering criteria or your experimental data'
+            return
+        else:
+            print 'Found',len(notflat_list),'potentially interesting curves.'
+            print 'Regenerating Playlist...'
+            self.pointer=0
+            self.current_list=notflat_list
+            self.current=self.current_list[self.pointer]
+            self.do_plot(0)
+
+    def has_stuff(self,item,maxretraction,threshold):
+        '''
+        Decides whether a curve has some features in the interesting phase.
+        Algorithm:
+            - clip the interesting phase portion of the curve.
+            - discard the first 20 milliseconds (this is due to a quirk of our hardware).
+            - look at the zpiezo plot and note down when (if) retratcs more than [maxretraction] nm away from the first point.
+            - clip off any data after this point, with an excess of 100 points (again, an hardware quirk)
+            - if the remainder is less than 100 points, ditch the curve.
+            - now look at the deflection plot and check if there are points more than [threshold] pN over the 'flat zone'.
+            - if you find such points, bingo!            
+        '''
+
+        item.identify(self.drivers)
+   
+        lower = int((self.config['fc_interesting'])-1)
+        upper = int((self.config['fc_interesting'])+1)
+        trim_idxs = item.curve.trimindexes()[lower:upper]
+        lo=trim_idxs[0]+20                                                  #clipping the first 20 points off...
+        hi=trim_idxs[1]
+        trimmed_zpiezo=item.curve.default_plots()[0].vectors[0][1][lo:hi]
+        trimmed_defl=item.curve.default_plots()[1].vectors[0][1][lo:hi]
+        trimmed_imposed=item.curve.default_plots()[1].vectors[1][1][lo:hi]
+        imposed=trimmed_imposed[21]                                         #just to match the 20-pts clipping...
+        
+        item.curve.close_all()
+        del item.curve
+        del item
+
+        starting_z=trimmed_zpiezo[0]
+        plausible=starting_z-(maxretraction*1e-9)
+        det_trim=0
+        while trimmed_zpiezo[det_trim]>plausible:
+            det_trim+=1
+            if det_trim >= len(trimmed_zpiezo):                              #breaking cycles makes me shiver...
+                det_trim=len(trimmed_zpiezo)                                 #but I cannot think of anything better now.
+                break
+        further_trim=det_trim-100
+        if further_trim<100:
+            return False
+        trimmed_defl=trimmed_defl[:further_trim]
+
+        trimmed_defl.sort()
+        ninetypercent=int(0.9*len(trimmed_defl))
+        j=0
+        sum=0
+        for j in trimmed_defl[:ninetypercent]:
+            sum+=j
+        avg=float(sum/ninetypercent)
+        sweetspot=float(avg+(threshold*1e-12))
+        if trimmed_defl[-1]>sweetspot:
+            flag=True
+        else:
+            flag=False
+
+        return flag            
+        
