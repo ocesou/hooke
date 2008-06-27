@@ -245,5 +245,7 @@ class generalclampCommands:
         else:
             flag=False
 
+        del trimmed_defl,trimmed_zpiezo,trimmed_imposed            
+
         return flag            
         
