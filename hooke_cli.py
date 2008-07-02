@@ -791,8 +791,7 @@ Syntax copylog [directory]
                     print 'OSError. Cannot copy file. Perhaps you gave me a wrong directory?'
 
 #OUTLET management
-
-
+#-----------------
     def do_outlet_show(self,args):
         '''OUTLET_SHOW
         ---------
@@ -817,10 +816,6 @@ Syntax copylog [directory]
             print 'Index needed!, use outlet_show to know it'
         else:
             self.outlet.delete(args)
-
-
-
-
 
 #OS INTERACTION COMMANDS
 #-----------------    

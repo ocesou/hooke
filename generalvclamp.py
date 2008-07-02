@@ -168,8 +168,9 @@ class generalvclampCommands:
                     valn[exponent]=sp.polyfit(x_ext,y_ext,exponent)
                     yrn[exponent]=sp.polyval(valn[exponent],x_ret)
                     errn[exponent]=sp.sqrt(sum((yrn[exponent]-y_ext)**2)/float(len(y_ext)))
-                except TypeError:
+                except Exception,e:
                     print 'Cannot flatten!'
+                    print e
                     return plot
 
             best_exponent=errn.index(min(errn))
