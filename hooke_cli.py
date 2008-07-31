@@ -891,6 +891,20 @@ Syntax: current
     def do_current(self,args):
         print self.current.path
         
+    def do_info(self,args):
+        '''
+        INFO
+        ----
+        Returns informations about the current curve.
+        '''
+        print 'Path: ',self.current.path
+        print 'Experiment: ',self.current.curve.experiment
+        print 'Filetype: ',self.current.curve.filetype
+        for plot in self.current.curve.default_plots():
+            for set in plot.vectors:
+                lengths=[len(item) for item in set]
+                print 'Data set size: ',lengths
+        
     def do_version(self,args):
         '''
         VERSION

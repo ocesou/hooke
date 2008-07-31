@@ -33,6 +33,7 @@ class Driver:
     '''
     def __init__(self):
         self.experiment=''
+        self.filetype=''
     
     def is_me(self):
         '''
