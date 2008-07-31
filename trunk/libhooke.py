@@ -173,11 +173,13 @@ class HookeConfig:
             plugins_elements=config.getElementsByTagName("plugins")
             drivers_elements=config.getElementsByTagName("drivers")
             workdir_elements=config.getElementsByTagName("workdir")
+            defaultlist_elements=config.getElementsByTagName("defaultlist")
             plotmanip_elements=config.getElementsByTagName("plotmanips")
             handleDisplay(display_elements)
             handlePlugins(plugins_elements)
             handleDrivers(drivers_elements)
             handleWorkdir(workdir_elements)
+            handleDefaultlist(defaultlist_elements)
             handlePlotmanip(plotmanip_elements)
             
         def handleDisplay(display_elements):
@@ -207,8 +209,18 @@ class HookeConfig:
                     pass
         
         def handleWorkdir(workdir):
+            '''
+            default working directory
+            '''
             wdir=getText(workdir[0].childNodes)
             self.config['workdir']=wdir.strip()
+            
+        def handleDefaultlist(defaultlist):
+            '''
+            default playlist
+            '''
+            dflist=getText(defaultlist[0].childNodes)
+            self.config['defaultlist']=dflist.strip()
             
         handleConfig(self.config_tree)
         #making items in the dictionary more machine-readable
