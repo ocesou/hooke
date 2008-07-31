@@ -121,6 +121,8 @@ class HookeCli(cmd.Cmd):
             except ImportError:
                 pass
 
+        #load default list, if possible
+        self.do_loadlist(self.config['defaultlist'])
         
 #HELPER FUNCTIONS
 #Everything sending an event should be here
