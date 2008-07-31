@@ -787,8 +787,8 @@ Syntax copylog [directory]
             if len(item.notes)>0:
                 try:
                     shutil.copy(item.path, mydir)
-                except OSError:
-                    print 'OSError. Cannot copy file. Perhaps you gave me a wrong directory?'
+                except (OSError, IOError):
+                    print 'Cannot copy file. '+item.path+' Perhaps you gave me a wrong directory?'
 
 #OUTLET management
 #-----------------
