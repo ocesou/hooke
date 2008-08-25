@@ -347,12 +347,9 @@ class fitCommands:
             
         FIXME: should be moved, probably to generalvclamp.py
         '''
-        outplot=self.subtract_curves(1)
-        xret=outplot.vectors[1][0]
-        ydiff=outplot.vectors[1][1]
         
-        raw_plot=self.current.curve.default_plots()[0]
-        
+        #raw_plot=self.current.curve.default_plots()[0]
+        raw_plot=self.plots[0]
         '''xext=self.plots[0].vectors[0][0]
         yext=self.plots[0].vectors[0][1]
         xret2=self.plots[0].vectors[1][0]
@@ -362,56 +359,24 @@ class fitCommands:
         yext=raw_plot.vectors[0][1]
         xret2=raw_plot.vectors[1][0]
         yret=raw_plot.vectors[1][1]
-        #taking care of the picoforce trigger bug: we exclude portions of the curve that have too much
-        #standard deviation. yes, a lot of magic is here.
         
-        monlength=len(xext)
-        #take half of the thing
-        endlength=int(len(xext)/2)
+        first_point=[xext[0], yext[0]]
+        last_point=[xext[-1], yext[-1]]
+       
+        #regr=scipy.polyfit(first_point, last_point,1)[0:2]
+        diffx=abs(first_point[0]-last_point[0])
+        diffy=abs(first_point[1]-last_point[1])
         
-        ok=False
-        xchunk=xext[endlength:monlength]
-        ychunk=yext[endlength:monlength]
-        regr=scipy.polyfit(xchunk,ychunk,1)[0:2]
+        #using polyfit results in numerical errors. good old algebra.
+        a=diffy/diffx
+        b=first_point[1]-(a*first_point[0])
+        baseline=scipy.polyval((a,b), xext)
         
-        '''
-        while not ok:
-            xchunk=yext[endlength:monlength]
-            ychunk=yext[endlength:monlength]
-            print len(xchunk)
-            #regr=scipy.stats.linregress(xchunk,ychunk)[0:2]
-            regr=scipy.polyfit(xchunk,ychunk,1)[0:2]
-            #we stop if we found an almost-horizontal fit or if we're going too short...
-            #FIXME: 0.1 and 6 here are "magic numbers" (although reasonable)
-            if (abs(regr[1]) > 0.1) and ( endlength < len(xret)-int(len(xret)/6) ) :
-                endlength+=10
-            else:
-                ok=True  
-        '''
-                  
-        '''
-        ymean=scipy.mean(ychunk) #baseline
-    
-        index=0
-        point = ymean+1
-    
-        #find the first point below the calculated baseline
-        while point > ymean:
-            try:
-                point=yret[index]
-                index+=1    
-            except IndexError:
-                #The algorithm didn't find anything below the baseline! It should NEVER happen
-                index=0            
-        '''
-        #fit the contact line
-        n_contact=100
-        x_contact_chunk=xret2[0:n_contact]
-        y_contact_chunk=yret[0:n_contact]
+        ysub=[item-basitem for item,basitem in zip(yext,baseline)]
         
-        regr_contact=scipy.polyfit(x_contact_chunk,y_contact_chunk,1)[0:2]
-        x_intercept=(regr_contact[1]-regr[1])/(regr[0]-regr_contact[0])
-        y_intercept=(regr_contact[0]*x_intercept + regr_contact[1])
+        contact=ysub.index(min(ysub))
+        
+        return xext,ysub,contact
         
         #now, exploit a ClickedPoint instance to calculate index...
         dummy=ClickedPoint()
@@ -423,11 +388,24 @@ class fitCommands:
         else:
             return dummy.index
             
+        
 
     def x_do_contact(self,args):
         '''
         DEBUG COMMAND to be activated in the future
         '''
+        xext,ysub,contact=self.find_contact_point2(debug=True)
+        
+        contact_plot=self.plots[0]
+        contact_plot.add_set(xext,ysub)
+        contact_plot.add_set([xext[contact]],[self.plots[0].vectors[0][1][contact]])
+        #contact_plot.add_set([first_point[0]],[first_point[1]])
+        #contact_plot.add_set([last_point[0]],[last_point[1]])
+        contact_plot.styles=[None,None,None,'scatter']
+        self._send_plot([contact_plot])
+        return
+        
+        
         index,regr,regr_contact=self.find_contact_point2(debug=True)
         print regr
         print regr_contact
