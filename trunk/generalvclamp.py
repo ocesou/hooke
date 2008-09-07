@@ -318,6 +318,8 @@ class generalvclampCommands:
         reclick : redefines by hand the contact point, if noauto has been used before
                   but the user is unsatisfied of the previously choosen contact point.
         
+        usepoints : fit interval by number of points instead than by nanometers
+        
         When you first issue the command, it will ask for the filename. If you are giving the filename
         of an existing file, autopeak will resume it and append measurements to it. If you are giving
         a new filename, it will create the file and append to it until you close Hooke.
@@ -332,9 +334,14 @@ class generalvclampCommands:
         pl_value=None
         T=self.config['temperature']
         
-        fit_points=int(self.config['auto_fit_points'])
+        if 'usepoints' in args.split():
+            fit_points=int(self.config['auto_fit_points'])
+            usepoints=True
+        else:
+            fit_points=None
+            usepoints=False
+            
         slope_span=int(self.config['auto_slope_span'])
-        
         delta_force=10
         rebase=False #if true=we select rebase
         
@@ -356,23 +363,24 @@ class generalvclampCommands:
                 t_expression=arg.split('=')
                 T=float(t_expression[1])
                
+                
         #Handle contact point arguments
-        #FIXME: code duplication
-        if 'reclick' in args.split():
-            print 'Click contact point'
+        def pickup_contact_point():
+            '''macro to pick up the contact point by clicking'''
             contact_point=self._measure_N_points(N=1, whatset=1)[0]
             contact_point_index=contact_point.index
             self.wlccontact_point=contact_point
             self.wlccontact_index=contact_point.index
             self.wlccurrent=self.current.path
+            return contact_point, contact_point_index
+                
+        if 'reclick' in args.split():
+            print 'Click contact point'
+            contact_point, contact_point_index = pickup_contact_point()
         elif 'noauto' in args.split():
             if self.wlccontact_index==None or self.wlccurrent != self.current.path:
                 print 'Click contact point'
-                contact_point=self._measure_N_points(N=1, whatset=1)[0]
-                contact_point_index=contact_point.index
-                self.wlccontact_point=contact_point
-                self.wlccontact_index=contact_point.index
-                self.wlccurrent=self.current.path
+                contact_point , contact_point_index = pickup_contact_point()
             else:
                 contact_point=self.wlccontact_point
                 contact_point_index=self.wlccontact_index
@@ -413,6 +421,22 @@ class generalvclampCommands:
         forces=[]
         slopes=[]
         
+        def fit_interval_nm(start_index,plot):
+            '''
+            Calculates the number of points to fit, given a fit interval in nm
+            '''
+            nm=self.config['auto_fit_nm']
+            x_vect=plot.vectors[1][0]
+            
+            c=0
+            i=start_index
+            start=x_vect[start_index]
+            while abs(x_vect[i]-x_vect[start_index])*(10**9) < nm:
+                i-=1
+                c+=1
+            
+            return c
+        
         #Cycle between peaks and do analysis.
         for peak in peak_location:
             #Do WLC fits.
@@ -421,6 +445,10 @@ class generalvclampCommands:
             peak_point=ClickedPoint()
             peak_point.absolute_coords=displayed_plot.vectors[1][0][peak], displayed_plot.vectors[1][1][peak]
             peak_point.find_graph_coords(displayed_plot.vectors[1][0], displayed_plot.vectors[1][1])    
+            
+            if not usepoints:
+                fit_points=fit_interval_nm(peak, displayed_plot)
+            
             #-create a clicked point for the other fit point
             other_fit_point=ClickedPoint()
             other_fit_point.absolute_coords=displayed_plot.vectors[1][0][peak-fit_points], displayed_plot.vectors[1][1][peak-fit_points]
