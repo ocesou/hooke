@@ -274,10 +274,10 @@ class flatfiltsCommands:
         convfilt [min_npks min_deviation]
 
         min_npks = minmum number of peaks
-        (default=4)
+        (to set the default, see convfilt.conf file; CONVCONF and SETCONF commands)
 
         min_deviation = minimum signal/noise ratio *in the convolution*
-        (default=4)
+        (to set the default, see convfilt.conf file; CONVCONF and SETCONF commands)
 
         If called without arguments, it uses default values.
         '''
