@@ -353,10 +353,22 @@ class flatfiltsCommands:
         Syntax: setconv variable value
         '''
         args=args.split()
-        try:
-            self.convfilt_config[args[0]]=eval(args[1])
-        except NameError:
-            self.convfilt_config[args[0]]=args[1]
+        #FIXME: a general "set dictionary" function has to be built
+        if len(args)==0:
+            print self.convfilt_config
+        else:
+            if not (args[0] in self.convfilt_config.keys()):
+                print 'This is not an internal convfilt variable!'
+                print 'Run "setconv" without arguments to see a list of defined variables.'
+                return
+            
+            if len(args)==1:
+                print self.convfilt_config[args[0]]
+            elif len(args)>1:
+                try:
+                    self.convfilt_config[args[0]]=eval(args[1])
+                except NameError: #we have a string argument
+                    self.convfilt_config[args[0]]=args[1]
 
 
 #########################
