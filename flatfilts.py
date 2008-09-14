@@ -333,16 +333,6 @@ class flatfiltsCommands:
             self.current_list=notflat_list
             self.current=self.current_list[self.pointer]
             self.do_plot(0)
-
-    def do_convconf(self,args):
-        '''
-        CONVCONFIG
-        (flatfilts.py)
-        Prints the current convfilt configuration variables.
-        ------
-        Syntax: convconfig
-        '''
-        print self.convfilt_config
         
     def do_setconv(self,args):
         '''
