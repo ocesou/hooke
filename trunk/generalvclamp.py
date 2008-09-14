@@ -324,12 +324,48 @@ class generalvclampCommands:
         of an existing file, autopeak will resume it and append measurements to it. If you are giving
         a new filename, it will create the file and append to it until you close Hooke.
         
-        Useful variables (to set with SET command):
         
+        Useful variables (to set with SET command):
+        ---
         temperature= temperature of the system for wlc fit (in K)
-        auto_fit_points = number of points to fit before the peak maximum, for wlc
+        
         auto_slope_span = number of points on which measure the slope, for slope
+        
+        auto_fit_nm = number of nm to fit before the peak maximum, for WLC (if usepoints false)
+        auto_fit_points = number of points to fit before the peak maximum, for WLC (if usepoints true)
+        
+        baseline_clicks = 0: automatic baseline
+                          1: decide baseline with a single click and length defined in auto_left_baseline
+                          2: let user click points of baseline
+        auto_left_baseline = length in nm to use as baseline from the right point (if baseline_clicks=0 , 1)
+        auto_right_baseline = distance in nm of peak-most baseline point from last peak (if baseline_clicks = 0)
         '''
+        
+        def fit_interval_nm(start_index,plot,nm,backwards):
+            '''
+            Calculates the number of points to fit, given a fit interval in nm
+            start_index: index of point
+            plot: plot to use
+            backwards: if true, finds a point backwards.
+            '''
+            x_vect=plot.vectors[1][0]
+            
+            c=0
+            i=start_index
+            start=x_vect[start_index]
+            maxlen=len(x_vect)
+            while abs(x_vect[i]-x_vect[start_index])*(10**9) < nm:
+                
+                if i==0 or i==maxlen: #we reached boundaries of vector!
+                    return c
+                
+                if backwards:
+                    i-=1
+                else:
+                    i+=1
+                c+=1
+            return c
+            
         
         pl_value=None
         T=self.config['temperature']
@@ -393,19 +429,6 @@ class generalvclampCommands:
             contact_point.is_marker=True
         
         
-        #Pick up force baseline
-        whatset=1 #fixme: for all sets
-        if 'rebase' in args or (self.basecurrent != self.current.path):
-            rebase=True               
-        if rebase:
-            print 'Select baseline'
-            self.basepoints=self._measure_N_points(N=2, whatset=whatset)
-            self.basecurrent=self.current.path
-        boundaries=[self.basepoints[0].index, self.basepoints[1].index]
-        boundaries.sort()
-        to_average=displayed_plot.vectors[1][1][boundaries[0]:boundaries[1]] #y points to average
-        avg=np.mean(to_average)
-        
         #Find peaks.
         defplot=self.current.curve.default_plots()[0]
         flatten=self._find_plotmanip('flatten') #Extract flatten plotmanip
@@ -415,27 +438,49 @@ class generalvclampCommands:
         #Create a new plot to send
         fitplot=copy.deepcopy(displayed_plot)
         
+        #Pick up force baseline
+        whatset=1 #fixme: for all sets
+        if 'rebase' in args or (self.basecurrent != self.current.path):
+            rebase=True               
+        if rebase:
+            clicks=self.config['baseline_clicks']
+            if clicks==0:
+                self.basepoints=[]
+                self.basepoints.append(ClickedPoint())
+                self.basepoints.append(ClickedPoint())
+                self.basepoints[0].index=peak_location[-1]+fit_interval_nm(peak_location[-1], displayed_plot, self.config['auto_right_baseline'],False)
+                self.basepoints[1].index=self.basepoints[0].index+fit_interval_nm(self.basepoints[0].index, displayed_plot, self.config['auto_left_baseline'],False)
+                for point in self.basepoints:
+                    #for graphing etc. purposes, fill-in with coordinates
+                    point.absolute_coords=displayed_plot.vectors[1][0][point.index], displayed_plot.vectors[1][1][point.index]
+                    point.find_graph_coords(displayed_plot.vectors[1][0], displayed_plot.vectors[1][1])
+            elif clicks>0:
+                print 'Select baseline'
+                if clicks==1:
+                    self.basepoints=self._measure_N_points(N=1, whatset=whatset)
+                    self.basepoints.append(ClickedPoint())
+                    self.basepoints[1].index=self.basepoints[0].index+fit_interval_nm(self.basepoints[0].index, displayed_plot, self.config['auto_left_baseline'], False)
+                    #for graphing etc. purposes, fill-in with coordinates
+                    self.basepoints[1].absolute_coords=displayed_plot.vectors[1][0][self.basepoints[1].index], displayed_plot.vectors[1][1][self.basepoints[1].index]
+                    self.basepoints[1].find_graph_coords(displayed_plot.vectors[1][0], displayed_plot.vectors[1][1])
+                else:
+                    self.basepoints=self._measure_N_points(N=2, whatset=whatset)
+            
+            self.basecurrent=self.current.path
+        
+        boundaries=[self.basepoints[0].index, self.basepoints[1].index]
+        boundaries.sort()
+        to_average=displayed_plot.vectors[1][1][boundaries[0]:boundaries[1]] #y points to average
+        avg=np.mean(to_average)
+        
+        
         #Initialize data vectors
         c_lengths=[]
         p_lengths=[]
         forces=[]
         slopes=[]
         
-        def fit_interval_nm(start_index,plot):
-            '''
-            Calculates the number of points to fit, given a fit interval in nm
-            '''
-            nm=self.config['auto_fit_nm']
-            x_vect=plot.vectors[1][0]
-            
-            c=0
-            i=start_index
-            start=x_vect[start_index]
-            while abs(x_vect[i]-x_vect[start_index])*(10**9) < nm:
-                i-=1
-                c+=1
-            
-            return c
+        
         
         #Cycle between peaks and do analysis.
         for peak in peak_location:
@@ -447,7 +492,7 @@ class generalvclampCommands:
             peak_point.find_graph_coords(displayed_plot.vectors[1][0], displayed_plot.vectors[1][1])    
             
             if not usepoints:
-                fit_points=fit_interval_nm(peak, displayed_plot)
+                fit_points=fit_interval_nm(peak, displayed_plot, self.config['auto_fit_nm'], True)
             
             #-create a clicked point for the other fit point
             other_fit_point=ClickedPoint()
@@ -464,10 +509,14 @@ class generalvclampCommands:
                 p_lengths.append(pl_value)
             #Add WLC fit lines to plot
             fitplot.add_set(xfit,yfit)
+            
             if len(fitplot.styles)==0:
                 fitplot.styles=[]
             else:
                 fitplot.styles.append(None)
+                
+            
+            
 
             #Measure forces
             delta_to_measure=displayed_plot.vectors[1][1][peak-delta_force:peak+delta_force]
@@ -478,7 +527,11 @@ class generalvclampCommands:
             #Measure slopes
             slope=self.linefit_between(peak-slope_span,peak)[0]
             slopes.append(slope)
-                            
+        
+        #--DEBUG STUFF--
+        fitplot.add_set([self.basepoints[0].graph_coords[0],self.basepoints[1].graph_coords[0]],[self.basepoints[0].graph_coords[1],self.basepoints[1].graph_coords[1]]) 
+        fitplot.styles.append('scatter')
+        
         #Show wlc fits and peak locations
         self._send_plot([fitplot])
         self.do_peaks('')
