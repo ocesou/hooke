@@ -514,10 +514,7 @@ class generalvclampCommands:
                 fitplot.styles=[]
             else:
                 fitplot.styles.append(None)
-                
-            
-            
-
+ 
             #Measure forces
             delta_to_measure=displayed_plot.vectors[1][1][peak-delta_force:peak+delta_force]
             y=min(delta_to_measure)
@@ -566,7 +563,7 @@ class generalvclampCommands:
         
         #Save file info
         if self.autofile=='':
-            self.autofile=raw_input('Filename? (return to ignore) ')
+            self.autofile=raw_input('Autopeak filename? (return to ignore) ')
             if self.autofile=='':
                 print 'Not saved.'
                 return

@@ -717,7 +717,7 @@ Syntax: txt [filename] {plot to export}
             print self.current_list[self.pointer].notes
         else:
             if self.notes_filename == None:
-                self.notes_filename=raw_input('Filename? ')
+                self.notes_filename=raw_input('Notebook filename? ')
                 title_line='Notes taken at '+time.asctime()+'\n'
                 f=open(self.notes_filename,'w')
                 f.write(title_line)
