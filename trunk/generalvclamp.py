@@ -500,6 +500,11 @@ class generalvclampCommands:
             other_fit_point.find_graph_coords(displayed_plot.vectors[1][0], displayed_plot.vectors[1][1])    
             #do the fit
             points=[contact_point, peak_point, other_fit_point]
+            
+            #Check if we have enough points for a fit. If not, wlc_fit could crash
+            if abs(peak_point.index-other_fit_point.index) < 2:
+                continue
+            
             params, yfit, xfit = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T)
             #save wlc values (nm)
             c_lengths.append(params[0]*(1.0e+9))
