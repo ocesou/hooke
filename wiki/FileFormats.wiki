@@ -1,0 +1,20 @@
+#summary File format support
+#labels Featured,Phase-Design,Phase-Requirements
+
+= Supported file formats =
+
+  * *Veeco Picoforce (6.x)*
+    drivers: picoforce.py ; picoforcealt.py (depends on your version of Picoforce)
+
+
+  * *JPK* (experimental support; needs testing!)
+    drivers: jpk.py
+
+
+  * Simple *comma-separated values*
+    drivers: csv.py
+
+= To do file formats =
+
+  * Asylum MFP 1D
+  * Anything else...
