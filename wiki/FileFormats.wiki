@@ -2,9 +2,9 @@
 #labels Featured,Phase-Design,Phase-Requirements
 
 We need full support for most force spectroscopy data files. Please help us:
-  *by giving us example data files
-  *by giving us specifications of data files
-  *by testing code and reporting bugs
+  * by giving us example data files
+  * by giving us specifications of data files
+  * by testing code and reporting bugs
 
 = Supported file formats =
 
