@@ -341,6 +341,9 @@ class generalvclampCommands:
         auto_right_baseline = distance in nm of peak-most baseline point from last peak (if baseline_clicks = 0)
         '''
         
+        #FIXME: this function is too long. split it and make it rational.
+        #FIXME: also, *generalize fits* to allow FJC and any other model in the future!
+        
         def fit_interval_nm(start_index,plot,nm,backwards):
             '''
             Calculates the number of points to fit, given a fit interval in nm
@@ -355,8 +358,7 @@ class generalvclampCommands:
             start=x_vect[start_index]
             maxlen=len(x_vect)
             while abs(x_vect[i]-x_vect[start_index])*(10**9) < nm:
-                
-                if i==0 or i==maxlen: #we reached boundaries of vector!
+                if i==0 or i==maxlen-1: #we reached boundaries of vector!
                     return c
                 
                 if backwards:
@@ -398,8 +400,7 @@ class generalvclampCommands:
             if ('t=' in arg[0:2]) or ('T=' in arg[0:2]):
                 t_expression=arg.split('=')
                 T=float(t_expression[1])
-               
-                
+                              
         #Handle contact point arguments
         def pickup_contact_point():
             '''macro to pick up the contact point by clicking'''
