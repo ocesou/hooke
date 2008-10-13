@@ -46,7 +46,10 @@ class fitCommands:
         clicked_points[1] and [2] are edges of chunk'''
     
         #STEP 1: Prepare the vectors to apply the fit.
-    
+        
+        if pl_value is not None:
+            pl_value=pl_value/(10**9)
+        
         #indexes of the selected chunk
         first_index=min(clicked_points[1].index, clicked_points[2].index)
         last_index=max(clicked_points[1].index, clicked_points[2].index)
@@ -171,8 +174,7 @@ class fitCommands:
         pl=[value] : Use a fixed persistent length for the fit. If pl is not given, 
                      the fit will be a 2-variable  
                      fit. DO NOT put spaces between 'pl', '=' and the value.
-                     The value must be in meters. 
-                     Scientific notation like 0.35e-9 is fine.
+                     The value must be in nanometers. 
         
         t=[value] : Use a user-defined temperature. The value must be in
                     kelvins; by default it is 293 K.
