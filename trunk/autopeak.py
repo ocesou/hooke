@@ -115,10 +115,7 @@ class autopeakCommands:
             defplot=flatten(defplot, self.current, customvalue=1) #Flatten curve before feeding it to has_peaks
             peak_location,peak_size=self.has_peaks(defplot, self.convfilt_config['mindeviation'])
             return peak_location, peak_size
-        
-        
-                
-                
+    
         #default fit etc. variables
         pl_value=None
         T=self.config['temperature']
@@ -234,7 +231,7 @@ class autopeakCommands:
             #check fitted data and, if right, add peak to the measurement
             #FIXME: code duplication
             if len(params)==1: #if we did choose 1-value fit
-                p_lengths.append(params[1]*(1.0e+9))
+                p_lengths.append(pl_value)
                 c_lengths.append(params[0]*(1.0e+9))
                 forces.append(abs(y-avg)*(1.0e+12))
                 slopes.append(slope)     
