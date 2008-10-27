@@ -173,12 +173,6 @@ class autopeakCommands:
             #Automatically find contact point
             cindex=self.find_contact_point()
             contact_point=self._clickize(displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], cindex)
-            '''
-            contact_point=ClickedPoint()
-            contact_point.absolute_coords=displayed_plot.vectors[1][0][cindex], displayed_plot.vectors[1][1][cindex]
-            contact_point.find_graph_coords(displayed_plot.vectors[1][0], displayed_plot.vectors[1][1])
-            contact_point.is_marker=True
-            '''
         #--END COMMAND LINE PARSING--
         
         
@@ -228,37 +222,55 @@ class autopeakCommands:
             
             params, yfit, xfit = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T)
             
-            #save wlc values (nm)
-            c_lengths.append(params[0]*(1.0e+9))
-            if len(params)==2: #if we did choose 2-value fit
-                p_lengths.append(params[1]*(1.0e+9))
-            else:
-                p_lengths.append(pl_value)
-            #Add WLC fit lines to plot
-            fitplot.add_set(xfit,yfit)
-            
-            if len(fitplot.styles)==0:
-                fitplot.styles=[]
-            else:
-                fitplot.styles.append(None)
                 
             #Measure forces
             delta_to_measure=displayed_plot.vectors[1][1][peak-delta_force:peak+delta_force]
             y=min(delta_to_measure)
-            #save force values (pN)
-            forces.append(abs(y-avg)*(1.0e+12))
-                
+            #save force values (pN)   
             #Measure slopes
             slope=self.linefit_between(peak-slope_span,peak)[0]
-            slopes.append(slope)
+            
+            
+            #check fitted data and, if right, add peak to the measurement
+            #FIXME: code duplication
+            if len(params)==1: #if we did choose 1-value fit
+                p_lengths.append(params[1]*(1.0e+9))
+                c_lengths.append(params[0]*(1.0e+9))
+                forces.append(abs(y-avg)*(1.0e+12))
+                slopes.append(slope)     
+                #Add WLC fit lines to plot
+                fitplot.add_set(xfit,yfit)
+                if len(fitplot.styles)==0:
+                    fitplot.styles=[]
+                else:
+                    fitplot.styles.append(None)
+            else:
+                p_leng=params[1]*(1.0e+9)
+                #check if persistent length makes sense. otherwise, discard peak.
+                if p_leng>self.config['auto_min_p'] and p_leng<self.config['auto_max_p']:
+                    p_lengths.append(p_leng)       
+                    c_lengths.append(params[0]*(1.0e+9))
+                    forces.append(abs(y-avg)*(1.0e+12))
+                    slopes.append(slope)     
+                    
+                    #Add WLC fit lines to plot
+                    fitplot.add_set(xfit,yfit)
+                    if len(fitplot.styles)==0:
+                        fitplot.styles=[]
+                    else:
+                        fitplot.styles.append(None)
+                else:
+                    pass
+ 
             
         #add basepoints to fitplot
         fitplot.add_set([self.basepoints[0].graph_coords[0],self.basepoints[1].graph_coords[0]],[self.basepoints[0].graph_coords[1],self.basepoints[1].graph_coords[1]]) 
         fitplot.styles.append('scatter')
         
+        
         #Show wlc fits and peak locations
         self._send_plot([fitplot])
-        self.do_peaks('')
+        #self.do_peaks('')
         
         
         #Ask the user what peaks to ignore from analysis.

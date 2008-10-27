@@ -290,14 +290,16 @@ class generalvclampCommands:
         #FIXME: also, *generalize fits* to allow FJC and any other model in the future!
         
         def fit_interval_nm(start_index,plot,nm,backwards):
-            '''
-            '''
+    '''
+            
+    '''
             Calculates the number of points to fit, given a fit interval in nm
             start_index: index of point
             plot: plot to use
             backwards: if true, finds a point backwards.
-            '''
-            '''
+    '''
+            
+    '''
             x_vect=plot.vectors[1][0]
             
             c=0
