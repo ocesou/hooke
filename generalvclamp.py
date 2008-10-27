@@ -284,72 +284,19 @@ class generalvclampCommands:
 #====================
 #AUTOMATIC ANALYSES
 #====================
+    '''
     def do_autopeak(self,args):
-        '''
-        AUTOPEAK
-        (generalvclamp.py)
-        Automatically performs a number of analyses on the peaks of the given curve.
-        Currently it automatically:
-        - fits peaks with WLC function
-        - measures peak maximum forces with a baseline
-        - measures slope in proximity of peak maximum
-        Requires flatten plotmanipulator , fit.py plugin , flatfilts.py plugin with convfilt
-        
-        Syntax:
-        autopeak [rebase] [pl=value] [t=value] [noauto] [reclick]
-        
-        rebase : Re-asks baseline interval
-        
-        pl=[value] : Use a fixed persistent length for the fit. If pl is not given, 
-                     the fit will be a 2-variable  
-                     fit. DO NOT put spaces between 'pl', '=' and the value.
-                     The value must be in meters. 
-                     Scientific notation like 0.35e-9 is fine.
-        
-        t=[value] : Use a user-defined temperature. The value must be in
-                    kelvins; by default it is 293 K.
-                    DO NOT put spaces between 't', '=' and the value.
-        
-        noauto : allows for clicking the contact point by 
-                 hand (otherwise it is automatically estimated) the first time.
-                 If subsequent measurements are made, the same contact point
-                 clicked the first time is used
-        
-        reclick : redefines by hand the contact point, if noauto has been used before
-                  but the user is unsatisfied of the previously choosen contact point.
-        
-        usepoints : fit interval by number of points instead than by nanometers
-        
-        When you first issue the command, it will ask for the filename. If you are giving the filename
-        of an existing file, autopeak will resume it and append measurements to it. If you are giving
-        a new filename, it will create the file and append to it until you close Hooke.
-        
-        
-        Useful variables (to set with SET command):
-        ---
-        temperature= temperature of the system for wlc fit (in K)
-        
-        auto_slope_span = number of points on which measure the slope, for slope
-        
-        auto_fit_nm = number of nm to fit before the peak maximum, for WLC (if usepoints false)
-        auto_fit_points = number of points to fit before the peak maximum, for WLC (if usepoints true)
-        
-        baseline_clicks = 0: automatic baseline
-                          1: decide baseline with a single click and length defined in auto_left_baseline
-                          2: let user click points of baseline
-        auto_left_baseline = length in nm to use as baseline from the right point (if baseline_clicks=0 , 1)
-        auto_right_baseline = distance in nm of peak-most baseline point from last peak (if baseline_clicks = 0)
-        '''
-        
         #FIXME: this function is too long. split it and make it rational.
         #FIXME: also, *generalize fits* to allow FJC and any other model in the future!
         
         def fit_interval_nm(start_index,plot,nm,backwards):
             '''
+            '''
             Calculates the number of points to fit, given a fit interval in nm
             start_index: index of point
             plot: plot to use
             backwards: if true, finds a point backwards.
+            '''
             '''
             x_vect=plot.vectors[1][0]
             
@@ -403,7 +350,7 @@ class generalvclampCommands:
                               
         #Handle contact point arguments
         def pickup_contact_point():
-            '''macro to pick up the contact point by clicking'''
+            #macro to pick up the contact point by clicking
             contact_point=self._measure_N_points(N=1, whatset=1)[0]
             contact_point_index=contact_point.index
             self.wlccontact_point=contact_point
@@ -590,4 +537,4 @@ class generalvclampCommands:
             
         f.close()
         self.do_note('autopeak')
-        
+        '''
