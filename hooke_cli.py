@@ -167,6 +167,16 @@ class HookeCli(cmd.Cmd):
         '''
         return self.plotmanip[self.config['plotmanips'].index(name)]
     
+    def _clickize(self, xvector, yvector, index):
+        '''
+        returns a ClickedPoint() object from an index and vectors of x, y coordinates       
+        '''
+        point=ClickedPoint()
+        point.index=index
+        point.absolute_coords=xvector[index],yvector[index]
+        point.find_graph_coords(xvector,yvector)
+        return point
+    
 #HERE COMMANDS BEGIN
     
     def help_set(self):
