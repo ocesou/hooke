@@ -35,7 +35,7 @@ class fitCommands:
         self.wlccontact_point=None
         self.wlccontact_index=None
     
-    def wlc_fit(self,clicked_points,xvector,yvector, pl_value, T=293):
+    def wlc_fit(self,clicked_points,xvector,yvector, pl_value, T=293, return_errors=False):
         '''
         Worm-like chain model fitting.
         The function is the simple polynomial worm-like chain as proposed by C.Bustamante, J.F.Marko, E.D.Siggia
@@ -61,11 +61,12 @@ class fitCommands:
         #put contact point at zero and flip around the contact point (the fit wants a positive growth for extension and force)
         xchunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xchunk]
         ychunk_corr_up=[-(y-clicked_points[0].graph_coords[1]) for y in ychunk]
+        
         #make them arrays
         xchunk_corr_up=scipy.array(xchunk_corr_up)
         ychunk_corr_up=scipy.array(ychunk_corr_up)
     
-    
+        
         #STEP 2: actually do the fit
     
         #Find furthest point of chunk and add it a bit; the fit must converge
@@ -126,9 +127,9 @@ class fitCommands:
     
         #make the fit! and obtain params
         if pl_value:
-            plsq=scipy.optimize.leastsq(residuals_plfix, p0_plfix, args=(ychunk_corr_up,xchunk_corr_up,1/pl_value,T))
+            plsq=scipy.optimize.leastsq(residuals_plfix, p0_plfix, args=(ychunk_corr_up,xchunk_corr_up,1/pl_value,T), full_output=1)
         else:
-            plsq=scipy.optimize.leastsq(residuals, p0, args=(ychunk_corr_up,xchunk_corr_up,T))
+            plsq=scipy.optimize.leastsq(residuals, p0, args=(ychunk_corr_up,xchunk_corr_up,T),full_output=1)
     
     
         #STEP 3: plotting the fit
@@ -150,12 +151,24 @@ class fitCommands:
     
         #get out true fit paramers
         fit_out=plsq[0]
+        fit_cov=plsq[1]
+        
         try:
             fit_out=[(1.0/x) for x in fit_out]
         except TypeError: #if we fit only 1 parameter, we have a float and not a list in output.
             fit_out=[(1.0/fit_out)]
-    
-        return fit_out, yfit_corr_down, xfit_chunk
+        
+        fit_errors=[]
+        for i in range(len(fit_cov[0])):
+            sqerr=scipy.sqrt(fit_cov[i,i])
+            err_real=sqerr*(fit_out[i]**2)
+            fit_errors.append(err_real)
+        
+        
+        if return_errors:
+            return fit_out, yfit_corr_down, xfit_chunk, fit_errors
+        else:
+            return fit_out, yfit_corr_down, xfit_chunk
     
                 
     def do_wlc(self,args):
@@ -235,8 +248,8 @@ class fitCommands:
         points=self._measure_N_points(N=2, whatset=1)
         points=[contact_point]+points
         try:
-            params, yfit, xfit = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T)
-        except:
+            params, yfit, xfit, fit_cov = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
+        except SyntaxError:
             print 'Fit not possible. Probably wrong interval -did you click two *different* points?'
             return
         
@@ -248,6 +261,7 @@ class fitCommands:
             to_dump='persistent '+self.current.path+' '+str(params[1]*(1.0e+9))+' nm'
             self.outlet.push(to_dump)
         
+        print 'Errors', fit_cov[0]*10**9 , fit_cov[1]*10**9
         #add the clicked points in the final PlotObject
         clickvector_x, clickvector_y=[], []
         for item in points:
