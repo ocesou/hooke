@@ -217,7 +217,7 @@ class autopeakCommands:
             if abs(peak_point.index-other_fit_point.index) < 2:
                 continue
             
-            params, yfit, xfit = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T)
+            params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T)
             
                 
             #Measure forces
