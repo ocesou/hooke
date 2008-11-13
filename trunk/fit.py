@@ -15,6 +15,7 @@ wxversion.select(WX_GOOD)
 #from wx import PostEvent
 #from wx.lib.newevent import NewEvent
 import scipy
+import scipy.odr
 import numpy as np
 import copy
 import Queue
@@ -79,21 +80,54 @@ class fitCommands:
     
         p0=[(1/xchunk_high),(1/(3.5e-10))]
         p0_plfix=[(1/xchunk_high)]
-    
-        def residuals(params,y,x,T):
-            '''
-            Calculates the residuals of the fit
-            '''
-            lambd, pii=params
+        '''
+        ODR STUFF
+        fixme: remove these comments after testing
+        '''
         
+        
+        def f_wlc(params,x,T=T):
+            '''
+            wlc function for ODR fitting
+            '''
+            lambd,pii=params
             Kb=(1.38065e-23)
-            #T=293
             therm=Kb*T
+            y=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
+            return y
         
-            err = y-( (therm*pii/4) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd)) )
+        def f_wlc_plfix(params,x,pl_value=pl_value,T=T):
+            '''
+            wlc function for ODR fitting
+            '''
+            lambd=params
+            pii=1/pl_value
+            Kb=(1.38065e-23)
+            therm=Kb*T
+            y=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
+            return y
         
-            return err
-    
+        #make the ODR fit
+        realdata=scipy.odr.RealData(xchunk_corr_up,ychunk_corr_up)
+        if pl_value:
+            model=scipy.odr.Model(f_wlc_plfix)
+            o = scipy.odr.ODR(realdata, model, p0_plfix)
+        else:
+            model=scipy.odr.Model(f_wlc)
+            o = scipy.odr.ODR(realdata, model, p0)
+        
+        o.set_job(fit_type=2)
+        out=o.run()
+        fit_out=[(1/i) for i in out.beta]
+        
+        #Calculate fit errors from output standard deviations.
+        #We must propagate the error because we fit the *inverse* parameters!
+        #The error = (error of the inverse)*(value**2)
+        fit_errors=[]
+        for sd,value in zip(out.sd_beta, fit_out):
+            err_real=sd*(value**2)
+            fit_errors.append(err_real)
+        
         def wlc_eval(x,params,pl_value,T):    
             '''
             Evaluates the WLC function
@@ -111,29 +145,9 @@ class fitCommands:
             therm=Kb*T #so we have thermal energy
         
             return ( (therm*pii/4.0) * (((1-(x*lambd))**-2.0) - 1 + (4.0*x*lambd)) )
-    
-        def residuals_plfix(params, y, x, pii, T):
-            '''
-            Calculates the residuals of the fit, if we have the persistent length from an external source
-            '''
-            lambd=params
         
-            Kb=(1.38065e-23)
-            therm=Kb*T
-        
-            err = y-( (therm*pii/4) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd)) )
-        
-            return err
-    
-        #make the fit! and obtain params
-        if pl_value:
-            plsq=scipy.optimize.leastsq(residuals_plfix, p0_plfix, args=(ychunk_corr_up,xchunk_corr_up,1/pl_value,T), full_output=1)
-        else:
-            plsq=scipy.optimize.leastsq(residuals, p0, args=(ychunk_corr_up,xchunk_corr_up,T),full_output=1)
-    
-    
         #STEP 3: plotting the fit
-    
+        
         #obtain domain to plot the fit - from contact point to last_index plus 20 points
         thule_index=last_index+10
         if thule_index > len(xvector): #for rare cases in which we fit something at the END of whole curve.
@@ -145,30 +159,14 @@ class fitCommands:
         xfit_chunk_corr_up=scipy.array(xfit_chunk_corr_up)
     
         #the fitted curve: reflip, re-uncorrect
-        yfit=wlc_eval(xfit_chunk_corr_up, plsq[0],pl_value,T)
+        yfit=wlc_eval(xfit_chunk_corr_up, out.beta, pl_value,T)
         yfit_down=[-y for y in yfit]
         yfit_corr_down=[y+clicked_points[0].graph_coords[1] for y in yfit_down]
     
-        #get out true fit paramers
-        fit_out=plsq[0]
-        fit_cov=plsq[1]
-        
-        try:
-            fit_out=[(1.0/x) for x in fit_out]
-        except TypeError: #if we fit only 1 parameter, we have a float and not a list in output.
-            fit_out=[(1.0/fit_out)]
-        
-        fit_errors=[]
-        for i in range(len(fit_cov[0])):
-            sqerr=scipy.sqrt(fit_cov[i,i])
-            err_real=sqerr*(fit_out[i]**2)
-            fit_errors.append(err_real)
-        
-        
         if return_errors:
             return fit_out, yfit_corr_down, xfit_chunk, fit_errors
         else:
-            return fit_out, yfit_corr_down, xfit_chunk
+            return fit_out, yfit_corr_down, xfit_chunk, None
     
                 
     def do_wlc(self,args):
@@ -248,8 +246,8 @@ class fitCommands:
         points=self._measure_N_points(N=2, whatset=1)
         points=[contact_point]+points
         try:
-            params, yfit, xfit, fit_cov = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
-        except SyntaxError:
+            params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
+        except:
             print 'Fit not possible. Probably wrong interval -did you click two *different* points?'
             return
         
@@ -261,7 +259,13 @@ class fitCommands:
             to_dump='persistent '+self.current.path+' '+str(params[1]*(1.0e+9))+' nm'
             self.outlet.push(to_dump)
         
-        print 'Errors', fit_cov[0]*10**9 , fit_cov[1]*10**9
+        if fit_errors:
+            fit_nm=[i*(10**9) for i in fit_errors]
+            print 'Standard deviation (contour length)', fit_nm[0]
+            if len(fit_nm)>1:
+                print 'Standard deviation (persistent length)', fit_nm[1]
+            
+            
         #add the clicked points in the final PlotObject
         clickvector_x, clickvector_y=[], []
         for item in points:
