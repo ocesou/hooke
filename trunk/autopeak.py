@@ -127,6 +127,8 @@ class autopeakCommands:
         #initialize output data vectors
         c_lengths=[]
         p_lengths=[]
+        sigma_c_lengths=[]
+        sigma_p_lengths=[]
         forces=[]
         slopes=[]
         
@@ -217,7 +219,7 @@ class autopeakCommands:
             if abs(peak_point.index-other_fit_point.index) < 2:
                 continue
             
-            params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T)
+            params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T, return_errors=True)
             
                 
             #Measure forces
@@ -233,6 +235,8 @@ class autopeakCommands:
             if len(params)==1: #if we did choose 1-value fit
                 p_lengths.append(pl_value)
                 c_lengths.append(params[0]*(1.0e+9))
+                sigma_p_lengths.append(0)
+                sigma_c_lengths.append(fit_errors[0]*(1.0e+9))
                 forces.append(abs(y-avg)*(1.0e+12))
                 slopes.append(slope)     
                 #Add WLC fit lines to plot
@@ -241,12 +245,14 @@ class autopeakCommands:
                     fitplot.styles=[]
                 else:
                     fitplot.styles.append(None)
-            else:
+            else: #2-value fit
                 p_leng=params[1]*(1.0e+9)
                 #check if persistent length makes sense. otherwise, discard peak.
                 if p_leng>self.config['auto_min_p'] and p_leng<self.config['auto_max_p']:
                     p_lengths.append(p_leng)       
                     c_lengths.append(params[0]*(1.0e+9))
+                    sigma_c_lengths.append(fit_errors[0]*(1.0e+9))
+                    sigma_p_lengths.append(fit_errors[1]*(1.0e+9))
                     forces.append(abs(y-avg)*(1.0e+12))
                     slopes.append(slope)     
                     
@@ -286,15 +292,23 @@ class autopeakCommands:
                     p_lengths[i]=None
                     forces[i]=None
                     slopes[i]=None
+                    sigma_c_lengths[i]=None
+                    sigma_p_lengths[i]=None
             except:
                  print 'Bad input, taking all...'
         #Clean data vectors from ignored peaks        
+        #FIXME:code duplication
         c_lengths=[item for item in c_lengths if item != None]
         p_lengths=[item for item in p_lengths if item != None]
         forces=[item for item in forces if item != None]
         slopes=[item for item in slopes if item != None]    
+        sigma_c_lengths=[item for item in sigma_c_lengths if item != None]    
+        sigma_p_lengths=[item for item in sigma_p_lengths if item != None]    
+        
         print 'contour (nm)',c_lengths
+        print 'sigma contour (nm)',sigma_c_lengths
         print 'p (nm)',p_lengths
+        print 'sigma p (nm)',sigma_p_lengths
         print 'forces (pN)',forces
         print 'slopes (N/m)',slopes
         
@@ -309,7 +323,7 @@ class autopeakCommands:
             f=open(self.autofile,'w+')
             f.write('Analysis started '+time.asctime()+'\n')
             f.write('----------------------------------------\n')
-            f.write('; Contour length (nm)  ;  Persistence length (nm) ;  Max.Force (pN)  ;  Slope (N/m) \n')
+            f.write('; Contour length (nm)  ;  Persistence length (nm) ;  Max.Force (pN)  ;  Slope (N/m) ;  Sigma contour (nm) ; Sigma persistence (nm)\n')
             f.close()
             
         print 'Saving...'
@@ -317,7 +331,7 @@ class autopeakCommands:
         
         f.write(self.current.path+'\n')
         for i in range(len(c_lengths)):
-            f.write(' ; '+str(c_lengths[i])+' ; '+str(p_lengths[i])+' ; '+str(forces[i])+' ; '+str(slopes[i])+'\n')
+            f.write(' ; '+str(c_lengths[i])+' ; '+str(p_lengths[i])+' ; '+str(forces[i])+' ; '+str(slopes[i])+' ; '+str(sigma_c_lengths[i])+' ; '+str(sigma_p_lengths[i])+'\n')
             
         f.close()
         self.do_note('autopeak')
