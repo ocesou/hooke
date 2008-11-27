@@ -285,7 +285,7 @@ class fitCommands:
         
         self._send_plot([fitplot])
                 
-    def find_contact_point(self):
+    def find_contact_point(self,plot=False):
         '''
         Finds the contact point on the curve.
     
@@ -301,15 +301,19 @@ class fitCommands:
         
         FIXME: should be moved, probably to generalvclamp.py
         '''
+        
+        if not plot:
+            plot=self.plots[0]
+        
         outplot=self.subtract_curves(1)
         xret=outplot.vectors[1][0]
         ydiff=outplot.vectors[1][1]
+
+        xext=plot.vectors[0][0]
+        yext=plot.vectors[0][1]
+        xret2=plot.vectors[1][0]
+        yret=plot.vectors[1][1]
         
-        xext=self.plots[0].vectors[0][0]
-        yext=self.plots[0].vectors[0][1]
-        xret2=self.plots[0].vectors[1][0]
-        yret=self.plots[0].vectors[1][1]
-    
         #taking care of the picoforce trigger bug: we exclude portions of the curve that have too much
         #standard deviation. yes, a lot of magic is here.
         monster=True

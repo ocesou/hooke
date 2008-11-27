@@ -158,8 +158,7 @@ class flatfiltsCommands:
         convoluted=lps.conv_dx(yret, self.convfilt_config['convolution'])
         
         #surely cut everything before the contact point
-        cut_index=self.find_contact_point()
-        
+        cut_index=self.find_contact_point(plot)
         #cut even more, before the blind window
         start_x=xret[cut_index]
         blind_index=0
@@ -168,7 +167,6 @@ class flatfiltsCommands:
                 break
             blind_index+=1
         cut_index+=blind_index
-        
         #do the dirty convolution-peak finding stuff
         noise_level=lps.noise_absdev(convoluted[cut_index:], self.convfilt_config['positive'], self.convfilt_config['maxcut'], self.convfilt_config['stable'])               
         above=lps.abovenoise(convoluted,noise_level,cut_index,abs_devs)     
@@ -221,8 +219,6 @@ class flatfiltsCommands:
         '''
         if len(args)==0:
             args=self.convfilt_config['mindeviation']
-        
-           
         
         try:
             abs_devs=float(args)
@@ -296,7 +292,6 @@ class flatfiltsCommands:
         print '(Please wait)'
         notflat_list=[]
         
-        
         c=0
         for item in self.current_list:
             c+=1
@@ -333,6 +328,7 @@ class flatfiltsCommands:
             self.current_list=notflat_list
             self.current=self.current_list[self.pointer]
             self.do_plot(0)
+        
         
     def do_setconv(self,args):
         '''
