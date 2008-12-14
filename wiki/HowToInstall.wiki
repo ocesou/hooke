@@ -27,6 +27,8 @@ It can be important to check the cross-compatibility of the versions of the abov
 = Installation =
 Hooke still has no installer... but it does not need it essentially, since it's so simple. Once all the dependencies have been installed, just unzip the package and copy the Hooke folder in your favourite location.
 
+It is advisable to put it in a folder where you have write access rights (es. your home folder)
+
 A [http://www.python.org/community/sigs/current/distutils-sig/doc/ distutils] based installer is in the todo list.
 
 == Installation notes for Windows ==
