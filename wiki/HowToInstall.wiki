@@ -3,6 +3,8 @@
 
 IN PROGRESS
 
+If you want to install Hooke plugins, see InstallPlugins.
+
 = Requirements =
 
 Hooke is known to work on Windows, Linux and MacOS X. 
