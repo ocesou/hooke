@@ -3,7 +3,7 @@
 
 IN PROGRESS
 
-Hooke works with a combined command line and graphic interface. Think of programs like RasMol. The command line allows the user to issue commands about the set of curves he wants to analyze. The graphic interface, for now, shows the curves plot and allows basic interactions with it -depending also from variables and commands issued.
+Hooke works with a combined command line and graphic interface. Think of programs like RASMOL. The command line allows the user to issue commands about the set of curves he wants to analyze. The graphic interface, for now, shows the curves plot and allows basic interactions with it -depending also from variables and commands issued.
 
 =Starting Hooke=
 Open a terminal, go to the directory Hooke is installed and type python
@@ -50,3 +50,73 @@ help
 
 hooke:
 }}}
+
+
+=Begin your analysis=
+
+==Create a playlist==
+To start analyzing your curves, you ﬁrst have to build a _playlist_. The playlist is just an index of the force curve ﬁles you want to analyze. Imagine it as a music playlist (that’s why it is called a playlist), but made of data ﬁles instead of MP3 ﬁles.
+
+Suppose you have 100 PicoForce curve ﬁles in your curves directory, starting from mycurve.000 and ending in mycurve.100 and you want to analyze them all.
+
+You then can cd to the directory
+{{{
+hooke: cd c:\curves
+}}}
+
+Type *pwd* to check the directory is correct
+{{{
+      hooke: pwd
+      c:\curves
+      hooke:
+}}}
+
+You can list the ﬁles in the directory using ls or dir (they’re synonims)
+{{{
+      hooke: ls
+      [’mycurve.000’, ’mycurve.001’, ...
+      ]
+}}}
+
+Now you are ready to generate the playlist. The command to use is *genlist*
+{{{
+hooke: genlist mycurve.*
+}}}
+You can also generate a playlist containing all what you ﬁnd in the directory by typing:
+{{{
+hooke: genlist c:\curves
+}}}   
+
+If you want to select what curves to see, based on the ﬁlename, you can use [http://en.wikipedia.org/wiki/Wildcard_character#Computing wildcards]. 
+
+For example:
+{{{
+hooke: genlist mycurve.05*
+}}}
+
+will take only curves from mycurve.050 to mycurve.059.
+
+Note that by using genlist you just generate the playlist in the local session.
+To save your playlist to a ﬁle, thus avoiding to regenerate it, type:
+{{{
+hooke: savelist mylist
+}}}
+
+The list will be saved, in this example, in the ﬁle _mylist.hkp_. Hooke will add the extension .hkp to the playlist if you forget to. The .hkp ﬁle is an XML ﬁle you can read and edit with any text editor (i.e. Wordpad), if needed. If you want to load it, just issue loadlist mylist.hkp or loadlist mylist, Hooke will care about the missing .hkp extension.
+
+Generating the playlist, you should see the plot of the ﬁrst curve appearing. If, generating the playlist, you are including by chance a non-force curve file that Hooke cannot open, it should be (more or less) silently ignored. If it gives some error, or it does not plot anything, try to navigate forward, and see if the next curve is plotted; it is possible you spotted a corrupted file.
+
+==Navigate the playlist==
+Now you can navigate through your playlist using the command *next* and *previous* or, more easily, their aliases *n* and *p*. You don’t need to digit *n* every time to run along a list of curves. If you press Return to an empty prompt, Hooke will repeat the last command you issued explicitly. 
+
+You can also navigate through the command history by using the up and down arrows.
+
+When arriving to the last curve of your playlist, pressing *n* will just come back to the first. Analogously, pressing *p* when at the ﬁrst curve will jump to the last.
+
+You can also *jump* to a given curve, this way:
+
+{{{
+hooke: jump c:\curves\mycurve.123
+}}}
+
+but be careful to tell Hooke the full path to that curve, otherwise it will not ﬁnd it.
