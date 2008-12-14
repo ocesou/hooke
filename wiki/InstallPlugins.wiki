@@ -10,7 +10,11 @@ your hooke.conf: you will ﬁnd something like that:
      <procplots/>
      <flatfilts/>
 </plugins>
-   Add a tag with your plugin ﬁlename, in the same fashion:
+}}}
+
+Add a tag with your plugin ﬁlename, in the same fashion:
+
+{{{
 <plugins>
      <fit/>
      <procplots/>
