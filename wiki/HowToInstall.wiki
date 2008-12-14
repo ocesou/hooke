@@ -1,0 +1,28 @@
+#summary How to install Hooke
+#labels Featured,Phase-Deploy
+
+IN PROGRESS
+
+= Introduction =
+
+Hooke requires:
+  * Python 2.5
+  * wxPython 2.8.x.x
+  * Numpy 1.0.x
+  * Scipy >=0.6.x
+  * Matplotlib =0.91.x
+  * wxMPL 1.2.9
+
+All libraries are open source, free of charge and available on the Internet.
+The packages should be installed in the order in which they are mentioned above.
+
+*IMPORTANT*: wxMPL currently doesn't work with latest matplotlib (0.98). A patched wxmpl can be found in the Downloads section if you cannot install matplotlib 0.91 , but it can show a few bugs.
+
+= Installation on Windows =
+to do
+
+= Installation on Linux =
+to do
+
+= Installation on Mac OS X =
+to do
