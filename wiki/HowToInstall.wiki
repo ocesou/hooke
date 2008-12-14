@@ -3,7 +3,11 @@
 
 IN PROGRESS
 
-= Introduction =
+= Requirements =
+
+Hooke is known to work on Windows, Linux and MacOS X. 
+
+For other operating systems, it should work on all the platforms that support Python 2.5, Scipy, Numpy, Matplotlib and Wx (this should include most Unix systems and possibly a few other).
 
 Hooke requires:
   *  [http://www.python.org Python] 2.5
@@ -16,13 +20,20 @@ Hooke requires:
 All libraries are open source, free of charge and available on the Internet.
 The packages should be installed in the order in which they are mentioned above.
 
+It can be important to check the cross-compatibility of the versions of the above. In particular of the numpy/scipy/matplotlib combo , and remember to install them for the right version of Python.
+
 *IMPORTANT*: wxMPL currently doesn't work with latest matplotlib (0.98). A patched wxmpl can be found in the Downloads section if you cannot install matplotlib 0.91 , but it can show a few bugs.
 
-= Installation on Windows =
+= Installation =
+Hooke still has no installer... but it does not need it essentially, since it's so simple. Once all the dependencies have been installed, just unzip the package and copy the Hooke folder in your favourite location.
+
+A [http://www.python.org/community/sigs/current/distutils-sig/doc/ distutils] based installer is in the todo list.
+
+== Installation notes for Windows ==
 to do
 
-= Installation on Linux =
+== Installation notes for Linux ==
 to do
 
-= Installation on Mac OS X =
+== Installation notes for Mac OS X ==
 to do
