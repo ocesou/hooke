@@ -6,12 +6,12 @@ IN PROGRESS
 = Introduction =
 
 Hooke requires:
-  * Python 2.5
-  * wxPython 2.8.x.x
-  * Numpy 1.0.x
-  * Scipy >=0.6.x
-  * Matplotlib =0.91.x
-  * wxMPL 1.2.9
+  *  [http://www.python.org Python] 2.5
+  *  [http://www.wxpython.org wxPython] 2.8.x.x
+  *  [http://numpy.scipy.org Numpy] 1.0.x
+  *  [http://www.scipy.org Scipy] >=0.6.x
+  *  [http://matplotlib.sourceforge.net Matplotlib] =0.91.x
+  *  [http://agni.phys.iit.edu/~kmcivor/wxmpl/ wxMPL] 1.2.9
 
 All libraries are open source, free of charge and available on the Internet.
 The packages should be installed in the order in which they are mentioned above.
