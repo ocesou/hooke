@@ -24,6 +24,22 @@ It can be important to check the cross-compatibility of the versions of the abov
 
 *IMPORTANT*: wxMPL currently doesn't work with latest matplotlib (0.98). A patched wxmpl can be found in the Downloads section if you cannot install matplotlib 0.91 , but it can show a few bugs.
 
+== Requirements on Linux ==
+With all probability a suitable Python version is installed on your system. If in doubt, ﬁre up a command line prompt and digit ’python’.
+
+The problem is a bit different for the other libraries. If you use a Linux or *BSD flavour, the libraries (except wxMPL) can be probably found on the package
+manager of your system. I don’t know for Solaris or other Unixen.
+
+I personally usually install Python and wxPython from packages, and the other libs from source. Compiling and installing them from source is not hard if you are accustomed to  compile software packages on Unix, but it requires in turn a lot of dependencies. Prepare to have installed on your system at least (I am surely forgetting something) LAPACK, BLAS, PyGTK, libpng and Tk -both packages and most importantly their headers/development ﬁles (usually known as dev packages, on Debian systems). The numpy, scipy and matplotlib documentations online will help you through. If you have packages of the recent versions,  try them -they should work. WxMPL has no official packages as far as I know, but it’s the easiest to install, once you have wxpython and matplotlib installed. Just  follow the instructions in the package.
+
+== Requirements on Windows ==
+
+You should ﬁnd the required packages on the Internet as easy .EXE installers.
+Just download them from the Internet (most are hosted on [http://sourceforge.net sourceforge.net], but look for them in the links above) and install them in the correct order. 
+
+An alternative is to install Enthought Python, a distribution of Python for scientiﬁc computing that includes numpy, scipy and wxpython (plus another bunch of libraries and goodies). You will still need to install matplotlib and wxmpl, though. Keep in mind that wxmpl needs to be installed *from the Windows command line*.
+
+
 = Installation =
 Hooke still has no installer... but it does not need it essentially, since it's so simple. Once all the dependencies have been installed, just unzip the package and copy the Hooke folder in your favourite location.
 
