@@ -1,0 +1,52 @@
+#summary Basic introduction to Hooke usage for SMFS force curves
+#labels Featured,Phase-Support
+
+IN PROGRESS
+
+Hooke works with a combined command line and graphic interface. Think of programs like RasMol. The command line allows the user to issue commands about the set of curves he wants to analyze. The graphic interface, for now, shows the curves plot and allows basic interactions with it -depending also from variables and commands issued.
+
+=Starting Hooke=
+Open a terminal, go to the directory Hooke is installed and type python
+hooke.py (You may need to give the full path for Python on Windows sys-
+tems). If everything is OK, Hooke displays a nice splashscreen and starts.
+
+Once Hooke is launched from the terminal window, you see a text like the following:
+
+{{{
+Starting Hooke.
+Imported plugin fit
+Imported plugin procplots
+Imported plugin flatfilts
+Imported plugin generalclamp
+Imported plugin generalvclamp
+Imported plugin massanalysis
+Imported plugin macro
+Imported driver picoforce
+Imported driver hemingclamp
+Imported driver csvdriver
+Imported driver tutorialdriver
+
+Warning: Invalid work directory.
+This is Hooke, version 0.8.0 Seinei
+(c) Massimo Sandal, 2006. Released under the GNU General Public License Version 2
+Hooke is Free software.
+----
+hooke:
+}}}
+
+Hooke tells you that plugins and drivers have been loaded, and now you’re ready to go. You’re now at the Hooke command line. In the meantime, a splashscreen and a window with a dummy force curve should appear . At the command line, digit *help* or *?* to obtain a list of available commands. 
+
+{{{
+hooke: ?
+Documented commands (type help <topic>):
+========================================
+addtolist debug        exit     genlist  ls   notelog previous  set
+cd         derivplot export     getlist  n    p       printlist size
+contact    dir        flatfilt jump      next plateau pwd       subtplot
+current    distance    force    loadlist note plot    savelist  wlc
+Undocumented commands:
+======================
+help
+
+hooke:
+}}}
