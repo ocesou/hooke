@@ -102,7 +102,7 @@ To save your playlist to a ﬁle, thus avoiding to regenerate it, type:
 hooke: savelist mylist
 }}}
 
-The list will be saved, in this example, in the ﬁle _mylist.hkp_. Hooke will add the extension .hkp to the playlist if you forget to. The .hkp ﬁle is an XML ﬁle you can read and edit with any text editor (i.e. Wordpad), if needed. If you want to load it, just issue loadlist mylist.hkp or loadlist mylist, Hooke will care about the missing .hkp extension.
+The list will be saved, in this example, in the ﬁle _mylist.hkp_. Hooke will add the extension .hkp to the playlist if you forget to. The .hkp ﬁle is an XML ﬁle you can read and edit with any text editor (i.e. Wordpad), if needed. If you want to load it, just issue *loadlist mylist.hkp* or *loadlist mylist*, Hooke will care about the missing .hkp extension. This will load the saved playlist, just like you just generated it.
 
 Generating the playlist, you should see the plot of the ﬁrst curve appearing. If, generating the playlist, you are including by chance a non-force curve file that Hooke cannot open, it should be (more or less) silently ignored. If it gives some error, or it does not plot anything, try to navigate forward, and see if the next curve is plotted; it is possible you spotted a corrupted file.
 
