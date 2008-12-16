@@ -1,0 +1,14 @@
+#summary Index of available documentation
+#labels Featured,Phase-Support
+
+= Installation & Basic Usage =
+
+  *  HowToInstall - how to install Hooke
+  *  BasicAnalysis - basic introduction to Hooke force curve analysis
+  *  InstallPlugins - how to install a new plugin
+
+= Specific Usage Topics =
+  *  Brief_Autopeak_HowTo - how to use autopeak, a routine for semiautomatic multipeak force curve analysis
+
+= Compatibility =
+  *  FileFormats - file formats supported by Hooke
