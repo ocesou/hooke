@@ -1,5 +1,5 @@
 #summary Basic introduction to Hooke usage for SMFS force curves
-#labels Featured,Phase-Support
+#labels Phase-Support
 
 IN PROGRESS
 
