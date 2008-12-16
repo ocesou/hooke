@@ -1,5 +1,5 @@
 #summary File format support
-#labels Featured,Phase-Design,Phase-Requirements
+#labels Phase-Design,Phase-Requirements
 
 We need full support for most force spectroscopy data files. Please help us:
   * by giving us example data files
