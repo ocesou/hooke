@@ -4,12 +4,12 @@ The AUTOPEAK command can speed up the quantitative analysis of a given curve con
 
 =AUTOPEAK sequential steps=
 
-- Find peak positions
-- Determine the baseline value
-- Find contact point
-- Perform WLC and linear fits on the peaks found previously
-- Ask user acceptance of the performed fits
-- Output fitted values for each peak (rupture force, contour length, persistence length, linear slope at rupture, errors of the fits)
+Find peak positions
+Determine the baseline value
+Find contact point
+Perform WLC and linear fits on the peaks found previously
+Ask user acceptance of the performed fits
+Output fitted values for each peak (rupture force, contour length, persistence length, linear slope at rupture, errors of the fits)
 
 Each step is customizable with several variables and is described in detail below. The general syntax of the AUTOPEAK command is as follows:
 
