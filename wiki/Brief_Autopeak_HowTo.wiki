@@ -2,8 +2,6 @@
 
 The AUTOPEAK command can speed up the quantitative analysis of a given curve considerably. When invoked, AUTOPEAK performs automatically a fixed sequence of measurements on the current curve and outputs the relevant parameters. When no custom parameters are utilized, the sequence of measurement steps looks like this:
 
-=AUTOPEAK sequential steps=
-
 *(1) Find peak positions, (2) Determine the baseline value, (3) Find contact point, (4) Perform WLC and linear fits on the peaks found previously, (5) Ask user acceptance of the performed fits, (6) Output fitted values for each peak (rupture force, contour length, persistence length, linear slope at rupture, errors of the fits)*
 
 Each step is customizable with several variables and is described in detail below. The general syntax of the AUTOPEAK command is as follows:
