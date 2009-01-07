@@ -82,6 +82,7 @@ class autopeakCommands:
             plot: plot to use
             backwards: if true, finds a point backwards.
             '''
+            whatset=1 #FIXME: should be decidable
             x_vect=plot.vectors[1][0]
             
             c=0
