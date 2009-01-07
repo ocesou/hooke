@@ -276,6 +276,13 @@ class autopeakCommands:
         self._send_plot([fitplot])
         #self.do_peaks('')
         
+        print 'Measurements for all peaks detected:'
+        print 'contour (nm)', c_lengths
+        print 'sigma contour (nm)',sigma_c_lengths
+        print 'p (nm)',p_lengths
+        print 'sigma p (nm)',sigma_p_lengths
+        print 'forces (pN)',forces
+        print 'slopes (N/m)',slopes
         
         #Ask the user what peaks to ignore from analysis.
         print 'Peaks to ignore (0,1...n from contact point,return to take all)'
@@ -306,6 +313,7 @@ class autopeakCommands:
         sigma_c_lengths=[item for item in sigma_c_lengths if item != None]    
         sigma_p_lengths=[item for item in sigma_p_lengths if item != None]    
         
+        print 'Measurements for chosen peaks:'
         print 'contour (nm)',c_lengths
         print 'sigma contour (nm)',sigma_c_lengths
         print 'p (nm)',p_lengths
