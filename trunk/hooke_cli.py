@@ -99,10 +99,10 @@ class HookeCli(cmd.Cmd):
                 pass
            
             
-        self.playlist_saved=0
-        self.playlist_name=''
-        self.notes_saved=1
-        self.notes_filename=None
+        self.playlist_saved=0 #Did we save the playlist?
+        self.playlist_name='' #Name of playlist
+        self.notes_saved=1 #Did we save the notes?
+        self.notes_filename=None #Name of notes
 
         #create outlet
         self.outlet=lout.Outlet()
