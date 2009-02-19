@@ -141,7 +141,6 @@ class fitCommands:
                 pii=1/pl_value
         
             Kb=(1.38065e-23) #boltzmann constant
-            #T=293 #temperature FIXME:should be user-modifiable!
             therm=Kb*T #so we have thermal energy
         
             return ( (therm*pii/4.0) * (((1-(x*lambd))**-2.0) - 1 + (4.0*x*lambd)) )

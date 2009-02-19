@@ -17,14 +17,27 @@ warnings.simplefilter('ignore',np.RankWarning)
 class pclusterCommands:
 
 		def do_pcluster(self,args):
+                                
 				'''
 				pCLUSTER
 				(pcluster.py)
+                                
+                                Automatically measures peaks for further clustering
+                                
+                                (c)Paolo Pancaldi, Massimo Sandal 2009
 				'''
-				
+				#--Custom persistent length
+                                for arg in args.split():
+                                    #look for a persistent length argument.
+                                    if 'pl=' in arg:
+                                        pl_expression=arg.split('=')
+                                        pl_value=float(pl_expression[1]) #actual value
+                                    else:
+                                        pl_value=None
+                                    
 				#configuration variables
-				min_npks = 5
-				min_deviation = 5
+				min_npks = self.convfilt_config['minpeaks']
+				min_deviation = self.convfilt_config['mindeviation']
 				
 				# ------ FUNCTION ------
 				def fit_interval_nm(start_index,plot,nm,backwards):
@@ -63,7 +76,7 @@ class pclusterCommands:
 						fit_errors											[6.5817195369767644e-010, 2.4415923138871498e-011]
 						'''
 						fit_points=int(self.config['auto_fit_points']) # number of points to fit before the peak maximum <50>
-						pl_value=None # persistent length <None>
+						
 						T=self.config['temperature'] #temperature of the system in kelvins. By default it is 293 K. <301.0>
 						cindex=self.find_contact_point() #Automatically find contact point <158, libhooke.ClickedPoint>
 						contact_point=self._clickize(itplot[0].vectors[1][0], itplot[0].vectors[1][1], cindex)
@@ -167,15 +180,6 @@ class pclusterCommands:
                                                     for var, vector in zip([c_leng, p_leng, sigma_c_leng, sigma_p_leng, force, slope],[c_lengths, p_lengths, sigma_c_lengths, sigma_p_lengths, forces, slopes]):
                                                         if var is not None:
                                                             vector.append(var)
-                                                    
-                                                    '''
-                                                    c_lengths.append(c_leng)
-                                                    p_lengths.append(p_leng)
-                                                    sigma_c_lengths.append(sigma_c_leng)
-						    sigma_p_lengths.append(sigma_p_leng)
-						    forces.append(force)
-						    slopes.append(slope)
-                                                    '''
                                                     						
 						print 'Measurements for all peaks detected:'
 						print 'contour (nm)', c_lengths
