@@ -143,7 +143,13 @@ class pclusterCommands:
 						c+=1
 						item.identify(self.drivers)
 						itplot=item.curve.default_plots()
-						peak_location,peak_size=self.exec_has_peaks(item,min_deviation)
+                                                try:
+                                                    peak_location,peak_size=self.exec_has_peaks(item,min_deviation)
+                                                except: 
+                                                    #We have troubles with exec_has_peaks (bad curve, whatever).
+                                                    #Print info and go to next cycle.
+                                                    print 'Cannot process ',item.path
+                                                    continue 
 						fit_points, contact_point, pl_value, T, cindex, avg = plot_informations(itplot)
 						print '\n\nCurve',item.path, 'is',c,'of',len(self.current_list),': found '+str(len(peak_location))+' peaks.'
 						
