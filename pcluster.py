@@ -22,7 +22,7 @@ class pclusterCommands:
 				pCLUSTER
 				(pcluster.py)
                                 
-                                Automatically measures peaks for further clustering
+                                Automatically measures peaks and extracts informations for further clustering
                                 
                                 (c)Paolo Pancaldi, Massimo Sandal 2009
 				'''
@@ -39,6 +39,20 @@ class pclusterCommands:
 				min_npks = self.convfilt_config['minpeaks']
 				min_deviation = self.convfilt_config['mindeviation']
 				
+                                pclust_filename=raw_input('Automeasure filename? ')
+                                realclust_filename=raw_input('Coordinates filename? ')
+                                
+                                f=open(pclust_filename,'w+')
+                                f.write('Analysis started '+time.asctime()+'\n')
+                                f.write('----------------------------------------\n')
+                                f.write('; Contour length (nm)  ;  Persistence length (nm) ;  Max.Force (pN)  ;  Slope (N/m) ;  Sigma contour (nm) ; Sigma persistence (nm)\n')
+                                f.close()
+                                
+                                f=open(realclust_filename,'w+')
+                                f.write('Analysis started '+time.asctime()+'\n')
+                                f.write('----------------------------------------\n')
+                                f.write('; Peak number ; Mean delta (nm)  ;  Median delta (nm) ;  Mean force (pN)  ;  Median force (pN) ; First peak length (nm) ; Last peak length (nm)')
+                                f.close()
 				# ------ FUNCTION ------
 				def fit_interval_nm(start_index,plot,nm,backwards):
 						'''
@@ -64,7 +78,7 @@ class pclusterCommands:
 								c+=1
 						return c
 				
-				def plot_informations(itplot):
+				def plot_informations(itplot,pl_value):
 						'''
 						OUR VARIABLES
 						contact_point.absolute_coords		(2.4584142802103689e-007, -6.9647135616234017e-009)
@@ -163,7 +177,7 @@ class pclusterCommands:
                                                     #Print info and go to next cycle.
                                                     print 'Cannot process ',item.path
                                                     continue 
-						fit_points, contact_point, pl_value, T, cindex, avg = plot_informations(itplot)
+						fit_points, contact_point, pl_value, T, cindex, avg = plot_informations(itplot,pl_value)
 						print '\n\nCurve',item.path, 'is',c,'of',len(self.current_list),': found '+str(len(peak_location))+' peaks.'
 						
 						#initialize output data vectors
@@ -180,6 +194,13 @@ class pclusterCommands:
                                                     for var, vector in zip([c_leng, p_leng, sigma_c_leng, sigma_p_leng, force, slope],[c_lengths, p_lengths, sigma_c_lengths, sigma_p_lengths, forces, slopes]):
                                                         if var is not None:
                                                             vector.append(var)
+                                                
+                                                #FIXME: We need a dictionary here...
+                                                allvects=[c_lengths, p_lengths, sigma_c_lengths, sigma_p_lengths, forces, slopes]
+                                                for vect in allvects:
+                                                    if len(vect)==0:
+                                                        for i in range(len(c_lengths)):
+                                                            vect.append(0)
                                                     						
 						print 'Measurements for all peaks detected:'
 						print 'contour (nm)', c_lengths
@@ -189,5 +210,50 @@ class pclusterCommands:
 						print 'forces (pN)',forces
 						print 'slopes (N/m)',slopes
 										
-				print ""
+				                '''
+                                                write automeasure text file
+                                                '''
+                                                print 'Saving automatic measurement...'
+                                                f=open(pclust_filename,'a+')
+        
+                                                f.write(self.current.path+'\n')
+                                                for i in range(len(c_lengths)):
+                                                    f.write(' ; '+str(c_lengths[i])+' ; '+str(p_lengths[i])+' ; '+str(forces[i])+' ; '+str(slopes[i])+' ; '+str(sigma_c_lengths[i])+' ; '+str(sigma_p_lengths[i])+'\n')
+                                                f.close()
+                                                
+                                                '''
+                                                calculate clustering coordinates
+                                                '''
+                                                peak_number=len(c_lengths)
+                                                
+                                                deltas=[]
+                                                for i in range(len(c_lengths)-1):
+                                                    deltas.append(c_lengths[i+1]-c_lengths[i])
+                                                
+                                                delta_mean=np.mean(deltas)
+                                                delta_median=np.median(deltas)
+                                                force_mean=np.mean(forces)
+                                                force_median=np.median(forces)
+                                                first_peak_cl=c_lengths[0]
+                                                last_peak_cl=c_lengths[-1]
+                                                
+                                                print 'Coordinates'
+                                                print 'Peaks',peak_number
+                                                print 'Mean delta',delta_mean
+                                                print 'Median delta',delta_median
+                                                print 'Mean force',force_mean
+                                                print 'Median force',force_median
+                                                print 'First peak',first_peak_cl
+                                                print 'Last peak',last_peak_cl
+                                                
+                                                '''
+                                                write clustering coordinates
+                                                '''
+                                                
+                                                f=open(realclust_filename,'a+')
+                                                f.write(self.current.path+'\n')
+                                                f.write(' ; '+str(peak_number)+' ; '+str(delta_mean)+' ; '+str(delta_median)+' ; '+str(force_mean)+' ; '+str(force_median)+' ; '+str(first_peak_cl)+' ; '+str(last_peak_cl)+'\n')
+                                                f.close()
+                                                    
+                                                
 				
