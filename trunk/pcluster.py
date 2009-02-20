@@ -177,6 +177,10 @@ class pclusterCommands:
                                                     #Print info and go to next cycle.
                                                     print 'Cannot process ',item.path
                                                     continue 
+                                                
+                                                if len(peak_location)==0:
+                                                    continue
+                                                
 						fit_points, contact_point, pl_value, T, cindex, avg = plot_informations(itplot,pl_value)
 						print '\n\nCurve',item.path, 'is',c,'of',len(self.current_list),': found '+str(len(peak_location))+' peaks.'
 						
@@ -226,34 +230,38 @@ class pclusterCommands:
                                                 '''
                                                 peak_number=len(c_lengths)
                                                 
-                                                deltas=[]
-                                                for i in range(len(c_lengths)-1):
-                                                    deltas.append(c_lengths[i+1]-c_lengths[i])
+                                                if peak_number > 1:
                                                 
-                                                delta_mean=np.mean(deltas)
-                                                delta_median=np.median(deltas)
-                                                force_mean=np.mean(forces)
-                                                force_median=np.median(forces)
-                                                first_peak_cl=c_lengths[0]
-                                                last_peak_cl=c_lengths[-1]
+                                                    deltas=[]
+                                                    for i in range(len(c_lengths)-1):
+                                                        deltas.append(c_lengths[i+1]-c_lengths[i])
+                                                    
+                                                    delta_mean=np.mean(deltas)
+                                                    delta_median=np.median(deltas)
+                                                    force_mean=np.mean(forces)
+                                                    force_median=np.median(forces)
+                                                    first_peak_cl=c_lengths[0]
+                                                    last_peak_cl=c_lengths[-1]
                                                 
-                                                print 'Coordinates'
-                                                print 'Peaks',peak_number
-                                                print 'Mean delta',delta_mean
-                                                print 'Median delta',delta_median
-                                                print 'Mean force',force_mean
-                                                print 'Median force',force_median
-                                                print 'First peak',first_peak_cl
-                                                print 'Last peak',last_peak_cl
+                                                    print 'Coordinates'
+                                                    print 'Peaks',peak_number
+                                                    print 'Mean delta',delta_mean
+                                                    print 'Median delta',delta_median
+                                                    print 'Mean force',force_mean
+                                                    print 'Median force',force_median
+                                                    print 'First peak',first_peak_cl
+                                                    print 'Last peak',last_peak_cl
                                                 
-                                                '''
-                                                write clustering coordinates
-                                                '''
+                                                    '''
+                                                    write clustering coordinates
+                                                    '''
                                                 
-                                                f=open(realclust_filename,'a+')
-                                                f.write(self.current.path+'\n')
-                                                f.write(' ; '+str(peak_number)+' ; '+str(delta_mean)+' ; '+str(delta_median)+' ; '+str(force_mean)+' ; '+str(force_median)+' ; '+str(first_peak_cl)+' ; '+str(last_peak_cl)+'\n')
-                                                f.close()
+                                                    f=open(realclust_filename,'a+')
+                                                    f.write(self.current.path+'\n')
+                                                    f.write(' ; '+str(peak_number)+' ; '+str(delta_mean)+' ; '+str(delta_median)+' ; '+str(force_mean)+' ; '+str(force_median)+' ; '+str(first_peak_cl)+' ; '+str(last_peak_cl)+'\n')
+                                                    f.close()
+                                                else:
+                                                    pass
                                                     
                                                 
 				
