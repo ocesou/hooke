@@ -1,0 +1,9 @@
+#summary Common problems and solutions
+#labels Phase-Support
+
+  * *Q: Hooke displays only a grey window with a very tiny square pattern at the top left corner (on Windows)*
+  * A: This is probably a small bug in the Windows version of Wx libraries. Just stretch a bit the plot window and the default curve should appear.
+
+
+  * *Q: At startup, Hooke crashes with a long error message that ends with _AttributeError: HookeCliPlugged instance has no attribute 'find_contact_point'_*
+  * A: Most probably there is some problem with your Scipy version. Using SciPy 0.5.x instead of SciPy 0.6 leads to this crash (which is due to the fact that SciPy 0.5 does not contain the ODR libraries that we use for curve fitting). Check your libraries version.
