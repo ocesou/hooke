@@ -12,3 +12,7 @@
 
 = Compatibility =
   *  FileFormats - file formats supported by Hooke
+
+= Development =
+
+  *  HookeArchitecture - an introduction to the architecture of Hooke
