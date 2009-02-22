@@ -7,3 +7,6 @@
 
   * *Q: At startup, Hooke crashes with a long error message that ends with _AttributeError: HookeCliPlugged instance has no attribute 'find_contact_point'_*
   * A: Most probably there is some problem with your Scipy version. Using SciPy 0.5.x instead of SciPy 0.6 leads to this crash (which is due to the fact that SciPy 0.5 does not contain the ODR libraries that we use for curve fitting). Check your libraries version.
+
+  * *Q: At startup, Hooke displays a long list of lines like _GnomePrintCupsPlugin-Message: The ppd file for the CUPS printer bw_1st_level could not be loaded._ (on Linux/Unix)*
+  * A: This is not a problem of Hooke but of the interplay between your Gnome install and the Wx library. It is just a warning that can be safely ignored.
