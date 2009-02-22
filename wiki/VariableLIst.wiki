@@ -3,7 +3,6 @@
 
 IN PROGRESS
 
-  * *correct* Tells Hooke to correct a velocity clamp force curve for deﬂection or not. The default is 1 (true). By typing set correct 0 Hooke stops correcting to give the true
-tip-surface extension and returns the piezo-setpoint extension.
-  * *medfilt* Tells Hooke to smooth the curve showed with a simple median ﬁlter. The value of the variable is the amplitude of the running window: a larger window means a smoother ﬁlter. By default medﬁlt is set to 0, that is no ﬁltering. Try for example set medﬁlt 7 or larger to clearly see the effects. 
-  * *xaxes* and *yaxes* ﬂip the X and Y axes, respectively. By default they are set to 0. Try setting them to 1 to ﬂip the plot (Bug warning: sometimes the default orientation can come back after zooming)
+  * *correct* (0/1) Tells Hooke to correct a velocity clamp force curve for deﬂection or not. The default is 1 (true). By typing set correct 0 Hooke stops correcting to give the true tip-surface extension and returns the piezo-setpoint extension.
+  * *medfilt* (integer) Tells Hooke to smooth the curve showed with a simple median ﬁlter. The value of the variable is the amplitude of the running window: a larger window means a smoother ﬁlter. By default medﬁlt is set to 0, that is no ﬁltering. Try for example set medﬁlt 7 or larger to clearly see the effects. 
+  * *xaxes* (0/1) and *yaxes* (0/1) ﬂip the X and Y axes, respectively. By default they are set to 0. Try setting them to 1 to ﬂip the plot (Bug warning: sometimes the default orientation can come back after zooming)
