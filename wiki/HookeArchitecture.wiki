@@ -3,7 +3,7 @@
 
 = The Hooke backbone =
 
-Hooke is composed of three different types of components (see Figure 1). The ﬁrst is the Hooke backbone. The backbone functionality by itself is very limited: it manages the basic
+Hooke is composed of three different types of components. The ﬁrst is the Hooke backbone. The backbone functionality by itself is very limited: it manages the basic
 command interpretation, general plot drawing and interaction facilities, a few very basic
 commands (like measuring the distance between two points) and other very basic stuff like
 loading playlists and conﬁguration ﬁles (see below). The backbone per se is useless as an
