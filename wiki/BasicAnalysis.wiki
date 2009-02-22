@@ -148,3 +148,22 @@ You can export Hooke curves as images and as text columns. To export as images, 
 To export as text, use the *txt* command, followed by the ﬁlename. The output
 is a text ﬁle containing columns (first two are X and Y of extension , second
 two are X and Y of retraction).
+
+=Interacting with the plot=
+==Measuring distances and forces==
+You can easily zoom in the plot by dragging a rectangle on it with the left mouse button. To zoom out, click the right mouse button. Sometimes by zoom ing in and out too much, you can lose the picture (this is probably a small bug in Matplotlib). Just type plot at the command line and the curve will be refreshed.
+
+You can measure distances and forces directly in the plot. Just issue the command *distance*. You will be asked to click two points: do it. When you click a point, a blue dot should appear. When you click the second point, the distance (in nanometers) will apper on the command line. *force* works in the same way. You can use *delta* if you prefer, which gives meaningful values for every kind of graph (not only force curves). If you want to know the coordinates of a single point, use *point*.
+
+Hooke automatically adjusts the position of the clicked point at the nearest point in the graph, so you will be always measuring distances and forces between points in the graph.
+
+The commands *force* and *distance* are present in the generalvramp.py plugin.
+
+=Variables=
+You can set environment variables to inﬂuence the behaviour of Hooke. The command to use is *set*.
+
+You can alter permanently the behaviour of Hooke by setting these variables in the ﬁle _hooke.conf_. This is a very simple XML ﬁle, just change the values
+of the variables with an ASCII text editor (not Word or a word processor - on
+Windows, Wordpad should work). Be careful in the correct XML syntax (which you should grasp very easily looking at the default configuration file) otherwise Hooke will crash nastily on the next startup.
+
+See VariableList for help on individual variables.
