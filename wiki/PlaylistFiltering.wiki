@@ -25,7 +25,7 @@ the playlist. For any given retracting curve:
     * The noise level of the convolution is calculated, eliminating the highest values (which are presumibly the spikes) until noise seems converging. Average value and absolute deviation of noise is calculated.
     * Data points exceeding the user-deﬁned threshold of absolute deviation are counted. Usually these data will show up as “clusters” around a single force peak: each cluster is then reduced to a single data point. If there are enough points exceeding the user-deﬁned threshold, then the curve is kept in the playlist, otherwise it is discarded.
 
-The convolution algorithm, with appropriate thresholds, usually recognizes peaks more than 90% of the time. The ﬁlter based on it can reduce a SMFS dataset like the one in (3) to analyze by hand of about 80-90% (depending on the overall cleanliness of the dataset). Thousands of curves can be automatically filtered this way in a few minutes on a standard PC, but the algorithm could still be optimized.
+The convolution algorithm, with appropriate thresholds, usually recognizes peaks well more than 95% of the time. The ﬁlter based on it can reduce a SMFS dataset like the one in (3) to analyze by hand of about 80-90% (depending on the overall cleanliness of the dataset). Thousands of curves can be automatically filtered this way in a few minutes on a standard PC, but the algorithm could still be optimized.
 
 
 =Bibliography=
