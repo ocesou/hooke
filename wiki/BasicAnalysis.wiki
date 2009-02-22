@@ -120,3 +120,31 @@ hooke: jump c:\curves\mycurve.123
 }}}
 
 but be careful to tell Hooke the full path to that curve, otherwise it will not ﬁnd it.
+
+
+= Taking notes =
+You can take notes about the curves you are looking at. Just type *note* followed by the text you want to append to that curve. Hooke will save the text in your current playlis and in an external log ﬁle. The output will look like this:
+
+{{{
+Notes taken at Sun Sep 17 20:42:07 2006
+/home/cyclopia/work/tris/20060620a.041 |             This is a note
+/home/cyclopia/work/tris/20060620a.207 |             This is another note
+/home/cyclopia/work/tris/20060620a.286 |             This is a third one
+}}}
+
+The first time you type *note* in a session, Hooke will ask you for a filename of the log.
+
+Usually curves you annotated are useful later. You can copy the curves you annotated in a different directory by using the *copylog* command, like
+
+{{{
+hooke: copylog c:\nicecurves
+}}}
+
+will copy all curves you have annotated in the c:\nicecurves directory. Take care that the directory already exists before doing that.
+
+= Exporting curves =
+You can export Hooke curves as images and as text columns. To export as images, issue the *export* command followed by the ﬁlename. Supported formats are PNG (raster) and EPS (Encapsulated Postscript, vectorial). The export format is determined by the filename extension ,so *export foo.png* and *export foo.eps* will save a PNG and EPS file respectively , automatically. 
+
+To export as text, use the *txt* command, followed by the ﬁlename. The output
+is a text ﬁle containing columns (first two are X and Y of extension , second
+two are X and Y of retraction).
