@@ -21,3 +21,4 @@
 = Development =
 
   *  HookeArchitecture - an introduction to the architecture of Hooke
+  *  A series of slides useful to understand how the Hooke source code works is being published on this website (see [http://hooke.googlecode.com/files/hookecore01.pdf here] and [http://hooke.googlecode.com/files/hookecore02.pdf here] )
