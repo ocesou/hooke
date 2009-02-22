@@ -12,6 +12,7 @@
   * TroubleShooting - Q&A on common Hooke troubles
 
 = Specific Usage Topics =
+  *  PlaylistFiltering - information on the playlist filtering routines for selection of curves in SMFS analysis
   *  Brief_Autopeak_HowTo - how to use autopeak, a routine for semiautomatic multipeak force curve analysis
 
 = Compatibility =
