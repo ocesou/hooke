@@ -51,7 +51,7 @@ class pclusterCommands:
                                 f=open(realclust_filename,'w+')
                                 f.write('Analysis started '+time.asctime()+'\n')
                                 f.write('----------------------------------------\n')
-                                f.write('; Peak number ; Mean delta (nm)  ;  Median delta (nm) ;  Mean force (pN)  ;  Median force (pN) ; First peak length (nm) ; Last peak length (nm)')
+                                f.write('; Peak number ; Mean delta (nm)  ;  Median delta (nm) ;  Mean force (pN)  ;  Median force (pN) ; First peak length (nm) ; Last peak length (nm) ; Max force (pN) ; Min force (pN) ; Max delta (nm) ; Min delta (nm)')
                                 f.close()
 				# ------ FUNCTION ------
 				def fit_interval_nm(start_index,plot,nm,backwards):
@@ -220,7 +220,7 @@ class pclusterCommands:
                                                 print 'Saving automatic measurement...'
                                                 f=open(pclust_filename,'a+')
         
-                                                f.write(self.current.path+'\n')
+                                                f.write(item.path+'\n')
                                                 for i in range(len(c_lengths)):
                                                     f.write(' ; '+str(c_lengths[i])+' ; '+str(p_lengths[i])+' ; '+str(forces[i])+' ; '+str(slopes[i])+' ; '+str(sigma_c_lengths[i])+' ; '+str(sigma_p_lengths[i])+'\n')
                                                 f.close()
@@ -238,10 +238,18 @@ class pclusterCommands:
                                                     
                                                     delta_mean=np.mean(deltas)
                                                     delta_median=np.median(deltas)
+                                                    
                                                     force_mean=np.mean(forces)
                                                     force_median=np.median(forces)
+                                                    
                                                     first_peak_cl=c_lengths[0]
                                                     last_peak_cl=c_lengths[-1]
+                                                    
+                                                    max_force=max(forces[:-1])
+                                                    min_force=min(forces)
+                                                    
+                                                    max_delta=max(deltas)
+                                                    min_delta=min(deltas)
                                                 
                                                     print 'Coordinates'
                                                     print 'Peaks',peak_number
@@ -251,14 +259,19 @@ class pclusterCommands:
                                                     print 'Median force',force_median
                                                     print 'First peak',first_peak_cl
                                                     print 'Last peak',last_peak_cl
+                                                    print 'Max force',max_force
+                                                    print 'Min force',min_force
+                                                    print 'Max delta',max_delta
+                                                    print 'Min delta',min_delta
                                                 
                                                     '''
                                                     write clustering coordinates
                                                     '''
                                                 
                                                     f=open(realclust_filename,'a+')
-                                                    f.write(self.current.path+'\n')
-                                                    f.write(' ; '+str(peak_number)+' ; '+str(delta_mean)+' ; '+str(delta_median)+' ; '+str(force_mean)+' ; '+str(force_median)+' ; '+str(first_peak_cl)+' ; '+str(last_peak_cl)+'\n')
+                                                    f.write(item.path+'\n')
+                                                    f.write(' ; '+str(peak_number)+' ; '+str(delta_mean)+' ; '+str(delta_median)+' ; '+str(force_mean)+' ; '+str(force_median)+' ; '+str(first_peak_cl)+' ; '+str(last_peak_cl)+ ' ; '+str(max_force)+' ; '
+                                                    +str(min_force)+' ; '+str(max_delta)+' ; '+str(min_delta)+ '\n')
                                                     f.close()
                                                 else:
                                                     pass
