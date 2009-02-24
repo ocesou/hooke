@@ -124,8 +124,13 @@ class PlaylistXML:
         def save(self,output_filename):
             '''
             saves the playlist in a XML file.
-            '''    
-            outfile=file(output_filename,'w')
+            '''
+            try:
+                outfile=file(output_filename,'w')
+            except IOError:
+                print 'libhooke.py : Cannot save playlist. Wrong path or filename'
+                return
+            
             self.playlist.writexml(outfile,indent='\n')
             outfile.close()
 
