@@ -130,8 +130,7 @@ class HookeCli(cmd.Cmd):
         '''
         general helper function for N-points measures
         '''
-        measure_points=self.list_of_events['measure_points']
-        wx.PostEvent(self.frame, measure_points(num_of_points=N, set=whatset))
+        wx.PostEvent(self.frame,self.list_of_events['measure_points'](num_of_points=N, set=whatset))
         while 1:
             try:
                 points=self.frame.events_from_gui.get()

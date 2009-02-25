@@ -304,6 +304,8 @@ class MainWindow(wx.Frame):
                         
             self.clicked_points=[]
             
+            self.measure_set=None
+            
             self.events_from_gui = events_from_gui
             
             '''
@@ -545,12 +547,13 @@ class MainWindow(wx.Frame):
             self.click_flags_functions['measure_points'][0]=True
             if 'num_of_points' in dir(event):
                 self.num_of_points=event.num_of_points
-     
+            if 'set' in dir(event):    
+                self.measure_set=event.set
      
         def MeasurePoints(self,event,current_set=1):
             dest=self.current_plot_dest
             try:
-                current_set=event.set
+                current_set=self.measure_set
             except AttributeError:
                 pass
             

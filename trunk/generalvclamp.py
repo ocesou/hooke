@@ -281,6 +281,8 @@ class generalvclampCommands:
 
         return (linefit[0],linefit[1],xtofit,ytofit)
     
+    
+    
 #====================
 #AUTOMATIC ANALYSES
 #====================
