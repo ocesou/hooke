@@ -4,8 +4,11 @@
 = Installation & Basic Usage =
 
   *  HowToInstall - how to install Hooke
+  *  ListKnownWorkingLibraries - if you're desperate, use this to choose the right libraries to make your Hooke working.
+
   *  BasicAnalysis - basic introduction to Hooke force curve analysis
   *  InstallPlugins - how to install a new plugin
+  
 
 = Troubleshooting =
 
