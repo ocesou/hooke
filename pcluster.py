@@ -27,6 +27,7 @@ class pclusterCommands:
                                 (c)Paolo Pancaldi, Massimo Sandal 2009
 				'''
 				#--Custom persistent length
+                                pl_value=None
                                 for arg in args.split():
                                     #look for a persistent length argument.
                                     if 'pl=' in arg:
