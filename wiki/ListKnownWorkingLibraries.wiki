@@ -1,0 +1,16 @@
+#summary List of library combinations that are known to work with Hooke
+#labels Phase-Support
+
+One of the main troubles in installing Hooke is getting the dependencies right. There are a lot of possible version combinations and often a given version of a library could play less than well with others. So, here is a list of known setups that work with latest Hooke version.
+
+If you have a different but working combination, you can post it! Use the *version* command of Hooke to gather your library combination.
+
+=Known working combinations=
+
+  * OS: Kubuntu Linux 8.04
+  * Python version: 2.5.2 (r252:60911, Jul 31 2008, 17:28:52)
+  * WxPython version: 2.8.7.1
+  * wxMPL version: 1.2.9
+  * Matplotlib version: 0.91.2
+  * SciPy version: 0.6.0
+  * NumPy version: 1.0.4
