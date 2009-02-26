@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from mdp import pca
 from libhooke import WX_GOOD, ClickedPoint
 import wxversion
 wxversion.select(WX_GOOD)
@@ -9,12 +10,18 @@ import scipy as sp
 import copy
 import os.path
 import time
+import libhookecurve as lhc
 
 import warnings
 warnings.simplefilter('ignore',np.RankWarning)
 
 
 class pclusterCommands:
+    
+    def _plug_init(self):
+        self.pca_paths=[]
+        self.pca_myArray=None
+        self.clustplot=None
 
     def do_pcluster(self,args):
         '''
@@ -268,3 +275,82 @@ class pclusterCommands:
                 f.close()
             else:
                 pass
+                
+    def do_pca(self,args):
+        '''
+        PCA
+        Automatically measures pca from coordinates filename and shows two interactives plots
+        (c)Paolo Pancaldi, Massimo Sandal 2009
+        '''
+        
+        self.pca_myArray = []
+        self.pca_paths = {}
+        plot_path_temp = ""
+        nPlotTot = 0
+        nPlotGood = 0
+        
+        file_name=args
+        
+        for arg in args.split():
+            #look for a file argument.
+            if 'f=' in arg:
+                file_temp=arg.split('=')[1] #actual coordinates filename
+                try:
+                    f=open(file_temp)
+                    f.close()
+                    file_name = file_temp
+                    print "Coordinates filename used: " + file_name
+                except:
+                    print "Impossibile to find " + file_temp + " in current directory"
+                    print "Coordinates filename used: " + file_name
+            
+        f=open(file_name)
+        rows = f.readlines()
+        for row in rows:
+        	if row[0]=="/":
+        		nPlotTot = nPlotTot+1
+        		#plot_path_temp = row.split("/")[6][:-1]
+        		plot_path_temp = row
+        	if row[0]==" " and row.find('nan')==-1:
+        		row = row[row.index(";",2)+2:].split(" ; ")	# non considero la prima colonna col #picchi
+        		row = [float(i) for i in row]
+        		#0:Mean delta, 1:Median delta, 2:Mean force, 3:Median force, 4:First peak length, 5:Last peak length
+        		if (row[0]<500 and row[1]<500 and row[2]<500 and row[3]<500 and row[4]<500 and row[5]<500):
+        			if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0 and row[6]>0 and row[7]>0 and row[8]>0 and row[9]>0):
+        				nPlotGood = nPlotGood+1
+        				self.pca_paths[nPlotGood] = plot_path_temp
+        				self.pca_myArray.append(row)
+        f.close()
+        print nPlotGood, "of", nPlotTot
+        
+        # array convert, calculate PCA, transpose
+        self.pca_myArray = np.array(self.pca_myArray,dtype='float')
+        self.pca_myArray = pca(self.pca_myArray, output_dim=2)	#other way -> y = mdp.nodes.PCANode(output_dim=2)(gigi)
+        myArrayTr = np.transpose(self.pca_myArray)
+        
+        # plotting
+        X=myArrayTr[0]
+        Y=myArrayTr[1]
+        clustplot=lhc.PlotObject()
+        clustplot.add_set(X,Y)
+        clustplot.normalize_vectors()
+        clustplot.styles=['scatter']
+        clustplot.destination=1
+        self._send_plot([clustplot])
+        self.clustplot=clustplot
+        
+        
+    def do_pclick(self,args):        
+        
+        # receive user input
+        self._send_plot([self.clustplot])
+        print 'Click point'
+        point = self._measure_N_points(N=1, whatset=0)
+        indice = point[0].index
+        plot_file = self.pca_paths[indice]
+        dot_coord = self.pca_myArray[indice]
+        print "file: " + str(plot_file)
+        print "id: " + str(indice)
+        print "coord: " + str(dot_coord)
+        self.do_genlist(str(plot_file))
+        #self.do_jump(str(plot_file))
