@@ -271,6 +271,7 @@ class ClickedPoint:
         corresponds to the clicked point.
         '''
                    
+        #FIXME: a general algorithm using min() is needed!
         best_index=0
         best_dist=10**9 #should be more than enough given the scale
                 

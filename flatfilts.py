@@ -170,7 +170,7 @@ class flatfiltsCommands:
         #do the dirty convolution-peak finding stuff
         noise_level=lps.noise_absdev(convoluted[cut_index:], self.convfilt_config['positive'], self.convfilt_config['maxcut'], self.convfilt_config['stable'])               
         above=lps.abovenoise(convoluted,noise_level,cut_index,abs_devs)     
-        peak_location,peak_size=lps.find_peaks(above)
+        peak_location,peak_size=lps.find_peaks(above,seedouble=self.convfilt_config['seedouble'])
                 
         #take the maximum
         for i in range(len(peak_location)):
