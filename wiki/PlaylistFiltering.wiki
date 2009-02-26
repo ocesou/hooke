@@ -4,21 +4,45 @@
 Only a small fraction of AFM-SMFS force curves contains interesting signals. We developed two simple but nonetheless useful filters that act on the whole data set, discarding curves likely devoid of interesting signals, thus greatly decreasing the time needed for data analysis.
 
 ==Flatfilt==
+Syntax:
+flatfilt [min_npks min_deviation]
+
+min_npks = minmum number of points over the deviation
+(default=4)
+
+min_deviation = minimum signal/noise ratio
+(default=9)
+
+If called without arguments, it uses default values, that should work most of the times.
+
 *flatﬁlt*, simply recognizes curves that possess some kind of signiﬁcant feature
 above the thermal noise. The ﬁlter cycles all the curves in the playlist. For any given curve:
     * A median window ﬁlter (window size = 7) is applied on the retracting curve
-    * A diﬀerence vector, containing the Y difference between contiguous points, is calcu lated.
+    * A difference vector, containing the Y difference between contiguous points, is calcu lated.
     * The number of points in the diﬀerence vector exceeding a user-deﬁned threshold is counted
     * If there are enough points exceeding the user-deﬁned threshold, then the curve is kept in the playlist, otherwise it is discarded.
    
-This type of ﬁlter is of course very raw, and requires relatively conservative settings to safely avoid false negatives (that is, to avoid discarding interesting curves). Using it on the protein unfolding experiments described in (1) it has been found to reduce the data set to analyze by hand of ∼ 60-80%.
+This type of ﬁlter is of course very raw, and requires relatively conservative settings to safely avoid false negatives (that is, to avoid discarding interesting curves). Using it on the protein unfolding experiments described in (1) it has been found to reduce the data set to analyze by hand of ∼ 60-80%. 
 
 
 ==Convfilt==
+Filters out flat (featureless) curves of the current playlist, creating a playlist containing only the curves with potential features.
+        ------------
+        Syntax:
+        convfilt [min_npks min_deviation]
+
+        min_npks = minmum number of peaks
+        (to set the default, see convfilt.conf file; SETCONV command)
+
+        min_deviation = minimum signal/noise ratio *in the convolution*
+        (to set the default, see convfilt.conf file; SETCONV command)
+
+        If called without arguments, it uses default values.
+
+
 The second ﬁlter, *convﬁlt*, relies on automatic recognition of force peaks. Recognition
 of peaks is based on a simple convolution algorithm that is an extreme but working simpli-
-ﬁcation of the approach of Kasas et.al. (2). Again, the ﬁlter function cycles all curves in
-the playlist. For any given retracting curve:
+ﬁcation of the approach of Kasas et.al. (2). Again, the ﬁlter function cycles all curves in the playlist. For any given retracting curve:
 
     * The contact point is found and only data before the contact point is used
     * The data before the contact point are convoluted with an L-shaped vector that encodes the approximate L-shape that forced unfolding peaks show after the maximum.
@@ -27,6 +51,16 @@ the playlist. For any given retracting curve:
 
 The convolution algorithm, with appropriate thresholds, usually recognizes peaks well more than 95% of the time. The ﬁlter based on it can reduce a SMFS dataset like the one in (3) to analyze by hand of about 80-90% (depending on the overall cleanliness of the dataset). Thousands of curves can be automatically filtered this way in a few minutes on a standard PC, but the algorithm could still be optimized.
 
+Parameters for peak recognition are set in the convfilt.conf file:
+
+  * _seedouble_: (int) minimum number of points that separate two different peaks
+  * _convolution_ : (list) the convolution vector
+  * _positive_ : (0/1) decides if cutting from the vector the most positive or negative data points. Keep it at 0 unless you are a Hooke developer
+  * _stable_ : (float) decides when the noise level of the convolution is converging. The logic is: we cut the most negative (or positive) data points until the absolute deviation becomes stable (it doesn't vary more than 0.005) or we have cut more than maxcut*len(data) points.
+  * _maxcut_ : (float from 0 to 1) the maximum fraction of points to cut to evaluate noise, even if it doesn't converge as wanted by _stable_ (to avoid eating all the noise)
+  * _minpeaks_ : (int) the minimum number of peaks we want to consider a curve "good"
+  * _mindeviation_ : (float) the minimum number of absolute deviations from the noise we want from a convolution to consider the point a peak
+  * _blindwindow_ : (float) the number of nm after the contact point where we do not look for peaks
 
 =Bibliography=
 (1) M.Sandal et al. "Conformational equilibria in monomeric alpha synuclein at the single molecule level", PLOS Biology 6:e6 , (2008)
