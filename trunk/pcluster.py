@@ -252,6 +252,9 @@ class pclusterCommands:
                 max_delta=max(deltas)
                 min_delta=min(deltas)
                 
+                delta_stdev=np.std(deltas)
+                forces_stdev=np.std(forces[:-1])
+                
                 print 'Coordinates'
                 print 'Peaks',peak_number
                 print 'Mean delta',delta_mean
@@ -264,6 +267,8 @@ class pclusterCommands:
                 print 'Min force',min_force
                 print 'Max delta',max_delta
                 print 'Min delta',min_delta
+                print 'Delta stdev',delta_stdev
+                print 'Forces stdev',forces_stdev
                 
                 '''
                 write clustering coordinates
@@ -271,7 +276,7 @@ class pclusterCommands:
                 f=open(realclust_filename,'a+')
                 f.write(item.path+'\n')
                 f.write(' ; '+str(peak_number)+' ; '+str(delta_mean)+' ; '+str(delta_median)+' ; '+str(force_mean)+' ; '+str(force_median)+' ; '+str(first_peak_cl)+' ; '+str(last_peak_cl)+ ' ; '+str(max_force)+' ; '
-                +str(min_force)+' ; '+str(max_delta)+' ; '+str(min_delta)+ '\n')
+                +str(min_force)+' ; '+str(max_delta)+' ; '+str(min_delta)+ ' ; '+str(delta_stdev)+ ' ; '+str(forces_stdev)+'\n')
                 f.close()
             else:
                 pass
@@ -314,17 +319,24 @@ class pclusterCommands:
         	if row[0]==" " and row.find('nan')==-1:
         		row = row[row.index(";",2)+2:].split(" ; ")	# non considero la prima colonna col #picchi
         		row = [float(i) for i in row]
+                        
         		#0:Mean delta, 1:Median delta, 2:Mean force, 3:Median force, 4:First peak length, 5:Last peak length
+                        #6:Max delta 7:Min delta 8:Max force 9:Min force 10:Std delta 11:Std force
         		if (row[0]<500 and row[1]<500 and row[2]<500 and row[3]<500 and row[4]<500 and row[5]<500):
         			if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0 and row[6]>0 and row[7]>0 and row[8]>0 and row[9]>0):
         				nPlotGood = nPlotGood+1
         				self.pca_paths[nPlotGood] = plot_path_temp
+                                        #row=[row[1],row[2],row[4],row[10],row[11]]
+                                        #row=[row[10],row[11], row[0], row[2]]
         				self.pca_myArray.append(row)
+                        
+                        
         f.close()
         print nPlotGood, "of", nPlotTot
         
         # array convert, calculate PCA, transpose
         self.pca_myArray = np.array(self.pca_myArray,dtype='float')
+        print self.pca_myArray.shape
         self.pca_myArray = pca(self.pca_myArray, output_dim=2)	#other way -> y = mdp.nodes.PCANode(output_dim=2)(gigi)
         myArrayTr = np.transpose(self.pca_myArray)
         
@@ -333,17 +345,18 @@ class pclusterCommands:
         Y=myArrayTr[1]
         clustplot=lhc.PlotObject()
         clustplot.add_set(X,Y)
+        #clustplot.add_set(X[:14],Y[:14])
         clustplot.normalize_vectors()
-        clustplot.styles=['scatter']
+        #clustplot.styles=['scatter',None]
         clustplot.destination=1
+        
         self._send_plot([clustplot])
         self.clustplot=clustplot
         
         
     def do_pclick(self,args):        
         
-        # receive user input
-        self._send_plot([self.clustplot])
+        self._send_plot([self.clustplot]) #quick workaround for BAD problems in the GUI
         print 'Click point'
         point = self._measure_N_points(N=1, whatset=0)
         indice = point[0].index
