@@ -347,6 +347,7 @@ class pclusterCommands:
         clustplot.add_set(X,Y)
         #clustplot.add_set(X[:14],Y[:14])
         clustplot.normalize_vectors()
+        clustplot.styles=['scatter']
         #clustplot.styles=['scatter',None]
         clustplot.destination=1
         
