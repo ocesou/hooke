@@ -5,6 +5,8 @@ One of the main troubles in installing Hooke is getting the dependencies right. 
 
 If you have a different but working combination, you can post it! Use the *version* command of Hooke to gather your library combination.
 
+Note that the operating system (OS) is -to our knowledge- largely irrelevant: what should really matter are the Python and libraries' versions.
+
 =Known working combinations=
 
   * OS: Kubuntu Linux 8.04
@@ -14,3 +16,11 @@ If you have a different but working combination, you can post it! Use the *versi
   * Matplotlib version: 0.91.2
   * SciPy version: 0.6.0
   * NumPy version: 1.0.4
+
+  * OS: Windows Vista
+  * Python version: 2.5.4 (r254:67916, Dec 23 2008, 15:10:54)
+  * WxPython version: 2.8.9.1
+  * wxMPL version: 1.3.1
+  * Matplotlib version: 0.98.5.2
+  * SciPy version: 0.7.0
+  * NumPy version: 1.2.1
