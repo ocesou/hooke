@@ -228,7 +228,11 @@ class generalvclampCommands:
         
         # Calls the function linefit_between
         parameters=[0,0,[],[]]
-        parameters=self.linefit_between(clickedpoints[0],clickedpoints[1])
+        try:
+            parameters=self.linefit_between(clickedpoints[0],clickedpoints[1])
+        except:
+            print 'Cannot fit. Did you click twice the same point?'
+            return
           
         # Outputs the relevant slope parameter
         print 'Slope:'
