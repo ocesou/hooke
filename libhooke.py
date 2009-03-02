@@ -265,7 +265,7 @@ class ClickedPoint:
         self.dest=None #0 or 1 ; 0=top plot 1=bottom plot
                 
         
-    def find_graph_coords(self, xvector, yvector):
+    def find_graph_coords_old(self, xvector, yvector):
         '''
         Given a clicked point on the plot, finds the nearest point in the dataset (in X) that
         corresponds to the clicked point.
@@ -285,7 +285,19 @@ class ClickedPoint:
         self.index=best_index
         self.graph_coords=(xvector[best_index],yvector[best_index])
         return
+            
+    def find_graph_coords(self,xvector,yvector):
+        '''
+        Given a clicked point on the plot, finds the nearest point in the dataset (in X) that
+        corresponds to the clicked point.
+        '''
+        dists=[]
+        for index in scipy.arange(1,len(xvector),1):
+            dists.append(((self.absolute_coords[0]-xvector[index])**2)+((self.absolute_coords[1]-yvector[index])**2))
+                        #TODO, generalize? y coordinate is multiplied by 100 due to scale differences in the plot
     
+        self.index=dists.index(min(dists))
+        self.graph_coords=(xvector[self.index],yvector[self.index])
 #-----------------------------------------
 #CSV-HELPING FUNCTIONS        
         
