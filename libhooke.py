@@ -294,8 +294,7 @@ class ClickedPoint:
         dists=[]
         for index in scipy.arange(1,len(xvector),1):
             dists.append(((self.absolute_coords[0]-xvector[index])**2)+((self.absolute_coords[1]-yvector[index])**2))
-                        #TODO, generalize? y coordinate is multiplied by 100 due to scale differences in the plot
-    
+                        
         self.index=dists.index(min(dists))
         self.graph_coords=(xvector[self.index],yvector[self.index])
 #-----------------------------------------
