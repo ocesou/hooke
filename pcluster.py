@@ -349,8 +349,21 @@ class pclusterCommands:
         X=myArrayTr[0]
         Y=myArrayTr[1]
         clustplot=lhc.PlotObject()
-        clustplot.add_set(X,Y)
-        clustplot.add_set(X[:15],Y[:15])
+        
+        Xsyn=[]
+        Ysyn=[]
+        Xgb1=[]
+        Ygb1=[]
+        for index in range(len(self.pca_paths)):
+            if 'syn' in self.pca_paths[index]:
+                Xsyn.append(X[index])
+                Ysyn.append(Y[index])
+            else:
+                Xgb1.append(X[index])
+                Ygb1.append(Y[index])
+        
+        clustplot.add_set(Xsyn,Ysyn)
+        clustplot.add_set(Xgb1,Ygb1)
         clustplot.normalize_vectors()
         clustplot.styles=['scatter', 'scatter_red']
         #clustplot.styles=['scatter',None]
