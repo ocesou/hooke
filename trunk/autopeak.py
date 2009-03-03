@@ -244,8 +244,10 @@ class autopeakCommands:
                 fitplot.add_set(xfit,yfit)
                 if len(fitplot.styles)==0:
                     fitplot.styles=[]
+                    fitplot.colors=[]
                 else:
                     fitplot.styles.append(None)
+                    fitplot.colors.append(None)
             else: #2-value fit
                 p_leng=params[1]*(1.0e+9)
                 #check if persistent length makes sense. otherwise, discard peak.
@@ -261,6 +263,7 @@ class autopeakCommands:
                     fitplot.add_set(xfit,yfit)
                     if len(fitplot.styles)==0:
                         fitplot.styles=[]
+                        fitplot.colors=[]
                     else:
                         fitplot.styles.append(None)
                         fitplot.colors.append(None)
@@ -271,7 +274,7 @@ class autopeakCommands:
         #add basepoints to fitplot
         fitplot.add_set([self.basepoints[0].graph_coords[0],self.basepoints[1].graph_coords[0]],[self.basepoints[0].graph_coords[1],self.basepoints[1].graph_coords[1]]) 
         fitplot.styles.append('scatter')
-        
+        fitplot.colors.append(None)
         
         #Show wlc fits and peak locations
         self._send_plot([fitplot])
