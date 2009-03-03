@@ -270,7 +270,7 @@ class generalvclampCommands:
         
         self._send_plot([lineplot])
 
-    def linefit_between(self,index1,index2):
+    def linefit_between(self,index1,index2,whatset=1):
         '''
         Creates two vectors (xtofit,ytofit) slicing out from the
         current return trace a portion delimited by the two indexes
@@ -282,8 +282,8 @@ class generalvclampCommands:
         (c) Marco Brucale, Massimo Sandal 2008
         '''
         # Translates the indexes into two vectors containing the x,y data to fit
-        xtofit=self.plots[0].vectors[1][0][index1:index2]
-        ytofit=self.plots[0].vectors[1][1][index1:index2]
+        xtofit=self.plots[0].vectors[whatset][0][index1:index2]
+        ytofit=self.plots[0].vectors[whatset][1][index1:index2]
         
         # Does the actual linear fitting (simple least squares with numpy.polyfit)
         linefit=[]
