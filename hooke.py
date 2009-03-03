@@ -456,6 +456,8 @@ class MainWindow(wx.Frame):
             for plot in self.plots:
                 if self.plots[c].styles==[]:
                     self.plots[c].styles=[None for item in plot.vectors] 
+                if self.plots[c].colors==[]:
+                    self.plots[c].colors=[None for item in plot.vectors] 
             
             for plot in self.plots:
                 '''
@@ -474,6 +476,27 @@ class MainWindow(wx.Frame):
                 self.current_plot_dest=dest #let's try this way to take into account the destination plot...
                 
                 c=0
+                            
+                if len(plot.colors)==0:
+                    plot.colors=[None] * len(plot.vectors)
+                if len(plot.styles)==0:
+                    plot.styles=[None] * len(plot.vectors)     
+                
+                for vectors_to_plot in self.current_vectors: 
+                    if plot.styles[c]=='scatter':
+                        if plot.colors[c]==None:
+                            self.axes[dest].scatter(vectors_to_plot[0], vectors_to_plot[1])
+                        else:
+                            self.axes[dest].scatter(vectors_to_plot[0], vectors_to_plot[1],color=plot.colors[c])
+                    else:
+                        if plot.colors[c]==None:
+                            self.axes[dest].plot(vectors_to_plot[0], vectors_to_plot[1])
+                        else:
+                            self.axes[dest].plot(vectors_to_plot[0], vectors_to_plot[1], color=plot.colors[c])
+                    self.axes[dest].hold(True)
+                    c+=1
+                    
+                '''
                 for vectors_to_plot in self.current_vectors:
                     if len(vectors_to_plot)==2: #3d plots are to come...
                         if len(plot.styles) > 0 and plot.styles[c] == 'scatter':
@@ -487,7 +510,7 @@ class MainWindow(wx.Frame):
                         c+=1
                     else:
                         pass
-               
+                '''               
                 #FIXME: tackles only 2d plots
                 self.axes[dest].set_xlabel(plot.units[0])
                 self.axes[dest].set_ylabel(plot.units[1])
@@ -606,12 +629,13 @@ class MainWindow(wx.Frame):
             dest=event.dest
             filename=event.name
             self.figures[dest].savefig(filename)
-                
+               
+        '''
         def _find_nearest_point(self, mypoint, dataset=1):
-            '''
-            Given a clicked point on the plot, finds the nearest point in the dataset (in X) that
-            corresponds to the clicked point.
-            '''
+            
+            #Given a clicked point on the plot, finds the nearest point in the dataset (in X) that
+            #corresponds to the clicked point.
+            
             dest=self.current_plot_dest
             
             xvector=plot.vectors[dataset][0]
@@ -630,7 +654,7 @@ class MainWindow(wx.Frame):
                 index+=1
             
             return best_index,xvector[best_index],yvector[best_index]
-              
+         '''   
         
         def _plot_of_dest(self,dest=None):
             '''
@@ -663,14 +687,30 @@ class MainWindow(wx.Frame):
             #find the current plot matching the clicked destination
             plot=self._plot_of_dest()
             #plot all superimposed plots 
-            c=0      
+            c=0 
+            if len(plot.colors)==0:
+                    plot.colors=[None] * len(plot.vectors)
+            if len(plot.styles)==0:
+                    plot.styles=[None] * len(plot.vectors)     
             for plotset in plot.vectors: 
+                if plot.styles[c]=='scatter':
+                    if plot.colors[c]==None:
+                        self.axes[dest].scatter(plotset[0], plotset[1])
+                    else:
+                        self.axes[dest].scatter(plotset[0], plotset[1],color=plot.colors[c])
+                else:
+                    if plot.colors[c]==None:
+                        self.axes[dest].plot(plotset[0], plotset[1])
+                    else:
+                        self.axes[dest].plot(plotset[0], plotset[1], color=plot.colors[c])
+                '''    
                 if len(plot.styles) > 0 and plot.styles[c]=='scatter':
-                    self.axes[dest].scatter(plotset[0], plotset[1])
+                    self.axes[dest].scatter(plotset[0], plotset[1],color=plot.colors[c])
                 elif len(plot.styles) > 0 and plot.styles[c] == 'scatter_red':
                     self.axes[dest].scatter(plotset[0],plotset[1],color='red')
                 else:
                     self.axes[dest].plot(plotset[0], plotset[1])
+                '''
                 c+=1
             #plot points we have clicked
             for item in self.clicked_points:
