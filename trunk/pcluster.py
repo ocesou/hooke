@@ -325,6 +325,7 @@ class pclusterCommands:
                 if (row[0]<9000 and row[1]<9000 and row[2]<9000 and row[3]<9000 and row[4]<9000 and row[5]<9000):
                     if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0):
                         self.pca_paths[nPlotGood] = plot_path_temp
+                        row=[row[1],row[2]]
                         self.pca_myArray.append(row)
                         nPlotGood = nPlotGood+1
                         
@@ -349,9 +350,9 @@ class pclusterCommands:
         Y=myArrayTr[1]
         clustplot=lhc.PlotObject()
         clustplot.add_set(X,Y)
-        #clustplot.add_set(X[:14],Y[:14])
+        clustplot.add_set(X[:15],Y[:15])
         clustplot.normalize_vectors()
-        clustplot.styles=['scatter']
+        clustplot.styles=['scatter', 'scatter_red']
         #clustplot.styles=['scatter',None]
         clustplot.destination=1
         self._send_plot([clustplot])

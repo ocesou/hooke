@@ -478,6 +478,8 @@ class MainWindow(wx.Frame):
                     if len(vectors_to_plot)==2: #3d plots are to come...
                         if len(plot.styles) > 0 and plot.styles[c] == 'scatter':
                             self.axes[dest].scatter(vectors_to_plot[0],vectors_to_plot[1])
+                        elif len(plot.styles) > 0 and plot.styles[c] == 'scatter_red':
+                            self.axes[dest].scatter(vectors_to_plot[0],vectors_to_plot[1],color='red')
                         else:
                             self.axes[dest].plot(vectors_to_plot[0],vectors_to_plot[1])
                             
@@ -665,6 +667,8 @@ class MainWindow(wx.Frame):
             for plotset in plot.vectors: 
                 if len(plot.styles) > 0 and plot.styles[c]=='scatter':
                     self.axes[dest].scatter(plotset[0], plotset[1])
+                elif len(plot.styles) > 0 and plot.styles[c] == 'scatter_red':
+                    self.axes[dest].scatter(plotset[0],plotset[1],color='red')
                 else:
                     self.axes[dest].plot(plotset[0], plotset[1])
                 c+=1
