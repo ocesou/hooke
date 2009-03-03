@@ -39,7 +39,7 @@ class pclusterCommands:
                 pl_value=float(pl_expression[1]) #actual value
             else:
                 pl_value=None
-			    
+                
         #configuration variables
         min_npks = self.convfilt_config['minpeaks']
         min_deviation = self.convfilt_config['mindeviation']
@@ -312,24 +312,21 @@ class pclusterCommands:
         f=open(file_name)
         rows = f.readlines()
         for row in rows:
-        	if row[0]=="/":
-        		nPlotTot = nPlotTot+1
-        		#plot_path_temp = row.split("/")[6][:-1]
-        		plot_path_temp = row
-        	if row[0]==" " and row.find('nan')==-1:
-        		row = row[row.index(";",2)+2:].split(" ; ")	# non considero la prima colonna col #picchi
-        		row = [float(i) for i in row]
+            if row[0]=="/":
+                nPlotTot = nPlotTot+1
+                #plot_path_temp = row.split("/")[6][:-1]
+                plot_path_temp = row
+            if row[0]==" " and row.find('nan')==-1:
+                row = row[row.index(";",2)+2:].split(" ; ")	# non considero la prima colonna col #picchi
+                row = [float(i) for i in row]
                         
-        		#0:Mean delta, 1:Median delta, 2:Mean force, 3:Median force, 4:First peak length, 5:Last peak length
+                #0:Mean delta, 1:Median delta, 2:Mean force, 3:Median force, 4:First peak length, 5:Last peak length
                         #6:Max delta 7:Min delta 8:Max force 9:Min force 10:Std delta 11:Std force
-        		if (row[0]<500 and row[1]<500 and row[2]<500 and row[3]<500 and row[4]<500 and row[5]<500):
-        			if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0 and row[6]>0 and row[7]>0 and row[8]>0 and row[9]>0):
-        				nPlotGood = nPlotGood+1
-        				self.pca_paths[nPlotGood] = plot_path_temp
-                                        #row=[row[1],row[2],row[4],row[10],row[11]]
-                                        #row=[row[10],row[11], row[0], row[2]]
-        				self.pca_myArray.append(row)
-                        
+                if (row[0]<9000 and row[1]<9000 and row[2]<9000 and row[3]<9000 and row[4]<9000 and row[5]<9000):
+                    if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0):
+                        self.pca_paths[nPlotGood] = plot_path_temp
+                        self.pca_myArray.append(row)
+                        nPlotGood = nPlotGood+1
                         
         f.close()
         print nPlotGood, "of", nPlotTot
@@ -337,8 +334,15 @@ class pclusterCommands:
         # array convert, calculate PCA, transpose
         self.pca_myArray = np.array(self.pca_myArray,dtype='float')
         print self.pca_myArray.shape
+        '''for i in range(len(self.pca_myArray)):
+            print i, self.pca_paths[i]
+            print i, self.pca_myArray[i]'''
         self.pca_myArray = pca(self.pca_myArray, output_dim=2)	#other way -> y = mdp.nodes.PCANode(output_dim=2)(gigi)
         myArrayTr = np.transpose(self.pca_myArray)
+        
+        '''for i in range(len(self.pca_myArray)):
+            print i, self.pca_paths[i]
+            print i, self.pca_myArray[i]'''
         
         # plotting
         X=myArrayTr[0]
@@ -350,7 +354,6 @@ class pclusterCommands:
         clustplot.styles=['scatter']
         #clustplot.styles=['scatter',None]
         clustplot.destination=1
-        
         self._send_plot([clustplot])
         self.clustplot=clustplot
         
@@ -363,7 +366,7 @@ class pclusterCommands:
         indice = point[0].index
         plot_file = self.pca_paths[indice]
         dot_coord = self.pca_myArray[indice]
-        print "file: " + str(plot_file)
+        print "file: " + str(plot_file).rstrip()
         print "id: " + str(indice)
         print "coord: " + str(dot_coord)
         self.do_genlist(str(plot_file))
