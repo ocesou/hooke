@@ -275,8 +275,8 @@ class MainWindow(wx.Frame):
             self.click_plot=0
                         
             #FIXME: These could become a single flag with different (string?) values
-            self.on_measure_distance=False
-            self.on_measure_force=False
+            #self.on_measure_distance=False
+            #self.on_measure_force=False
             
             self.plot_fit=False
             
@@ -284,13 +284,16 @@ class MainWindow(wx.Frame):
             self.num_of_points = 2
             
             #Data.
+            '''
             self.current_x_ext=[[],[]]
             self.current_y_ext=[[],[]]
             self.current_x_ret=[[],[]]
             self.current_y_ret=[[],[]]
             
+            
             self.current_x_unit=[None,None]
             self.current_y_unit=[None,None]
+            '''
                         
             #Initialize xaxes, yaxes
             #FIXME: should come from config
