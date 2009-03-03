@@ -365,7 +365,8 @@ class pclusterCommands:
         clustplot.add_set(Xsyn,Ysyn)
         clustplot.add_set(Xgb1,Ygb1)
         clustplot.normalize_vectors()
-        clustplot.styles=['scatter', 'scatter_red']
+        clustplot.styles=['scatter', 'scatter']
+        clustplot.colors=[None,'red']
         #clustplot.styles=['scatter',None]
         clustplot.destination=1
         self._send_plot([clustplot])

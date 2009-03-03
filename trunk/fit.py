@@ -277,10 +277,16 @@ class fitCommands:
         fitplot.add_set(xfit,yfit)
         fitplot.add_set(clickvector_x,clickvector_y)
         
+        #FIXME: this colour/styles stuff must be solved at the root!
         if fitplot.styles==[]:
             fitplot.styles=[None,None,None,'scatter']
         else:
             fitplot.styles+=[None,'scatter']
+        
+        if fitplot.colors==[]:
+            fitplot.colors=[None,None,None,None]
+        else:
+            fitplot.colors+=[None,None]
         
         self._send_plot([fitplot])
                 

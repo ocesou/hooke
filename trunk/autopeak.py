@@ -263,6 +263,7 @@ class autopeakCommands:
                         fitplot.styles=[]
                     else:
                         fitplot.styles.append(None)
+                        fitplot.colors.append(None)
                 else:
                     pass
  

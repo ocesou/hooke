@@ -257,10 +257,16 @@ class generalvclampCommands:
         lineplot.add_set(xtoplot,ytoplot)
         lineplot.add_set(clickvector_x, clickvector_y)
                 
+        
         if lineplot.styles==[]:
             lineplot.styles=[None,None,None,'scatter']
         else:
             lineplot.styles+=[None,'scatter']
+        if lineplot.colors==[]:
+            lineplot.styles=[None,None,None,None]
+        else:
+            lineplot.colors+=[None,None]
+        
         
         self._send_plot([lineplot])
 

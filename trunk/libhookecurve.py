@@ -107,6 +107,11 @@ class PlotObject:
         '''
         self.styles=[]
         
+        '''
+        colors: define what is the colour of the current plots
+        '''
+        self.colors=[]
+        
     def add_set(self,x,y):
         '''
         Adds an x,y data set to the vectors.
