@@ -536,6 +536,7 @@ class MainWindow(wx.Frame):
         def PlotContact(self,event):
             '''
             plots the contact point
+            DEPRECATED!
             '''
             self.axes[0].hold(True)
             self.current_contact_index=event.contact_index
@@ -548,6 +549,15 @@ class MainWindow(wx.Frame):
             self._replot()
             self.clicked_points=[]
             
+        def OnMeasurePoints(self,event):
+            '''
+            trigger flags to measure N points
+            '''
+            self.click_flags_functions['measure_points'][0]=True
+            if 'num_of_points' in dir(event):
+                self.num_of_points=event.num_of_points
+            if 'set' in dir(event):    
+                self.measure_set=event.set            
         
         def ClickPoint0(self,event):
             self.current_plot_dest=0
@@ -568,15 +578,7 @@ class MainWindow(wx.Frame):
                 if value[0]:
                     eval('self.'+value[1]+'(event)')
                                       
-        def OnMeasurePoints(self,event):
-            '''
-            trigger flags to measure N points
-            '''
-            self.click_flags_functions['measure_points'][0]=True
-            if 'num_of_points' in dir(event):
-                self.num_of_points=event.num_of_points
-            if 'set' in dir(event):    
-                self.measure_set=event.set
+
      
         def MeasurePoints(self,event,current_set=1):
             dest=self.current_plot_dest

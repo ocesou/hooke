@@ -142,7 +142,7 @@ class pclusterCommands:
             if len(params)==1: #if we did choose 1-value fit
                 p_leng=pl_value
                 c_leng=params[0]*(1.0e+9)
-                sigma_p_lengt=0
+                sigma_p_leng=0
                 sigma_c_leng=fit_errors[0]*(1.0e+9)
                 force = abs(y-avg)*(1.0e+12)
             else: #2-value fit
