@@ -97,7 +97,7 @@ class pclusterCommands:
             fit_points=int(self.config['auto_fit_points']) # number of points to fit before the peak maximum <50>
             
             T=self.config['temperature'] #temperature of the system in kelvins. By default it is 293 K. <301.0>
-            cindex=self.find_contact_point(itplot) #Automatically find contact point <158, libhooke.ClickedPoint>
+            cindex=self.find_contact_point(itplot[0]) #Automatically find contact point <158, libhooke.ClickedPoint>
             contact_point=self._clickize(itplot[0].vectors[1][0], itplot[0].vectors[1][1], cindex)
             self.basepoints=[]
             base_index_0=peak_location[-1]+fit_interval_nm(peak_location[-1], itplot[0], self.config['auto_right_baseline'],False)
