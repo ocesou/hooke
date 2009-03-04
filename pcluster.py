@@ -277,8 +277,20 @@ class pclusterCommands:
                 '''
                 f=open(realclust_filename,'a+')
                 f.write(item.path+'\n')
-                f.write(' ; '+str(peak_number)+' ; '+str(delta_mean)+' ; '+str(delta_median)+' ; '+str(force_mean)+' ; '+str(force_median)+' ; '+str(first_peak_cl)+' ; '+str(last_peak_cl)+ ' ; '+str(max_force)+' ; '
-                +str(min_force)+' ; '+str(max_delta)+' ; '+str(min_delta)+ ' ; '+str(delta_stdev)+ ' ; '+str(forces_stdev)+'\n')
+                f.write(' ; '+str(peak_number)+     # non considerato
+                        ' ; '+str(delta_mean)+      # 0
+                        ' ; '+str(delta_median)+    # 1 -
+                        ' ; '+str(force_mean)+      # 2
+                        ' ; '+str(force_median)+    # 3 -
+                        ' ; '+str(first_peak_cl)+   # 4 -
+                        ' ; '+str(last_peak_cl)+    # 5 -
+                        ' ; '+str(max_force)+       # 6
+                        ' ; '+str(min_force)+       # 7
+                        ' ; '+str(max_delta)+       # 8
+                        ' ; '+str(min_delta)+       # 9
+                        ' ; '+str(delta_stdev)+     # 10
+                        ' ; '+str(forces_stdev)+    # 11
+                        '\n')
                 f.close()
             else:
                 pass
@@ -323,11 +335,11 @@ class pclusterCommands:
                 row = [float(i) for i in row]
                         
                 #0:Mean delta, 1:Median delta, 2:Mean force, 3:Median force, 4:First peak length, 5:Last peak length
-                        #6:Max delta 7:Min delta 8:Max force 9:Min force 10:Std delta 11:Std force
-                if (row[0]<9000 and row[1]<9000 and row[2]<9000 and row[3]<9000 and row[4]<9000 and row[5]<9000):
+                #6:Max delta 7:Min delta 8:Max force 9:Min force 10:Std delta 11:Std force
+                if (row[0]<500 and row[1]<500 and row[2]<500 and row[3]<500 and row[4]<500 and row[5]<500):
                     if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0):
                         self.pca_paths[nPlotGood] = plot_path_temp
-                        row=[row[1],row[2]]
+                        row = row[0], row[2], row[3], row[6], row[7], row[8]
                         self.pca_myArray.append(row)
                         nPlotGood = nPlotGood+1
                         
