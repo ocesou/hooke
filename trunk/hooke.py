@@ -325,7 +325,7 @@ class MainWindow(wx.Frame):
             
             self.click_flags_functions={'measure_points':[False, 'MeasurePoints']}
             
-            #Custom events from CLI --> GUI functions!                       
+            #Binding of custom events from CLI --> GUI functions!                       
             #FIXME: Should use the self.Bind() syntax
             EVT_PLOT(self, self.PlotCurve)
             EVT_PLOT_CONTACT(self, self.PlotContact)
