@@ -142,8 +142,8 @@ class pclusterCommands:
             if len(params)==1: #if we did choose 1-value fit
                 p_leng=pl_value
                 c_leng=params[0]*(1.0e+9)
-                sigma_p_lengths=0
-                sigma_c_lengths=fit_errors[0]*(1.0e+9)
+                sigma_p_lengt=0
+                sigma_c_leng=fit_errors[0]*(1.0e+9)
                 force = abs(y-avg)*(1.0e+12)
             else: #2-value fit
                 p_leng=params[1]*(1.0e+9)
@@ -174,6 +174,8 @@ class pclusterCommands:
             c+=1
             item.identify(self.drivers)
             itplot=item.curve.default_plots()
+            flatten=self._find_plotmanip('flatten') #extract flatten plot manipulator
+            itplot[0]=flatten(itplot[0], item, customvalue=1)
             try:
                 peak_location,peak_size=self.exec_has_peaks(item,min_deviation)
             except: 
