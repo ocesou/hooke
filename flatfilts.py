@@ -253,8 +253,10 @@ class flatfiltsCommands:
         recplot.vectors.append([xgood,ygood])
         if recplot.styles==[]:
             recplot.styles=[None,None,'scatter']
+            recplot.colors=[None,None,None]
         else:
             recplot.styles+=['scatter']
+            recplot.colors+=[None]
         
         self._send_plot([recplot])
         

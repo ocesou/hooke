@@ -97,7 +97,7 @@ class pclusterCommands:
             fit_points=int(self.config['auto_fit_points']) # number of points to fit before the peak maximum <50>
             
             T=self.config['temperature'] #temperature of the system in kelvins. By default it is 293 K. <301.0>
-            cindex=self.find_contact_point() #Automatically find contact point <158, libhooke.ClickedPoint>
+            cindex=self.find_contact_point(itplot) #Automatically find contact point <158, libhooke.ClickedPoint>
             contact_point=self._clickize(itplot[0].vectors[1][0], itplot[0].vectors[1][1], cindex)
             self.basepoints=[]
             base_index_0=peak_location[-1]+fit_interval_nm(peak_location[-1], itplot[0], self.config['auto_right_baseline'],False)
@@ -183,9 +183,11 @@ class pclusterCommands:
                 continue 
 
             if len(peak_location)==0:
+                print 'No peaks!'
                 continue
 
             fit_points, contact_point, pl_value, T, cindex, avg = plot_informations(itplot,pl_value)
+            
             print '\n\nCurve',item.path, 'is',c,'of',len(self.current_list),': found '+str(len(peak_location))+' peaks.'
 
             #initialize output data vectors
@@ -350,6 +352,9 @@ class pclusterCommands:
         Y=myArrayTr[1]
         clustplot=lhc.PlotObject()
         
+        #FIXME
+        #our dataset-specific stuff
+        #This will go away after testing :)
         Xsyn=[]
         Ysyn=[]
         Xgb1=[]
