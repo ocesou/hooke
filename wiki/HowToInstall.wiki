@@ -24,8 +24,6 @@ The packages should be installed in the order in which they are mentioned above.
 
 *Note*: It IS important to check the cross-compatibility of the versions of the above. In particular of the numpy/scipy/matplotlib combo , and remember to install them for the right version of Python. For your help, you can find here a ListKnownWorkingLibraries with combinations of libraries tested and known to work.
 
-*IMPORTANT*: wxMPL currently doesn't work with latest matplotlib (0.98). A patched wxmpl can be found in the Downloads section if you cannot install matplotlib 0.91 , but it can show a few bugs.
-
 == Requirements on Linux ==
 With all probability a suitable Python version is installed on your system. If in doubt, ﬁre up a command line prompt and digit ’python’.
 
