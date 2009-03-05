@@ -27,7 +27,7 @@ The packages should be installed in the order in which they are mentioned above.
 == Requirements on Linux ==
 With all probability a suitable Python version is installed on your system. If in doubt, ﬁre up a command line prompt and digit ’python’.
 
-The problem is a bit different for the other libraries. If you use a Linux or *BSD flavour, the libraries (except wxMPL) can be probably found on the package
+The problem is a bit different for the other libraries. If you use a Linux or BSD flavour, the libraries (except wxMPL) can be probably found on the package
 manager of your system. I don’t know for Solaris or other Unixen.
 
 I personally usually install Python and wxPython from packages, and the other libs from source. Compiling and installing them from source is not hard if you are accustomed to  compile software packages on Unix, but it requires in turn a lot of dependencies. Prepare to have installed on your system at least (I am surely forgetting something) LAPACK, BLAS, PyGTK, libpng and Tk -both packages and most importantly their headers/development ﬁles (usually known as dev packages, on Debian systems). The numpy, scipy and matplotlib documentations online will help you through. If you have packages of the recent versions,  try them -they should work. WxMPL has no official packages as far as I know, but it’s the easiest to install, once you have wxpython and matplotlib installed. Just  follow the instructions in the package.
