@@ -341,7 +341,10 @@ class pclusterCommands:
                 if (row[0]<500 and row[1]<500 and row[2]<500 and row[3]<500 and row[4]<500 and row[5]<500):
                     if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0):
                         self.pca_paths[nPlotGood] = plot_path_temp
-                        row = row[0], row[2], row[3], row[6], row[7], row[8]
+                        #row = row[0], row[2], row[3], row[6], row[7], row[8]
+                        #row= row[0], row[1], row[2], row[3], row[6], row[7], row[8], row[9], row[10], row[11]
+                        #row= row[6], row[7], row[8], row[9]
+                        row= row[1],row[3], row[10], row[11], row[6], row[7], row[8], row[9]
                         self.pca_myArray.append(row)
                         nPlotGood = nPlotGood+1
                         
@@ -371,21 +374,29 @@ class pclusterCommands:
         #This will go away after testing :)
         Xsyn=[]
         Ysyn=[]
+        
         Xgb1=[]
         Ygb1=[]
+        
+        Xbad=[]
+        Ybad=[]
         for index in range(len(self.pca_paths)):
-            if 'syn' in self.pca_paths[index]:
+            if 'syn' in self.pca_paths[index] and not 'bad' in self.pca_paths[index]:
                 Xsyn.append(X[index])
                 Ysyn.append(Y[index])
+            elif 'bad' in self.pca_paths[index]:
+                Xbad.append(X[index])
+                Ybad.append(Y[index])
             else:
                 Xgb1.append(X[index])
                 Ygb1.append(Y[index])
-        
+        print 'blath',len(Xbad),len(Ybad)
         clustplot.add_set(Xsyn,Ysyn)
         clustplot.add_set(Xgb1,Ygb1)
+        clustplot.add_set(Xbad,Ybad)
         clustplot.normalize_vectors()
-        clustplot.styles=['scatter', 'scatter']
-        clustplot.colors=[None,'red']
+        clustplot.styles=['scatter', 'scatter','scatter']
+        clustplot.colors=[None,'red','green']
         #clustplot.styles=['scatter',None]
         clustplot.destination=1
         self._send_plot([clustplot])
