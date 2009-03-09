@@ -373,6 +373,11 @@ class pclusterCommands:
         # plotting
         X=myArrayTr[0]
         Y=myArrayTr[1]
+        
+        X=list(X)
+        Y=list(Y)
+        
+        
         clustplot=lhc.PlotObject()
         
         #FIXME
@@ -386,8 +391,15 @@ class pclusterCommands:
         
         Xbad=[]
         Ybad=[]
+        
+        goodnamefile=open('/home/massimo/python/hooke/dataset_clust/roslin_blind50.log','r')
+        goodnames=goodnamefile.readlines()
+        goodnames=[i.split()[0] for i in goodnames[1:]]
+        
+        
         for index in range(len(self.pca_paths)):
-            if 'syn' in self.pca_paths[index] and not 'bad' in self.pca_paths[index]:
+            '''
+            if '3s3' in self.pca_paths[index] and not 'bad' in self.pca_paths[index]:
                 Xsyn.append(X[index])
                 Ysyn.append(Y[index])
             elif 'bad' in self.pca_paths[index]:
@@ -396,10 +408,20 @@ class pclusterCommands:
             else:
                 Xgb1.append(X[index])
                 Ygb1.append(Y[index])
-        print 'blath',len(Xbad),len(Ybad)
-        clustplot.add_set(Xsyn,Ysyn)
-        clustplot.add_set(Xgb1,Ygb1)
+            '''
+            #print self.pca_paths
+            if self.pca_paths[index][:-1] in goodnames:
+                Xsyn.append(X[index])
+                Ysyn.append(Y[index])
+            else:
+                Xbad.append(X[index])
+                Ybad.append(Y[index])
+            
+        print 'blath',len(Xsyn),len(Ysyn)
+        
+        #clustplot.add_set(Xgb1,Ygb1)
         clustplot.add_set(Xbad,Ybad)
+        clustplot.add_set(Xsyn,Ysyn)
         clustplot.normalize_vectors()
         clustplot.styles=['scatter', 'scatter','scatter']
         clustplot.colors=[None,'red','green']

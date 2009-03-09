@@ -1,4 +1,4 @@
-row[1]*15, row[3], row[6], row[7], row[8], row[9]*1, row[10], row[11]
+row[1]*15, row[3], row[6], row[7], row[8], row[9]*100, row[10]*150, row[11]*10
 
 questo file viene letto solo nella prima riga!!
 ----------------------------------------------------
