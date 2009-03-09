@@ -1,0 +1,17 @@
+row[1]*15, row[3], row[6], row[7], row[8], row[9]*1, row[10], row[11]
+
+questo file viene letto solo nella prima riga!!
+----------------------------------------------------
+str(peak_number)+     # non considerato
+str(delta_mean)+      # 0
+str(delta_median)+    # 1 -
+str(force_mean)+      # 2
+str(force_median)+    # 3 -
+str(first_peak_cl)+   # 4 -
+str(last_peak_cl)+    # 5 -
+str(max_force)+       # 6
+str(min_force)+       # 7
+str(max_delta)+       # 8
+str(min_delta)+       # 9
+str(delta_stdev)+     # 10
+str(forces_stdev)+    # 11
