@@ -269,6 +269,7 @@ class ClickedPoint:
         '''
         Given a clicked point on the plot, finds the nearest point in the dataset (in X) that
         corresponds to the clicked point.
+        OLD & DEPRECATED - to be removed
         '''
                    
         #FIXME: a general algorithm using min() is needed!
