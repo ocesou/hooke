@@ -304,6 +304,11 @@ class pclusterCommands:
         (c)Paolo Pancaldi, Massimo Sandal 2009
         '''
         
+        # reads the columns of pca
+        conf=open("pca_config.txt")
+        config = conf.readlines()
+        conf.close()
+        
         self.pca_myArray = []
         self.pca_paths = {}
         plot_path_temp = ""
@@ -344,7 +349,8 @@ class pclusterCommands:
                         #row = row[0], row[2], row[3], row[6], row[7], row[8]
                         #row= row[0], row[1], row[2], row[3], row[6], row[7], row[8], row[9], row[10], row[11]
                         #row= row[6], row[7], row[8], row[9]
-                        row= row[1],row[3], row[10], row[11], row[6], row[7], row[8], row[9]
+                        #row= row[1], row[3], row[6], row[7], row[8], row[9], row[10], row[11]*10
+                        row = eval(config[0])
                         self.pca_myArray.append(row)
                         nPlotGood = nPlotGood+1
                         
