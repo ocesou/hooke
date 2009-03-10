@@ -8,6 +8,8 @@
 
   *  BasicAnalysis - basic introduction to Hooke force curve analysis
   *  InstallPlugins - how to install a new plugin
+
+  *  VariableList - a (growing) introduction to the environment variables
   
 
 = Troubleshooting =
