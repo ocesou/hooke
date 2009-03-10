@@ -159,7 +159,8 @@ Hooke automatically adjusts the position of the clicked point at the nearest poi
 
 The commands *force* and *distance* are present in the generalvramp.py plugin.
 
-You can measure by hand the parameters relative to a force peak using a worm-like chain fitting with the *wlc* command.
+==Worm like chain fitting==
+You can measure by hand the parameters relative to a force peak using a worm-like chain fitting with the *wlc* command. The command by default automatically finds the contact point, asks for two points delimiting the portion to fit, and performs a two-variable fit, with contour length and persistence length as output, with relative errors. If desired, one can use the _noauto_ option to manually click the contact point, and/or the _pl=`[`number`]`_ options to impose a specific persistence length (in nanometers). Please see the help of the *wlc* command from the Hooke command line for details.
 
 =Variables=
 You can set environment variables to inﬂuence the behaviour of Hooke. The command to use is *set*.
