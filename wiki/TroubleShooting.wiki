@@ -1,6 +1,8 @@
 #summary Common problems and solutions
 #labels Phase-Support
 
+We will add new Q&A whenever new problems come out...
+
   * *Q: Hooke displays only a grey window with a very tiny square pattern at the top left corner (on Windows)*
   * A: This is probably a small bug in the Windows version of Wx libraries. Just stretch a bit the plot window and the default curve should appear.
 
