@@ -62,6 +62,32 @@ Parameters for peak recognition are set in the convfilt.conf file:
   * _mindeviation_ : (float) the minimum number of absolute deviations from the noise we want from a convolution to consider the point a peak
   * _blindwindow_ : (float) the number of nm after the contact point where we do not look for peaks
 
+==Fcfilt==
+
+Is a filtering command, similar to the previous ones, that works on force clamp curves. Its logic is very similar to 'flatfilt' for velocity clamp curves.
+
+* Syntax: fcfilt maxretraction(nm) mindeviation(pN) *
+WARNING - Only works if you set an appropriate fc_interesting config variable (see below)!
+WARNING - arguments are NOT optional at the moment!
+
+For *Fcfilt* to work, the internal configuration variable *fc_interesting* must have a non-zero value. Fcfilt will take into account only the portion of the curve specified via *fc_interesting*, which can be modified with the *set* command.
+
+Mandatory arguments are:
+(1) the maximum plausible piezo retraction in NANOMETERS measured from the start of the pulling phase (i.e. usually the length of the protein) and
+(2) the minimum force deviation threshold, in PICONEWTONS. If the constant-force signal deviates from the imposed force value more than this, an event is detected and the curve is non-empty.
+
+As an example, suggested values for a typical (i27)8 experiment are respectively 200nm and 10-15 pN
+
+For reference, the actual algorithm which decides whether a curve has some features in the interesting phase works as follows:
+
+  * first, clip the interesting phase portion of the curve.
+  * then, discard the first 20 milliseconds (this is due to a quirk of our hardware: the first few milliseconds after the pulling is started are somewhat noisy and could interfere with the filtering process).
+  * now look at the zpiezo plot and note down when (if) retratcs more than *maxretraction* nm away from the first point.
+  * clip off any data after this point, with an excess of 100 points (again, an hardware quirk)
+  * if the remainder is less than 100 points, ditch the curve.
+  * now look at the deflection plot and check if there are points more than *threshold* pN over the 'flat zone'.
+  * if you find such points, bingo! you found a non-empty curve.
+
 =Bibliography=
 (1) M.Sandal et al. "Conformational equilibria in monomeric alpha synuclein at the single molecule level", PLOS Biology 6:e6 , (2008)
 
