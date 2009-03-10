@@ -67,6 +67,7 @@ Parameters for peak recognition are set in the convfilt.conf file:
 Is a filtering command, similar to the previous ones, that works on force clamp curves. Its logic is very similar to 'flatfilt' for velocity clamp curves.
 
 * Syntax: fcfilt maxretraction(nm) mindeviation(pN) *
+
 WARNING - Only works if you set an appropriate fc_interesting config variable (see below)!
 WARNING - arguments are NOT optional at the moment!
 
