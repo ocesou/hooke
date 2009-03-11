@@ -205,7 +205,6 @@ class tutorialCommands:
         #Create the object.
         #The PlotObject class lives in the libhookecurve library.
         myplot=lhc.PlotObject()
-        myplot.vectors=[[],[]] #Decide we will have two data sets in this plot
         '''
         The *data* of the plot live in the .vectors list. 
         
@@ -226,12 +225,10 @@ class tutorialCommands:
         y2 = self.vectors[1][1]
         '''
         #Pour 0-th dataset into myplot: 
-        myplot.vectors[0].append(xdata1) #...x
-        myplot.vectors[0].append(ydata1) #...then y
+        myplot.add_set(xdata1,ydata1)
         
         #Pour 1-st dataset into myplot: 
-        myplot.vectors[1].append(xdata2) #...x
-        myplot.vectors[1].append(ydata2) #...then y
+        myplot.add_set(xdata2,ydata2)
         
         #Add units to x and y axes
         #units=[string, string]
@@ -261,14 +258,9 @@ class tutorialCommands:
         ydata2=[item**3 for item in xdata2]
         
         myplot=lhc.PlotObject()
-        myplot.vectors=[[],[]]
-        #Pour 0-th dataset into myplot: 
-        myplot.vectors[0].append(xdata1) #...x
-        myplot.vectors[0].append(ydata1) #...then y
+        myplot.add_set(xdata1,ydata1)
+        myplot.add_set(xdata2,ydata2)
         
-        #Pour 1-st dataset into myplot: 
-        myplot.vectors[1].append(xdata2) #...x
-        myplot.vectors[1].append(ydata2) #...then y
         
         #Add units to x and y axes
         myplot.units=['x axis','y axis']
@@ -284,9 +276,11 @@ class tutorialCommands:
         
         Here we define the second set to be plotted as scatter,
         and the first to be plotted as line.
+        
+        Here we define also the colors to be the default Matplotlib colors
         '''
         myplot.styles=[None,'scatter']
-        
+        myplot.colors=[None,None]
         self._send_plot([myplot])
         
 
