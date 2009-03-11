@@ -360,15 +360,8 @@ class pclusterCommands:
         # array convert, calculate PCA, transpose
         self.pca_myArray = np.array(self.pca_myArray,dtype='float')
         print self.pca_myArray.shape
-        '''for i in range(len(self.pca_myArray)):
-            print i, self.pca_paths[i]
-            print i, self.pca_myArray[i]'''
         self.pca_myArray = pca(self.pca_myArray, output_dim=2)	#other way -> y = mdp.nodes.PCANode(output_dim=2)(gigi)
         myArrayTr = np.transpose(self.pca_myArray)
-        
-        '''for i in range(len(self.pca_myArray)):
-            print i, self.pca_paths[i]
-            print i, self.pca_myArray[i]'''
         
         # plotting
         X=myArrayTr[0]
@@ -377,6 +370,12 @@ class pclusterCommands:
         X=list(X)
         Y=list(Y)
         
+        '''#builds coordinate s file
+        f = open('coordinate_punti.txt','w')
+        for i in range(len(X)):
+            f.write (str(i) + "\t" + str(X[i]) + "\t" + str(Y[i]) + "\n")
+        f.close()
+        '''
         
         clustplot=lhc.PlotObject()
         
@@ -392,7 +391,8 @@ class pclusterCommands:
         Xbad=[]
         Ybad=[]
         
-        goodnamefile=open('/home/massimo/python/hooke/dataset_clust/roslin_blind50.log','r')
+        goodnamefile=open('roslin_blind50.log','r')
+        #goodnamefile=open('/home/massimo/python/hooke/dataset_clust/roslin_blind50.log','r')
         goodnames=goodnamefile.readlines()
         goodnames=[i.split()[0] for i in goodnames[1:]]
         
