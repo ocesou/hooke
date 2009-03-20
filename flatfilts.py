@@ -147,11 +147,15 @@ class flatfiltsCommands:
     #-----Convolution-based peak recognition and filtering.
     #Requires the libpeakspot.py library
     
-    def has_peaks(self, plot, abs_devs):
+    def has_peaks(self, plot, abs_devs=None):
         '''
         Finds peak position in a force curve.
         FIXME: should be moved in libpeakspot.py
         '''
+        if abs_devs==None:
+            abs_devs=self.convfilt_config['mindeviation']
+        
+        
         xret=plot.vectors[1][0]
         yret=plot.vectors[1][1]
         #Calculate convolution.

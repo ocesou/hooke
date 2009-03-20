@@ -450,7 +450,13 @@ If we are at the last curve, we come back to the first.
 Syntax: next, n
         '''
     def do_next(self,args):
-        self.current.curve.close_all()
+        try:
+            self.current.curve.close_all()
+        except:
+            print 'No curve file loaded, currently!'
+            print 'This should not happen, report to http://code.google.com/p/hooke'
+            return
+        
         if self.pointer == (len(self.current_list)-1):
             self.pointer=0
             print 'Playlist finished; back to first curve.'
@@ -475,7 +481,12 @@ If we are at the first curve, we jump to the last.
 Syntax: previous, p
     '''
     def do_previous(self,args):
-        self.current.curve.close_all()
+        try:
+            self.current.curve.close_all()
+        except:
+            print 'No curve file loaded, currently!'
+            print 'This should not happen, report to http://code.google.com/p/hooke'
+            return
         if self.pointer == 0:
             self.pointer=(len(self.current_list)-1)
             print 'Start of playlist; jump to last curve.' 

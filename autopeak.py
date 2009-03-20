@@ -178,6 +178,10 @@ class autopeakCommands:
         
         peak_location, peak_size = find_current_peaks()
         
+        if len(peak_location) == 0:
+            print 'No peaks to fit.'
+            return
+        
         fitplot=copy.deepcopy(displayed_plot)
         
         #Pick up force baseline
