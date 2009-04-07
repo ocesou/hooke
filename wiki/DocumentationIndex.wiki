@@ -26,5 +26,7 @@
 = Development =
 
   *  HookeArchitecture - an introduction to the architecture of Hooke
-  *  Example tutorial files on how to write plugins and drivers are available in the Hooke source distribution.
+  *  Example tutorial files on how to write plugins and drivers are available in the Hooke source distribution (_tutorial.py_ and _tutorialdriver.py_).
   *  A series of slides useful to understand how the Hooke source code works is being published on this website (see [http://hooke.googlecode.com/files/hookecore01.pdf one], [http://hooke.googlecode.com/files/hookecore02.pdf two], [http://hooke.googlecode.com/files/hookecore3.pdf three], [http://hooke.googlecode.com/files/hookecore4.pdf four])
+
+  * To write drivers and plugins, also look at [http://hooke.googlecode.com/files/hookecore05_plugins.pdf here] and [http://hooke.googlecode.com/files/hookecore06_drivers.pdf here] !
