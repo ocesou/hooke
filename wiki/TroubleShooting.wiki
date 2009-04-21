@@ -12,3 +12,6 @@ We will add new Q&A whenever new problems come out...
 
   * *Q: At startup, Hooke displays a long list of lines like _GnomePrintCupsPlugin-Message: The ppd file for the CUPS printer foo could not be loaded._ (on Linux/Unix)*
   * A: This is not a problem of Hooke but of the interplay between your Gnome install and the Wx library. It is just a warning that can be safely ignored.
+
+  * *Q: At startup, Hooke crashes with errors like "import numpy.ma as ma ImportError: No module named ma" *
+  * A: Check if your numpy and your matplotlib libraries are of mutually compatible versions.
