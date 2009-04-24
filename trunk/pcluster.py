@@ -334,14 +334,14 @@ class pclusterCommands:
                 nPlotTot = nPlotTot+1
                 #plot_path_temp = row.split("/")[6][:-1]
                 plot_path_temp = row
-            if row[0]==" " and row.find('nan')==-1:
+            if row[0]==" " and row.find('nan')==-1 and row.find("-1.#IND")==-1:
                 row = row[row.index(";",2)+2:].split(" ; ")	# non considero la prima colonna col #picchi
                 row = [float(i) for i in row]
                         
                 #0:Mean delta, 1:Median delta, 2:Mean force, 3:Median force, 4:First peak length, 5:Last peak length
                 #6:Max delta 7:Min delta 8:Max force 9:Min force 10:Std delta 11:Std force
-                if (row[0]<500 and row[1]<500 and row[2]<500 and row[3]<500 and row[4]<500 and row[5]<500):
-                    if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0):
+                if (row[0]<500 and row[1]<500 and row[2]<500 and row[3]<500 and row[4]<500 and row[5]<500 and row[6]<500 and row[7]<500 and row[8]<500 and row[9]<500 and row[10]<500 and row[11]<500):
+                    if (row[0]>0 and row[1]>0 and row[2]>0 and row[3]>0 and row[4]>0 and row[5]>0 and row[6]>0 and row[7]>0 and row[8]>0 and row[9]>0 and row[10]>0 and row[11]>0):
                         self.pca_paths[nPlotGood] = plot_path_temp
                         #row = row[0], row[2], row[3]*3, row[6], row[7]*56, row[8]
                         res=[]
@@ -389,7 +389,7 @@ class pclusterCommands:
         Xbad=[]
         Ybad=[]
         
-        goodnamefile=open('gaeta_good_blind50.log','r')
+        goodnamefile=open('dataset_s3sT45base_good_blind50.log','r')
         #goodnamefile=open('/home/massimo/python/hooke/dataset_clust/roslin_blind50.log','r')
         goodnames=goodnamefile.readlines()
         goodnames=[i.split()[0] for i in goodnames[1:]]
@@ -431,12 +431,12 @@ class pclusterCommands:
         # -- exporting coordinates and plot! --
         
         #builds coordinate s file
-        '''
+        
         f = open('coordinate_punti.txt','w')
         for i in range(len(X)):
             f.write (str(i) + "\t" + str(X[i]) + "\t" + str(Y[i]) + "\n")
         f.close()
-        '''
+        
         #save plot
         config = config[0].replace("*", "x")
         self.do_export("png/" + config + " 1")
@@ -456,8 +456,39 @@ class pclusterCommands:
         arg = args.split(" ")
         file_name=arg[0]
         column=str(arg[1])
-        for i in range(1, 101, 2):
+        for i in range(1, 51, 1):
             self.do_pca(file_name + " " + config[0].replace(column,column+"*"+str(i),1))
+
+    def do_doublepca(self,args):
+        '''
+        DOUBLEPCA -> "double gaeta_coor_blind50.txt"
+        Automatically multiply the column suggest in second argument for value between 1-100 (step of 2), 
+        measures pca from coordinates filename and save the png plots.
+        (c)Paolo Pancaldi, Massimo Sandal 2009
+        '''
+        # cycling pca
+        arg = args.split(" ")
+        file_name=arg[0]
+        for i in range(1, 12):
+            for j in range(1, 12):
+                if i!=j:
+                    self.do_pca(file_name + " " + str(i) + "," + str(j))
+                    
+    def do_triplepca(self,args):
+        '''
+        DOUBLEPCA -> "double gaeta_coor_blind50.txt"
+        Automatically multiply the column suggest in second argument for value between 1-100 (step of 2), 
+        measures pca from coordinates filename and save the png plots.
+        (c)Paolo Pancaldi, Massimo Sandal 2009
+        '''
+        # cycling pca
+        arg = args.split(" ")
+        file_name=arg[0]
+        for i in range(1, 12):
+            for j in range(1, 12):
+                for k in range(1, 12):
+                    if i!=j and i!=k and j!=k:
+                        self.do_pca(file_name + " " + str(i) + "," + str(j) + "," + str(k))
         
     def do_pclick(self,args):        
         
