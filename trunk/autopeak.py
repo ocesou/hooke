@@ -66,9 +66,10 @@ class autopeakCommands:
         auto_fit_nm = number of nm to fit before the peak maximum, for WLC (if usepoints false)
         auto_fit_points = number of points to fit before the peak maximum, for WLC (if usepoints true)
         
-        baseline_clicks = 0: automatic baseline
-                          1: decide baseline with a single click and length defined in auto_left_baseline
-                          2: let user click points of baseline
+        baseline_clicks = -1: no baseline, f=0 at the contact point (whether hand-picked or automatically found)
+                           0: automatic baseline
+                           1: decide baseline with a single click and length defined in auto_left_baseline
+                           2: let user click points of baseline
         auto_left_baseline = length in nm to use as baseline from the right point (if baseline_clicks=0 , 1)
         auto_right_baseline = distance in nm of peak-most baseline point from last peak (if baseline_clicks = 0)
         '''
@@ -209,6 +210,12 @@ class autopeakCommands:
         to_average=displayed_plot.vectors[1][1][boundaries[0]:boundaries[1]] #y points to average
         avg=np.mean(to_average)
         
+        clicks=self.config['baseline_clicks']
+        if clicks==-1:
+            try:
+                avg=displayed_plot.vectors[1][1][contact_point_index]
+            except:
+                avg=displayed_plot.vectors[1][1][cindex]
         
         for peak in peak_location:
             #WLC FITTING
