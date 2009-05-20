@@ -41,7 +41,7 @@ class mcsDriver(lhc.Driver):
         self.experiment = 'smfluo'
         
     def is_me(self):
-        if self.filename[-3:]=='mcs':
+        if self.filename[-3:].lower()=='mcs':
             return True
         else:
             return False
