@@ -20,7 +20,7 @@ class mcsDriver(lhc.Driver):
         '''
         #obtain name of blue files
         othername=filename
-        if othername[-8]=='a':
+        if othername[-8]=='a': #fixme: how to make it general? (maybe should not be in driverspace but in environment...)
             oth=list(othername)
             oth[-8]='d'
             othername=''.join(oth)

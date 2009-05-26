@@ -42,7 +42,7 @@ class jpkDriver(lhc.Driver):
     
     def is_me(self):
         '''
-        we define our magic heuristic for HemingClamp files
+        we define our magic heuristic for jpk files
         '''
         myfile=file(self.filename)
         headerlines=myfile.readlines()[0:3]
