@@ -52,6 +52,8 @@ class autopeakCommands:
         
         usepoints : fit interval by number of points instead than by nanometers
         
+        noflatten : does not use the "flatten" plot manipulator
+        
         When you first issue the command, it will ask for the filename. If you are giving the filename
         of an existing file, autopeak will resume it and append measurements to it. If you are giving
         a new filename, it will create the file and append to it until you close Hooke.
@@ -110,11 +112,12 @@ class autopeakCommands:
             self.wlccurrent=self.current.path
             return contact_point, contact_point_index
         
-        def find_current_peaks():
+        def find_current_peaks(noflatten):
             #Find peaks.
             defplot=self.current.curve.default_plots()[0]
-            flatten=self._find_plotmanip('flatten') #Extract flatten plotmanip
-            defplot=flatten(defplot, self.current, customvalue=1) #Flatten curve before feeding it to has_peaks
+            if not noflatten:
+                flatten=self._find_plotmanip('flatten') #Extract flatten plotmanip
+                defplot=flatten(defplot, self.current, customvalue=1) #Flatten curve before feeding it to has_peaks
             peak_location,peak_size=self.has_peaks(defplot, self.convfilt_config['mindeviation'])
             return peak_location, peak_size
     
@@ -125,6 +128,7 @@ class autopeakCommands:
         slope_span=int(self.config['auto_slope_span'])
         delta_force=10
         rebase=False #if true=we select rebase
+        noflatten=False #if true=we avoid flattening
         
         #initialize output data vectors
         c_lengths=[]
@@ -148,6 +152,9 @@ class autopeakCommands:
         #--Recalculate baseline
         if 'rebase' in args or (self.basecurrent != self.current.path):
             rebase=True 
+        
+        if 'noflatten' in args:
+            noflatten=True
         
         #--Custom persistent length / custom temperature
         for arg in args.split():
@@ -177,7 +184,7 @@ class autopeakCommands:
         #--END COMMAND LINE PARSING--
         
         
-        peak_location, peak_size = find_current_peaks()
+        peak_location, peak_size = find_current_peaks(noflatten)
         
         if len(peak_location) == 0:
             print 'No peaks to fit.'
