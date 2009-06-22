@@ -120,7 +120,33 @@ class generalvclampCommands:
         print str(forcebase*(10**12))+' pN'
         to_dump='forcebase '+self.current.path+' '+str(forcebase*(10**12))+' pN'
         self.outlet.push(to_dump)
+
+    def plotmanip_multiplier(self, plot, current):
+        '''
+        Multiplies all the Y values of an SMFS curve by a value stored in the 'force_multiplier'
+        configuration variable. Useful for calibrations and other stuff.
+        '''
         
+        #not a smfs curve...
+        if current.curve.experiment != 'smfs':
+            return plot
+        
+        #only one set is present...
+        if len(self.plots[0].vectors) != 2:
+            return plot
+        
+        #multiplier is 1...
+        if (self.config['force_multiplier']==1):
+            return plot
+
+        for i in range(len(plot.vectors[0][1])):
+            plot.vectors[0][1][i]=plot.vectors[0][1][i]*self.config['force_multiplier']        
+
+        for i in range(len(plot.vectors[1][1])):
+            plot.vectors[1][1][i]=plot.vectors[1][1][i]*self.config['force_multiplier']
+
+        return plot            
+   
     
     def plotmanip_flatten(self, plot, current, customvalue=False):
         '''
