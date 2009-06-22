@@ -103,7 +103,7 @@ class PlotObject:
         '''
         styles: defines what is the style of the current plots. If undefined or None, it is line plot.
         If an element of the list is 'scatter', the corresponding dataset
-	is drawn with scattered points and not a continuous line.
+        is drawn with scattered points and not a continuous line.
         '''
         self.styles=[]
         
