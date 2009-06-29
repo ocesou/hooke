@@ -1,0 +1,26 @@
+#summary Support for the Asylum MFP 1D microscope
+#labels Phase-Support
+
+Currently support for the Asylum MFP is _indirect_ : Hooke (still) can't read directly the binary MFP files. 
+
+However a nice Igor script and menu for Hooke export has been provided by Rolf Schmidt (Concordia University, Canada). You can find the scripts in the mfp_igor_scripts directory in your SVN source distribution.
+
+==Usage==
+Put the scripts in a folder (somewhere convenient and outside of the Igor installation folder), then create a shortcut to that folder in the "Igor Procedures" folder.
+
+On my computer, this folder is located at:
+C:\Program Files\WaveMetrics\Igor Pro Folder\Igor Procedures
+
+The latest export macro comes with its own 'hooke' menu and two menu items:
+  - Export folder
+  - Export waves
+
+The first one lets you choose a folder that contains Igor binary waves and exports all these waves (*killing all open waves first* , so if you have waves you care about, *save them before running the script!*).
+
+The second one exports all currently open waves into the save folder.
+
+Obviously, you can rename the menu entry and/or place it somewhere else by
+editing 'ExportMFP1DMenu.ipf'.
+
+==Troubleshoot==
+  *  Usually it's better if you disable the _flatten_ plot manipulator. Just edit hooke.conf and put 0 in the flatten variable value , or type _set flatten 0_ at startup.
