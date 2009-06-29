@@ -1,6 +1,8 @@
 #summary Support for the Asylum MFP 1D microscope
 #labels Phase-Support
 
+Support for the MFP 1D is quite highly experimental. Testing and bug reporting is much appreciated.
+
 Currently support for the Asylum MFP is _indirect_ : Hooke (still) can't read directly the binary MFP files. 
 
 However a nice Igor script and menu for Hooke export has been provided by Rolf Schmidt (Concordia University, Canada). You can find the scripts in the mfp_igor_scripts directory in your SVN source distribution.
