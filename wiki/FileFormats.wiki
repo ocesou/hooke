@@ -15,9 +15,13 @@ We need full support for most force spectroscopy data files. Please help us:
   * *JPK* (experimental support; needs testing!)
     drivers: jpk.py
 
+  * *MFP 1D* (indirect) (needs testing)
+    drivers: mfp1dexport.py
+    Still _indirect_ support, requires Igor export scripts provided by Rolf Schmidt et al. available in the subversion reporsitory. See Mfp1dSupport for the details.
 
   * Simple *comma-separated values*
     drivers: csv.py
+    Basically little more than a proof of concept, but one can build useful drivers on top of it.
 
 = To do file formats =
 
