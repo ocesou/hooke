@@ -22,6 +22,7 @@
 
 = Compatibility =
   *  FileFormats - file formats supported by Hooke
+  *  Mfp1dSupport - information about the experimental Asylum MFP 1D support
 
 = Development =
 
