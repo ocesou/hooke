@@ -26,4 +26,4 @@ editing 'ExportMFP1DMenu.ipf'.
 The exported text files can now be opened by Hooke with the *mfp1dexport* driver activated.
 
 ==Troubleshoot==
-  *  Usually it's better if you disable the _flatten_ plot manipulator. Just edit hooke.conf and put 0 in the flatten variable value , or type _set flatten 0_ at startup.
+  *  Usually it's better if you disable the _flatten_ plot manipulator. Just edit hooke.conf and put 0 in the flatten variable value , or type `set flatten 0` at startup. For the same reason, use autopeak with the (new) *noflatten* option
