@@ -30,6 +30,16 @@ class pclusterCommands:
         Automatically measures peaks and extracts informations for further clustering
         (c)Paolo Pancaldi, Massimo Sandal 2009
         '''
+        if self.config['hookedir'][0]=='/':
+            slash='/' #a Unix or Unix-like system
+        else:
+            slash='\\'
+        blindw = str(self.convfilt_config['blindwindow'])
+        pclus_dir = "pCluster_blind"+blindw+"_"+time.strftime("%Y%m%d_%H%M")
+        self.my_work_dir = os.getcwd()+slash+pclus_dir+slash
+        self.my_curr_dir = os.path.basename(os.getcwd())
+        os.mkdir(self.my_work_dir)
+        
         #--Custom persistent length
         pl_value=None
         for arg in args.split():
@@ -44,23 +54,23 @@ class pclusterCommands:
         min_npks = self.convfilt_config['minpeaks']
         min_deviation = self.convfilt_config['mindeviation']
         
-        pclust_filename=raw_input('Automeasure filename? ')
-        realclust_filename=raw_input('Coordinates filename? ')
-        peackforce_filename=raw_input('Peacks and Forces filename? ')
+        pclust_filename = "automeasure_"+self.my_curr_dir+"_blind"+blindw+".txt" #raw_input('Automeasure filename? ')
+        realclust_filename = "coordinate_"+self.my_curr_dir+"_blind"+blindw+".txt" #raw_input('Coordinates filename? ')
+        peackforce_filename = "peakforce_"+self.my_curr_dir+"_blind"+blindw+".txt"  #raw_input('Peacks and Forces filename? ')
         
-        f=open(pclust_filename,'w+')
+        f=open(self.my_work_dir+pclust_filename,'w+')
         f.write('Analysis started '+time.asctime()+'\n')
         f.write('----------------------------------------\n')
         f.write('; Contour length (nm)  ;  Persistence length (nm) ;  Max.Force (pN)  ;  Slope (N/m) ;  Sigma contour (nm) ; Sigma persistence (nm)\n')
         f.close()
         
-        f=open(realclust_filename,'w+')
+        f=open(self.my_work_dir+realclust_filename,'w+')
         f.write('Analysis started '+time.asctime()+'\n')
         f.write('----------------------------------------\n')
         f.write('; Peak number ; Mean delta (nm)  ;  Median delta (nm) ;  Mean force (pN)  ;  Median force (pN) ; First peak length (nm) ; Last peak length (nm) ; Max force (pN) ; Min force (pN) ; Max delta (nm) ; Min delta (nm) ; Peaks Diff\n')
         f.close()
         
-        f=open(peackforce_filename,'w+')
+        f=open(self.my_work_dir+peackforce_filename,'w+')
         f.write('Analysis started '+time.asctime()+'\n')
         f.write('----------------------------------------\n')
         f.write('; Peak number  ;  1 peak Length (nm) ; 1 peak Force (pN) ;  2 peak Length (nm) ; 2 peak Force (pN) ;  3 peak Length (nm) ; 3 peak Force (pN) ;  4 peak Length (nm) ; 4 peak Force (pN) ;  5 peak Length (nm) ; 5 peak Force (pN) ;  6 peak Length (nm) ; 6 peak Force (pN) ;  7 peak Length (nm) ; 7 peak Force (pN) ;  8 peak Length (nm) ; 8 peak Force (pN)\n')
@@ -234,7 +244,7 @@ class pclusterCommands:
             write automeasure text file
             '''
             print 'Saving automatic measurement...'
-            f=open(pclust_filename,'a+')
+            f=open(self.my_work_dir+pclust_filename,'a+')
             f.write(item.path+'\n')
             for i in range(len(c_lengths)):
                 f.write(' ; '+str(c_lengths[i])+' ; '+str(p_lengths[i])+' ; '+str(forces[i])+' ; '+str(slopes[i])+' ; '+str(sigma_c_lengths[i])+' ; '+str(sigma_p_lengths[i])+'\n')
@@ -246,7 +256,7 @@ class pclusterCommands:
             write peackforce text file
             '''
             print 'Saving automatic measurement...'
-            f=open(peackforce_filename,'a+')
+            f=open(self.my_work_dir+peackforce_filename,'a+')
             f.write(item.path+'\n')
             peackforce_info = ''
             for i in range(len(c_lengths)):
@@ -301,7 +311,7 @@ class pclusterCommands:
                 '''
                 write clustering coordinates
                 '''
-                f=open(realclust_filename,'a+')
+                f=open(self.my_work_dir+realclust_filename,'a+')
                 f.write(item.path+'\n')
                 f.write(' ; '+str(peak_number)+     # non considerato
                         ' ; '+str(delta_mean)+      # 0
@@ -319,8 +329,10 @@ class pclusterCommands:
                         ' ; '+str(peaks_diff)+      # 12
                         '\n')
                 f.close()
-            else:
-                pass
+                
+        # start PCA
+        self.do_pca(pclus_dir+"/"+realclust_filename)
+        
                 
     def do_pca(self,args):
         '''
@@ -333,7 +345,14 @@ class pclusterCommands:
         '''
         
         # reads the columns of pca
-        conf=open("pca_config.txt")
+        if self.config['hookedir'][0]=='/':
+            slash='/' #a Unix or Unix-like system
+        else:
+            slash='\\'
+        self.my_hooke_dir = self.config['hookedir']+slash
+        #self.my_work_dir = os.getcwd()+slash+"pCluster_"+time.strftime("%Y%m%d_%H%M")+slash
+        #self.my_curr_dir = os.path.basename(os.getcwd())
+        conf=open(self.my_hooke_dir+"pca_config.txt")
         config = conf.readlines()
         conf.close()
         
@@ -359,11 +378,11 @@ class pclusterCommands:
         
         # creo l'array "plot_myCoord" con tutte le coordinate dei plots
         # e l'array plot_paths con tutti i percorsi dei plots
-        nPlotTot = 0
+        nPlotTot = -3 #tolgo le prime 3 righe iniziali del file
         f=open(file_name)
         rows = f.readlines()
         for row in rows:
-            if row[0]=="/":
+            if row[0]!=" " and row[0]!="":
                 nPlotTot = nPlotTot+1
                 plot_path_temp = row
             if row[0]==" " and row.find('nan')==-1 and row.find("-1.#IND")==-1:
@@ -403,48 +422,34 @@ class pclusterCommands:
         pca_X=np.array(self.plot_pcaCoordTr[0],dtype='float')
         pca_Y=np.array(self.plot_pcaCoordTr[1],dtype='float')
         
-        #FIXME
-        #our dataset-specific stuff
-        #This will go away after testing :)
+        '''
+        # Start section of testing with good plots                                  # 4 TESTING!
         Xsyn_1=[]
-        Ysyn_1=[]
-        
+        Ysyn_1=[]        
         Xgb1_1=[]
         Ygb1_1=[]
-        
         Xbad_1=[]
         Ybad_1=[]
-        
-        goodnamefile=open(file_name.replace("coor", "good").replace(".txt", ".log"),'r')
-        #goodnamefile=open('/home/massimo/python/hooke/dataset_clust/roslin_blind50.log','r')
+        goodnamefile=open(file_name.replace("coordinate", "good"),'r')
         goodnames=goodnamefile.readlines()
         nPlotGood = len(goodnames)-2 #tolgo prima e ultima riga
         goodnames=[i.split()[0] for i in goodnames[1:]]
         
-        
         for index in range(len(self.plot_paths)):
-            '''
-            if '3s3' in self.plot_paths[index] and not 'bad' in self.plot_paths[index]:
-                Xsyn_1.append(X[index])
-                Ysyn_1.append(Y[index])
-            elif 'bad' in self.plot_paths[index]:
-                Xbad_1.append(X[index])
-                Ybad_1.append(Y[index])
-            else:
-                Xgb1_1.append(X[index])
-                Ygb1_1.append(Y[index])
-            '''
             if self.plot_paths[index][:-1] in goodnames:
                 Xsyn_1.append(pca_X[index])
                 Ysyn_1.append(pca_Y[index])
             else:
                 Xbad_1.append(pca_X[index])
                 Ybad_1.append(pca_Y[index])
+        # Stop section of testing with good plots                                   # 4 TESTING!
+        '''
         
         # print first plot
         clustplot1=lhc.PlotObject()
-        clustplot1.add_set(Xbad_1,Ybad_1)
-        clustplot1.add_set(Xsyn_1,Ysyn_1)
+        clustplot1.add_set(pca_X,pca_Y)
+        #clustplot1.add_set(Xbad_1,Ybad_1) # 4 TESTING!
+        #clustplot1.add_set(Xsyn_1,Ysyn_1) # 4 TESTING!
         clustplot1.normalize_vectors()
         clustplot1.styles=['scatter', 'scatter','scatter']
         clustplot1.colors=[None,'red','green']
@@ -452,16 +457,28 @@ class pclusterCommands:
         self._send_plot([clustplot1])
         self.clustplot1=clustplot1
         
-        # density estimation
+        # density and filer estimation
+        kernel = sp.stats.kde.gaussian_kde(sp.c_[pca_X,pca_Y].T)
+        tallest = 0
+        for i in range(len(pca_X)):
+            kern_value = kernel.evaluate([pca_X[i],pca_Y[i]])
+            if tallest < kern_value:
+                    tallest = float(kern_value)
+        if float(config[1]) == 0:
+            my_filter = float(tallest / 3.242311147)
+        else:
+            my_filter = float(config[1])
+        '''
+        # section useful only for graphic printing
         xmin = pca_X.min()
         xmax = pca_X.max()
         ymin = pca_Y.min()
         ymax = pca_Y.max()
         mX, mY = sp.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-        kernel = sp.stats.kde.gaussian_kde(sp.c_[pca_X,pca_Y].T)
         Z = sp.rot90(sp.fliplr(sp.reshape(kernel(sp.c_[mX.ravel(), mY.ravel()].T).T, mX.T.shape)))
         axis_X = np.linspace(xmin,xmax,num=100)
         axis_Y = np.linspace(ymin,ymax,num=100)
+        '''
         
         # density filtering:
         # tramite "kernel.evaluate" trovo lo score (altezza) di ogni coordinata e decido se mantenerla o no
@@ -469,12 +486,9 @@ class pclusterCommands:
         filtered_pca_Y = []
         filtered_PcaCoordTr = []
         filtered_PcaCoord = []
-        counter = 0
         for i in range(len(pca_X)):
             kern_value = kernel.evaluate([pca_X[i],pca_Y[i]])
-            if kern_value > float(config[1]):
-                counter = counter +1
-                #print counter, kern_value, pca_X[i], pca_Y[i]
+            if kern_value > my_filter:
                 filtered_pca_X.append(pca_X[i])
                 filtered_pca_Y.append(pca_Y[i])
         filtered_PcaCoordTr.append(filtered_pca_X)
@@ -486,8 +500,11 @@ class pclusterCommands:
             if self.plot_pcaCoord[index] in filtered_PcaCoord:
                 self.plot_FiltOrigCoord.append(self.plot_myCoord[index])
                 self.plot_FiltPaths.append(self.plot_paths[index])
-                
-        # creo l'array con alcune colonne e pure moltiplicate
+        
+        '''
+        # START PCA#2: USELESS!!!
+        
+        # creo l array con alcune colonne e pure moltiplicate
         temp_coord = []
         for row in self.plot_FiltOrigCoord:
             res=[]
@@ -513,7 +530,7 @@ class pclusterCommands:
         pca_X2=np.array(self.plot_NewPcaCoordTr[0],dtype='float')
         pca_Y2=np.array(self.plot_NewPcaCoordTr[1],dtype='float')
         
-        # creo i due array blu e rossi
+        # Start section of testing with good plots                              # 4 TESTING!
         Xsyn_2=[]
         Ysyn_2=[]
         Xbad_2=[]
@@ -528,8 +545,20 @@ class pclusterCommands:
         
         # print second plot
         clustplot2=lhc.PlotObject()
-        clustplot2.add_set(Xbad_2,Ybad_2)
-        clustplot2.add_set(Xsyn_2,Ysyn_2)
+        #clustplot2.add_set(pca_X2,pca_Y2)
+        clustplot2.add_set(Xbad_2,Ybad_2)                                       # 4 TESTING!
+        clustplot2.add_set(Xsyn_2,Ysyn_2)                                       # 4 TESTING!
+        clustplot2.normalize_vectors()
+        clustplot2.styles=['scatter', 'scatter','scatter']
+        clustplot2.colors=[None,'red','green']
+        clustplot2.destination=1
+        self._send_plot([clustplot2])
+        self.clustplot2=clustplot2
+        '''
+        
+        # PRINT density plot
+        clustplot2=lhc.PlotObject()
+        clustplot2.add_set(filtered_pca_X,filtered_pca_Y)
         clustplot2.normalize_vectors()
         clustplot2.styles=['scatter', 'scatter','scatter']
         clustplot2.colors=[None,'red','green']
@@ -539,42 +568,47 @@ class pclusterCommands:
         
         # printing results
         config_pca1 = config[0].replace("*", "x").rstrip("\n")
-        config_limit = config[1].rstrip("\n")
         config_pca2 = config[2].replace("*", "x").rstrip("\n")
         print ""
         print "- START: "+file_name
         print "Curve totali: ", nPlotTot
-        print "Curve totali good: ", nPlotGood
+        #print "Curve totali good: ", nPlotGood                                  # 4 TESTING!
         print "- FILTRO 1: 0-500 e NaN"
-        print "Curve rimaste per la 1'PCA: ", len(self.plot_origCoord)
-        print 'Curve good rimaste: ', len(Xsyn_1)
-        #print "plot_pcaCoord ", len(self.plot_pcaCoord)
-        #print "plot_pcaCoordTr[0] ", len(self.plot_pcaCoordTr[0])
-        #print "filtered_PcaCoordTr[0] ", len(filtered_PcaCoordTr[0])
-        print "- FILTRO 2: 1'PCA:"+config_pca1+" e DENSITA:"+config_limit
-        print "Curve rimaste per la 2'PCA: ", len(self.plot_FiltOrigCoord)
-        print 'Curve good rimaste: ', len(Xsyn_2)
-        print "- FILTRO 3: 2'PCA:"+config_pca2
+        print "Curve totali rimaste: ", len(self.plot_origCoord)
+        #print 'Curve good rimaste: ', len(Xsyn_1)                               # 4 TESTING!
+        print "- FILTRO 2: PCA:"+config_pca1+" e DENSITA:"+str(my_filter)
+        print "Curve totali rimaste: ", len(self.plot_FiltOrigCoord)
+        #print 'Curve good rimaste: ', len(Xsyn_2)                               # 4 TESTING!
+        print "Piu alta: ", tallest
+        #print "- FILTRO 3: 2'PCA:"+config_pca2
         print ""
         
-        # -- exporting coordinates and plot! --
+        # -- exporting coordinates and plot of PCA in debug mode! --
+        if config[3].find("true")!=-1:
+            #1' PCA: save plot and build coordinate s file
+            self.do_export(file_name.replace("coordinate_", "debug_pca1graph_").replace('.txt','_'+config_pca1) + " 0")
+            f = open(file_name.replace("coordinate_", "debug_pca1coor_").replace('.txt','_'+config_pca1+'.txt'),'w')
+            for i in range(len(pca_X)):
+                f.write (str(i) + "\t" + str(pca_X[i]) + "\t" + str(pca_Y[i]) + "\n")
+            f.close()
+            #2' PCA: save plot and build coordinate s file
+            #self.do_export(file_name.replace("coordinate_", "debug_pca2graph_").replace('.txt','_'+config_pca2) + " 1")
+            #f = open(file_name.replace("coordinate_", "debug_pca2coor_").replace('.txt','_'+config_pca2+'.txt'),'w')
+            #for i in range(len(pca_X2)):
+            #    f.write (str(i) + "\t" + str(pca_X2[i]) + "\t" + str(pca_Y2[i]) + "\n")
+            #f.close()
+            #DENSITY: save plot
+            self.do_export(file_name.replace("coordinate_", "debug_densitygraph_").replace('.txt','_'+config_pca1+'_'+str(my_filter).replace(".",",")) + " 1")
+            f = open(file_name.replace("coordinate_", "debug_densitycoor_").replace('.txt','_'+config_pca1+'_'+str(my_filter).replace(".",",")+'.txt'),'w')
+            for i in range(len(filtered_pca_X)):
+                f.write (str(i) + "\t" + str(filtered_pca_X[i]) + "\t" + str(filtered_pca_Y[i]) + "\n")
+            f.close()
         
-        #1' PCA: save plot and build coordinate s file
-        mytime = time.strftime("%Y%m%d_%H%M_")
-        myDS = file_name.replace(".txt", "_")
-        
-        self.do_export("output/" + myDS + config_pca1 + "_plot 0")
-        f = open('output/' + myDS + config_pca1 + '_coord.txt','w')
-        for i in range(len(pca_X)):
-            f.write (str(i) + "\t" + str(pca_X[i]) + "\t" + str(pca_Y[i]) + "\n")
+        # pCLUSTER SAVING!!!
+        f = open(file_name.replace("coordinate_", "pCluster_").replace('.txt','_'+config_pca1+'_'+str(my_filter).replace(".",",")+'.txt'),'w')
+        for i in range(len(self.plot_FiltPaths)):
+            f.write (str(self.plot_FiltPaths[i]))
         f.close()
-        #2' PCA: save plot and build coordinate s file
-        self.do_export("output/" + myDS + config_pca2 + "_plot 1")
-        f = open('output/' + myDS + config_pca2 + '_coord.txt','w')
-        for i in range(len(pca_X2)):
-            f.write (str(i) + "\t" + str(pca_X2[i]) + "\t" + str(pca_Y2[i]) + "\n")
-        f.close()
-        
             
     def do_multipca(self,args):
         '''
