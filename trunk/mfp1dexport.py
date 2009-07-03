@@ -35,6 +35,7 @@ class mfp1dexportDriver(lhc.Driver):
         self.filedata.close()
         
     def is_me(self):
+        #FIXME: We want a more reasonable header recognition
         if self.raw_header[0][0:4]=='Wave':
             return True
         else:
