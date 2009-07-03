@@ -632,8 +632,11 @@ If you have a multiple plot, the optional plot to export argument tells Hooke wh
         #FIXME: the bottom plot doesn't have the title
         
         dest=0
-        if args=='':
-            name=linp.safeinput('Filename?',[self.current.path+'.png'])
+        
+        if len(args)==0:
+            #FIXME: We have to go into the libinput stuff and fix it, for now here's a dummy replacement...
+            #name=linp.safeinput('Filename?',[self.current.path+'.png'])
+            name=raw_input('Filename? ')
         else:
             args=args.split()
             name=args[0]
