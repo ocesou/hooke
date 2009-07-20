@@ -1,11 +1,11 @@
 #summary Support for the Asylum MFP 1D microscope
 #labels Phase-Support
 
-Support for the MFP 1D is quite highly experimental. Testing and bug reporting is much appreciated.
+Support for the MFP 1D is highly experimental. Testing and bug reporting is much appreciated.
 
-Currently support for the Asylum MFP is _indirect_ : Hooke (still) can't read directly the binary MFP files. 
+Currently, support for the Asylum MFP is _indirect_ : Hooke (still) can't read the binary MFP files directly. 
 
-However a nice Igor script and menu for Hooke export has been provided by Rolf Schmidt (Concordia University, Canada). You can find the scripts in the mfp_igor_scripts directory in your SVN source distribution.
+However, a nice Igor script and menu for Hooke export has been provided by Rolf Schmidt (Concordia University, Canada). You can find the scripts in the mfp_igor_scripts directory in your SVN source distribution.
 
 ==Exporting==
 
@@ -17,8 +17,8 @@ On my computer, this folder is located at:
 C:\Program Files\WaveMetrics\Igor Pro Folder\Igor Procedures
 
 The latest export macro comes with its own 'hooke' menu and two menu items:
-  - Export folder
-  - Export waves
+  * Export folder
+  * Export waves
 
 The first one lets you choose a folder that contains Igor binary waves and exports all these waves (*killing all open waves first* , so if you have waves you care about, *save them before running the script!*).
 
