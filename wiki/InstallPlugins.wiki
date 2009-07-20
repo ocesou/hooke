@@ -2,7 +2,7 @@
 #labels Phase-Support,Phase-Deploy
 
 Just copy the plugin ﬁle to the Hooke directory and edit the plugin section in
-your hooke.conf: you will ﬁnd something like that:
+your hooke.conf. It looks something like this:
 
 {{{
 <plugins>
@@ -12,7 +12,7 @@ your hooke.conf: you will ﬁnd something like that:
 </plugins>
 }}}
 
-Add a tag with your plugin ﬁlename, in the same fashion:
+Add a tag with your plugin ﬁlename in the same fashion:
 
 {{{
 <plugins>
@@ -24,5 +24,5 @@ Add a tag with your plugin ﬁlename, in the same fashion:
 }}}
 
    Restart Hooke. At startup you should see that your plugin has been loaded
-and, by typing ’help’, you’ll ﬁnd ’mycommand’ among the others. The same
-syntax hold for drivers.
+and by typing ’help’, you’ll ﬁnd ’mycommand’ among the others. The same
+syntax holds for drivers.
