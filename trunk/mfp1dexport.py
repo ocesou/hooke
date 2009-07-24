@@ -17,17 +17,9 @@ class mfp1dexportDriver(lhc.Driver):
         
         self.filename=filename
         self.filedata=open(filename,'rU')
-        
-        lines=list(self.filedata.readlines())
-        self.raw_header=lines[0:38]
-        self.raw_columns=lines[39:]
+        self.lines=list(self.filedata.readlines())
         self.filedata.close()
         
-        self.data=self._read_columns()
-        
-        self.k=float(self.raw_header[22][16:])
-        
-        #print self.k
         self.filetype='mfp1dexport'
         self.experiment='smfs'
         
@@ -35,6 +27,12 @@ class mfp1dexportDriver(lhc.Driver):
         self.filedata.close()
         
     def is_me(self):
+        try:
+            self.raw_header=self.lines[0:38]
+        except:
+            #Not enough lines for a header; not a good file
+            return False
+        
         #FIXME: We want a more reasonable header recognition
         if self.raw_header[0][0:4]=='Wave':
             return True
@@ -42,6 +40,11 @@ class mfp1dexportDriver(lhc.Driver):
             return False
         
     def _read_columns(self):
+        
+        self.raw_columns=self.lines[39:]
+        self.k=float(self.raw_header[23][8:])
+        
+        
         xext=[]
         xret=[]
         yext=[]
@@ -56,14 +59,15 @@ class mfp1dexportDriver(lhc.Driver):
         return [[xext,yext],[xret,yret]]
         
     def deflection(self):
+        self.data=self._read_columns()
         return self.data[0][1],self.data[1][1]
         
         
     def default_plots(self):   
         main_plot=lhc.PlotObject()
-        
-        yextforce=[i*self.k for i in self.data[0][1]]
-        yretforce=[i*self.k for i in self.data[1][1]]
+        defl_ext,defl_ret=self.deflection()
+        yextforce=[i*self.k for i in defl_ext]
+        yretforce=[i*self.k for i in defl_ret]
         main_plot.add_set(self.data[0][0],yextforce)
         main_plot.add_set(self.data[1][0],yretforce)
         main_plot.normalize_vectors()
