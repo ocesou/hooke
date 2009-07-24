@@ -42,7 +42,17 @@ class mfp1dexportDriver(lhc.Driver):
     def _read_columns(self):
         
         self.raw_columns=self.lines[39:]
-        self.k=float(self.raw_header[23][8:])
+        
+        kline=None
+        for line in self.lines:
+            if line[:7]=='SpringC':
+                kline=line
+                break
+        
+        kline=kline.split(':')
+        
+        #self.k=float(self.raw_header[23][8:])
+        self.k=float(kline[1])
         
         
         xext=[]
