@@ -603,13 +603,27 @@ class pclusterCommands:
             for i in range(len(filtered_pca_X)):
                 f.write (str(i) + "\t" + str(filtered_pca_X[i]) + "\t" + str(filtered_pca_Y[i]) + "\n")
             f.close()
+            #ALL GOOD COORDINATES (without NaN and 0<x<500)
+            f = open(file_name.replace("coordinate_", "debug_allgoodcoor_"),'w')
+            for i in range(len(self.plot_myCoord)):
+                for cel in self.plot_myCoord[i]:
+                    f.write (" ; " + str(cel))
+                f.write ("\n")
+            f.close()
         
         # pCLUSTER SAVING!!!
-        f = open(file_name.replace("coordinate_", "pCluster_").replace('.txt','_'+config_pca1+'_'+str(my_filter).replace(".",",")+'.txt'),'w')
+        import shutil
+        pcl_name = file_name.replace("coordinate_", "goodplots_").replace('.txt','_'+config_pca1+'_'+str(my_filter).replace(".",","))
+        if os.path.exists(pcl_name+slash): shutil.rmtree(pcl_name)
+        os.mkdir(pcl_name+slash)
+        f = open(pcl_name+'.txt','w')
         for i in range(len(self.plot_FiltPaths)):
-            f.write (str(self.plot_FiltPaths[i]))
+            myfile = str(self.plot_FiltPaths[i]).rstrip("\n")
+            f.write (myfile+"\n")
+            shutil.copy2(myfile, pcl_name)
         f.close()
-            
+        
+        
     def do_multipca(self,args):
         '''
         MULTIPCA -> "multipca gaeta_coor_blind50.txt 3"
