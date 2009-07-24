@@ -691,6 +691,9 @@ Syntax: txt [filename] {plot to export}
         text='\n'.join(rows)
         
         txtfile=open(filename,'w+')
+        #Save units of measure in header
+        txtfile.write('X:'+self.plots[whichplot].units[0]+'\n')
+        txtfile.write('Y:'+self.plots[whichplot].units[1]+'\n')
         txtfile.write(text)
         txtfile.close()
         
