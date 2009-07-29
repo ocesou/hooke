@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 0.3
+#pragma version = 0.4
 
 //
 // ExportMFP1D.ipf - A procedure to export force curves from MFP1D to 'hooke'
@@ -12,6 +12,8 @@
 //
 
 // History
+// 2009 07 24: v0.4
+// the wave note is now correctly and fully exported in Igor 4
 // 2009 06 29: v0.3
 // split functionality into ExportMFP1DFolder and ExportMFP1DWaves
 // ExportMFP1DFolder: export individual Igor binary waves file from a folder
@@ -65,6 +67,7 @@ Function ExportMFP1DWaves()
 	String sFileName2
 	String sLine
 	String sList
+	String sNote
 	String sWaveCombined
 	String sWaveDeflection
 	String sWaveLVDT
@@ -130,7 +133,19 @@ Function ExportMFP1DWaves()
 
 		// add the note to the file
 		// the notes are identical for LVDT and Deflection
-		fprintf iRefNum, note(wLVDT)
+// the following only works in Igor 5 and up
+//		fprintf iRefNum, note(wDeflection)
+// END: the following only works in Igor 5 and up
+		sNote=note(wLVDT)
+		// in order to get the correct number of lines in the note, we have to specify the EOF as \r\n
+		for(iCount=0; iCount<ItemsInList(sNote, "\r\n");iCount+=1)
+			// print every line to the output file
+			fprintf iRefNum, StringFromList(iCount, sNote, "\r\n")
+			// add a CR/LF for every but the last line
+			if(iCount<ItemsInList(sNote, "\r\n")-1)
+				fprintf iRefNum, "\r\n"
+			endif
+		endfor
 
 		// separate the approach from the retraction
 		// by simply taking the first half of the points to be the approach
