@@ -85,6 +85,7 @@ Function ExportMFP1DWaves()
 	
 	// get a list of all LVDT waves (could be deflection as well, they always come in a pair)
 	sList=WaveList("*LVDT*", ";", "")
+	
 	// iterate through all the LVDT waves
 	for(iCount=0; iCount<ItemsInList(sList); iCount+=1)
 		// create the wave names as string
@@ -98,7 +99,7 @@ Function ExportMFP1DWaves()
 		// treat the filename as a key-value list with '.' as a separator
 		// use the first entry (ie 0) as the filename without extension
 		sWaveLVDT=StringFromList(0, StringFromList(iCount, sList), ".")
-
+		
 		// treat the filename as a key-value list with 'LVDT' as a separator
 		// use the first entry (ie 0) as the first part of the filename
 		sFileName1=StringFromList(0, sWaveLVDT, "LVDT")
@@ -111,7 +112,9 @@ Function ExportMFP1DWaves()
 		sFileName2=StringByKey("VD", sFileName2, "T")
 		// then we create the wave names as follows:
 		sWaveDeflection=sFileName1+"deflection"+sFileName2
+		
 		sWaveCombined=sFileName1+"_"+sFileName2
+		
 // END: the following works in Igor 4 and up
 
 		// create the waves we need
@@ -138,11 +141,11 @@ Function ExportMFP1DWaves()
 // END: the following only works in Igor 5 and up
 		sNote=note(wLVDT)
 		// in order to get the correct number of lines in the note, we have to specify the EOF as \r\n
-		for(iCount=0; iCount<ItemsInList(sNote, "\r\n");iCount+=1)
+		for(iLine=0; iLine<ItemsInList(sNote, "\r\n");iLine+=1)
 			// print every line to the output file
-			fprintf iRefNum, StringFromList(iCount, sNote, "\r\n")
+			fprintf iRefNum, StringFromList(iLine, sNote, "\r\n")
 			// add a CR/LF for every but the last line
-			if(iCount<ItemsInList(sNote, "\r\n")-1)
+			if(iLine<ItemsInList(sNote, "\r\n")-1)
 				fprintf iRefNum, "\r\n"
 			endif
 		endfor
