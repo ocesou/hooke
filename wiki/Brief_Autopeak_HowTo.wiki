@@ -16,6 +16,17 @@ autopeak [noauto] [reclick] [rebase] [usepoints] [pl=value] [t=value]
 
 First of all, *autopeak* tries to recognize the peaks present in a curve, using the same convolution algorithm that can also be invoked with the *peaks* command. The convolution algorithm can be customized with the *setconv* command, and these settings will also be used by *autopeak*. It is often useful to try some different convolution settings using the *peaks* command, trying to find a setting that is a bit on the generous side (i.e. it finds peaks in excess to the ‘true’ ones, and not in defect. The reason for this will be explained below).
 
+The relevant settings are here explained:
+
+_mindeviation_ : Number of standard deviations above the convolution noise. The higher the parameter, the less peaks it finds ; the lower the parameter, the more peaks it finds.
+
+_seedouble_ : Minimum distance to count two peaks as separate peaks in nm; if two peaks occur as less than _seedouble_ nanometers, they are counted as a single peak.
+
+_blindwindow_ : Zone after the contact point that we ignore, in nm (to avoid measuring aspecific adhesion stuff).
+
+_convolution_ : The actual convolution vector. Do not touch unless you REALLY know what you're doing.
+
+
 ==(2) Determining the Baseline Value==
 
 *autopeak* needs a zero force reference in order to measure the rupture forces of the peaks and to estimate a contact point for the curve. There are several possible ways to do this, and you can choose which by adding optional arguments to the *autopeak* command, or changing global variables with the *set* command.
