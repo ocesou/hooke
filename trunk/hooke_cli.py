@@ -305,7 +305,8 @@ Syntax: genlist [input files]
         self.current_list=[]
         for item in list_files:
             try:
-                self.current_list.append(lhc.HookeCurve(os.path.abspath(item))) 
+                if os.path.isfile(item):
+                    self.current_list.append(lhc.HookeCurve(os.path.abspath(item))) 
             except:
                 pass
             
