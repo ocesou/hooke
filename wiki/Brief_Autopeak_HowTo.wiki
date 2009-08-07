@@ -2,7 +2,17 @@
 
 The AUTOPEAK command can speed up the quantitative analysis of a given curve considerably. When invoked, AUTOPEAK performs automatically a fixed sequence of measurements on the current curve and outputs the relevant parameters. When no custom parameters are utilized, the sequence of measurement steps looks like this:
 
-*(1) Find peak positions, (2) Determine the baseline value, (3) Find contact point, (4) Perform WLC and linear fits on the peaks found previously, (5) Ask user acceptance of the performed fits, (6) Output fitted values for each peak (rupture force, contour length, persistence length, linear slope at rupture, errors of the fits)*
+*(1) Find peak positions*
+
+*(2) Determine the baseline value*
+
+*(3) Find contact point*
+
+*(4) Perform WLC and linear fits on the peaks found previously*
+
+*(5) Ask user acceptance of the performed fits*
+
+*(6) Output fitted values for each peak (rupture force, contour length, persistence length, linear slope at rupture, errors of the fits)*
 
 Each step is customizable with several variables and is described in detail below. The general syntax of the AUTOPEAK command is as follows:
 
@@ -14,41 +24,40 @@ autopeak [noauto] [reclick] [rebase] [usepoints] [pl=value] [t=value]
 
 ==(1) Finding Peaks==
 
-First of all, *autopeak* tries to recognize the peaks present in a curve, using the same convolution algorithm that can also be invoked with the *peaks* command. The convolution algorithm can be customized with the *setconv* command, and these settings will also be used by *autopeak*. It is often useful to try some different convolution settings using the *peaks* command, trying to find a setting that is a bit on the generous side (i.e. it finds peaks in excess to the ‘true’ ones, and not in defect. The reason for this will be explained below).
+First of all, *autopeak* tries to recognize the peaks present in a curve, using the same convolution algorithm that can also be invoked with the *peaks* command. The convolution algorithm can be customized with the *setconv* command, and these settings will also be used by *autopeak*. It is often useful to try different convolution settings using the *peaks* command, trying to find a setting that is a bit on the generous side (i.e. it finds peaks in excess to the ‘true’ ones, see below).
 
-The relevant settings are here explained:
+The relevant settings are:
 
-_mindeviation_ : Number of standard deviations above the convolution noise. The higher the parameter, the less peaks it finds ; the lower the parameter, the more peaks it finds.
+_mindeviation_ : Number of standard deviations above the convolution noise. The higher the parameter, the less peaks are found; the lower the parameter, the more peaks are found.
 
-_seedouble_ : Minimum distance to count two peaks as separate peaks in nm; if two peaks occur as less than _seedouble_ nanometers, they are counted as a single peak.
+_seedouble_ : Minimum distance to count two peaks as separate peaks in nm. If two peaks occur at less than _seedouble_ nanometers, they are counted as a single peak.
 
-_blindwindow_ : Zone after the contact point that we ignore, in nm (to avoid measuring aspecific adhesion stuff).
+_blindwindow_ : Zone after the contact point that we ignore, in nm (to avoid measuring non-specific adhesion).
 
-_convolution_ : The actual convolution vector. Do not touch unless you REALLY know what you're doing.
+_convolution_ : The actual convolution vector. Do not touch this unless you REALLY know what you're doing.
 
 
 ==(2) Determining the Baseline Value==
 
-*autopeak* needs a zero force reference in order to measure the rupture forces of the peaks and to estimate a contact point for the curve. There are several possible ways to do this, and you can choose which by adding optional arguments to the *autopeak* command, or changing global variables with the *set* command.
+*autopeak* needs a zero force reference in order to measure the rupture forces of the peaks and to estimate a contact point for the curve. There are several possible ways to do this, and you can choose a certain way by using optional arguments with the *autopeak* command, or by changing global variables with the *set* command.
 
-If no optional argument is given to *autopeak*, the baseline will be estimated by looking at a portion of the curve that is further away from the surface than the position of the last peak found in the previous step (see Finding Peaks above). Once the peak position is found, two numbers are needed to identify the region used to estimate the baseline value, namely the distance between the last peak and the start of this region (stored in the AUTO_RIGHT_BASELINE variable, in nanometers) and the width of the region (stored in the AUTO_LEFT_BASELINE variable, also in nanometers). Of course both variables can be customized with the *set* command. The mean value of the force in the specified region is taken as the zero force baseline reference.
+If no optional argument is given to *autopeak*, the baseline will be estimated by looking at a portion of the curve that is further away from the surface than the position of the last peak found in the previous step (see Finding Peaks above). Once the peak position is found, two numbers are needed to identify the region used to estimate the baseline value: the distance between the last peak and the start of this region (stored in the AUTO_RIGHT_BASELINE variable, in nanometers) and the width of the region (stored in the AUTO_LEFT_BASELINE variable, also in nanometers). Both variables can be customized with the *set* command. The mean value of the force in the specified region is taken as the zero force baseline reference.
 
-The completely automated method just described above is the default option, but it’s also possible to use a semi-automated and a fully manual method for calculating baseline. This can be chosen by setting the BASELINE_CLICKS variable with the *set* command. When BASELINE_CLICKS is 0 (default value), baseline estimation requires no manual clicks and proceeds exactly as described above. BASELINE_CLICKS can also be set to either 1 or 2. If BASELINE_CLICKS is set to 1, Hooke will ask the user to click once on the curve, and this point replaces the AUTO_RIGHT_BASELINE value (the width of the region will still be defined by AUTO_LEFT_BASELINE). If instead BASELINE_CLICKS is set to 2, both the boundaries of the region will need to be selected by mouse clicks.
+The completely automated method just described above is the default option. It is also possible to use a semi-automated and a fully manual method for calculating the baseline. These modes can be selected by setting the BASELINE_CLICKS variable with the *set* command. When BASELINE_CLICKS is 0 (default value), baseline estimation requires no manual clicks and proceeds exactly as described above. BASELINE_CLICKS can also be set to either 1 or 2. If BASELINE_CLICKS is set to 1, Hooke will ask the user to click on the curve once, and this point replaces the AUTO_RIGHT_BASELINE value (the width of the region will still be defined by AUTO_LEFT_BASELINE). If instead BASELINE_CLICKS is set to 2, both boundaries of the region will need to be selected by mouse clicks.
 
-The calculated baseline will be used for all the successive measurements performed on the current curve. However, if the optional argument _rebase_ is added to the AUTOPEAK command, the calculation will be performed anew, according to the current relevant settings (i.e. the variables mentioned above).
+The calculated baseline will be used for all subsequent measurements performed on the current curve. However, if the optional argument _rebase_ is added to the AUTOPEAK command, the calculation will be performed anew, according to the current relevant settings (i.e. the variables mentioned above).
 
 Finally, peaks are automatically excluded from the measurement if their persistence length falls out of a certain range. The range is defined by the AUTO_MIN_P and AUTO_MAX_P variables, in nanometers. If in some curve, the *peaks* command finds a peak that *autopeak* does not find, check with the *wlc* command if the persistence length falls out of the range.
 
 ==(3) Finding Contact Point==
 
+After having determined the baseline value, *autopeak* estimates a plausible contact point by finding the intersection point of two segments: the horizontal baseline segment (y=baseline value) and a linear fit of the near-vertical hookean contact region. Again, this completely automatic estimation can be overridden by using optional arguments with the *autopeak* command. If the NOAUTO argument is used, the user will be asked to specify the contact point manually (with a single mouse click).
 
-After having determined the baseline value, *autopeak* estimates a plausible contact point by finding the intersection point of two segments: the horizontal baseline segment (y=baseline value) and a linear fit of the near-vertical hookean contact region. Again, this completely automatic estimation can be overridden by adding optional arguments to the *autopeak* command. If the NOAUTO argument is added, the user will be asked to specify contact point manually (with a single mouse click).
-
-In either case (automated or manual contact point determination), the found contact point will stand for the successive measurements performed on the current curve. However, if the optional argument _reclick_ is added to the AUTOPEAK command, the user will be asked to specify contact point anew, the latter contact point replacing the former.
+In either case (automated or manual contact point determination), the found contact point will be used for the subsequent measurements performed on the current curve. However, if the optional argument _reclick_ is added to the AUTOPEAK command, the user will be asked to specify the contact point anew, the latter contact point replacing the former.
 
 ==(4) Performing fits on the Peaks==
 
-WLC functions originating from the contact point will be fitted on each peak previously spotted by *autopeak* in this curve (during step 1 above). A region will be defined for each peak, and the WLC will be fitted only taking into account the experimental point comprised in this region. If no custom arguments are added, the region has a fixed width, and the outmost point of the region relative to contact point (i.e. “leftmost” on screen) is the peak itself.The width of the region is stored in the two variables AUTO_FIT_NM and AUTO_FIT_POINTS, which can me modified with the *set* command. The former specifies the width of the fit region in nanometers, the second in absolute number of points. The addition of the optional argument USEPOINTS to the *autopeak* command will toggle which of the two variables will be used (unsurprisingly, AUTO_FIT_POINTS will be used only when the USEPOINTS argument is used).
+WLC functions originating from the contact point will be fitted on each peak previously spotted by *autopeak* in this curve (during step 1 above). A region will be defined for each peak, and the WLC will be fitted only taking into account the experimental points comprised in this region. If no custom arguments are added, the region has a fixed width, and the outmost point of the region relative to the contact point (i.e. “leftmost” on the screen) is the peak itself. The width of the region is stored in the two variables AUTO_FIT_NM and AUTO_FIT_POINTS, which can be modified with the *set* command. The former specifies the width of the fit region in nanometers, the second in absolute number of points. The addition of the optional argument USEPOINTS to the *autopeak* command will toggle which of the two variables will be used (unsurprisingly, AUTO_FIT_POINTS will be used only when the USEPOINTS argument is used).
 
 The WLC equations used for the fit itself have two free parameters, namely contour length and persistence length of the pulled object. If no optional arguments are given, both parameters are optimized simultaneously. Alternatively, the optional argument _pl=X_ can be used, where X is the persistence length (in nanometers) that will be used for the fit. In this latter case, the fit will use only one variable.
 
@@ -58,10 +67,10 @@ A simple linear fit will also be performed on the peaks, broadly following the s
 
 ==(5) Ask User Acceptance of the Performed Fits==
 
-The WLC plots will be then superimposed to the curve to allow the user a visual qualitative estimate of the individual fits. Each successive peak will be numbered progressively from 0 onwards, 0 being the peak closest to contact point. A prompt will ask the user which of the WLC fits should be discarded:
+The WLC plots will then be superimposed to the curve to allow the user a visual qualitative estimate of the individual fits. Each successive peak will be numbered progressively from 0 onwards, 0 being the peak closest to contact point. A prompt will ask the user which of the WLC fits should be discarded:
 
 {{{
-Peaks to ignore (0,1...n from contact point,return to take all)
+Peaks to ignore (0,1...n from contact point, return to take all)
 N to discard measurement
 }}}
 
@@ -69,7 +78,7 @@ If N is entered at the prompt, all the current measurements will be discarded an
 
 ==(6) Output Fitted Values for each Peak ==
 
-Finally, all the values found in the analysis will be outputted both to screen, and an user-specified file. When you first issue the *autopeak* command during a Hooke session, it will ask for a filename. If you are giving the filename of an existing file, *autopeak* will resume it and append measurements to it. If you are giving a new filename, it will create the file and append to it until you close the current session.
+Finally, all the values found in the analysis will be outputted both to the screen, and a user-specified file. When you first issue the *autopeak* command during a Hooke session, it will ask for a filename. If you are giving the filename of an existing file, *autopeak* will resume it and append measurements to it. If you are giving a new filename, it will create the file and append to it until you close the current session.
 
 This is an example file outputted by *autopeak*. The analysis was performed with fixed persistence length (_pl=0.35_). 
 
