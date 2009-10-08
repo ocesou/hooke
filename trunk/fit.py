@@ -326,7 +326,7 @@ class fitCommands:
         finalength=len(xret)
         while monster:
             monchunk=scipy.array(ydiff[monlength:finalength])
-            if abs(scipy.stats.std(monchunk)) < 2e-10:
+            if abs(np.std(monchunk)) < 2e-10:
                 monster=False
             else: #move away from the monster
                 monlength-=int(len(xret)/50)
@@ -350,7 +350,7 @@ class fitCommands:
                 ok=True  
                   
         
-        ymean=scipy.mean(ychunk) #baseline
+        ymean=np.mean(ychunk) #baseline
     
         index=0
         point = ymean+1
