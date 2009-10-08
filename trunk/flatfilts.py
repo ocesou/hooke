@@ -227,7 +227,8 @@ class flatfiltsCommands:
         try:
             abs_devs=float(args)
         except:
-            pass
+            print 'Wrong argument, using config value'
+            abs_devs=float(self.convfilt_config['mindeviation'])
                         
         defplots=self.current.curve.default_plots()[0] #we need the raw, uncorrected plots
         
