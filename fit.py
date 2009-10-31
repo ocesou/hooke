@@ -317,8 +317,8 @@ class fitCommands:
         xfit_chunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xfit]
         
         #xfit_chunk_corr_up=scipy.array(xfit_chunk_corr_up)
-               
-        
+        deltay=yfit_down[0]-yvector[clicked_points[0].index]
+        yfit_corr_down=[y-deltay for y in yfit_down]
         
         #print yfit_chunk_corr_up
         #print xfit_corr_down
