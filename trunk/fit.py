@@ -170,7 +170,7 @@ class fitCommands:
     def fjc_fit(self,clicked_points,xvector,yvector, pl_value, T=293, return_errors=False):
         '''
         Freely-jointed chain function
-        ref: C.Ray and B.B. Akhremitchev;h ttp://www.chem.duke.edu/~boris/research/force_spectroscopy/fit_efjc.pdf
+        ref: C.Ray and B.B. Akhremitchev; http://www.chem.duke.edu/~boris/research/force_spectroscopy/fit_efjc.pdf
         '''
     
         '''clicked_points[0] = contact point (calculated or hand-clicked)
@@ -304,7 +304,9 @@ class fitCommands:
         
         #yfit=wlc_eval(xfit_chunk_corr_up, out.beta, pl_value,T)
         ychunk=yvector[clicked_points[0].index:thule_index]
-        yfit_down=[-y for y in ychunk]
+        #print clicked_points[0].graph_coords[1]
+        y_evalchunk=np.linspace(min(ychunk),max(ychunk),100)
+        yfit_down=[-y for y in y_evalchunk]
         yfit_corr_down=[y+clicked_points[0].graph_coords[1] for y in yfit_down]
         yfit_corr_down=scipy.array(yfit_corr_down)
         
@@ -313,6 +315,7 @@ class fitCommands:
         xfit=list(xfit)
         xfit.reverse()
         xfit_chunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xfit]
+        
         #xfit_chunk_corr_up=scipy.array(xfit_chunk_corr_up)
                
         
