@@ -167,7 +167,165 @@ class fitCommands:
         else:
             return fit_out, yfit_corr_down, xfit_chunk, None
     
-                
+    def fjc_fit(self,clicked_points,xvector,yvector, pl_value, T=293, return_errors=False):
+        '''
+        Freely-jointed chain function
+        ref: C.Ray and B.B. Akhremitchev;h ttp://www.chem.duke.edu/~boris/research/force_spectroscopy/fit_efjc.pdf
+        '''
+    
+        '''clicked_points[0] = contact point (calculated or hand-clicked)
+        clicked_points[1] and [2] are edges of chunk'''
+    
+        #STEP 1: Prepare the vectors to apply the fit.
+        if pl_value is not None:
+            pl_value=pl_value/(10**9)
+        
+        #indexes of the selected chunk
+        first_index=min(clicked_points[1].index, clicked_points[2].index)
+        last_index=max(clicked_points[1].index, clicked_points[2].index)
+               
+        #getting the chunk and reverting it
+        xchunk,ychunk=xvector[first_index:last_index],yvector[first_index:last_index]
+        xchunk.reverse()
+        ychunk.reverse()    
+        #put contact point at zero and flip around the contact point (the fit wants a positive growth for extension and force)
+        xchunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xchunk]
+        ychunk_corr_up=[-(y-clicked_points[0].graph_coords[1]) for y in ychunk]
+        
+        #make them arrays
+        xchunk_corr_up=scipy.array(xchunk_corr_up)
+        ychunk_corr_up=scipy.array(ychunk_corr_up)
+    
+        
+        #STEP 2: actually do the fit
+    
+        #Find furthest point of chunk and add it a bit; the fit must converge
+        #from an excess!
+        xchunk_high=max(xchunk_corr_up)
+        xchunk_high+=(xchunk_high/10)
+    
+        #Here are the linearized start parameters for the WLC.
+        #[lambd=1/Lo , pii=1/P]
+    
+        p0=[(1/xchunk_high),(1/(3.5e-10))]
+        p0_plfix=[(1/xchunk_high)]
+        '''
+        ODR STUFF
+        fixme: remove these comments after testing
+        '''
+        def coth(z):
+            '''
+            hyperbolic cotangent
+            '''
+            return (np.exp(2*z)+1)/(np.exp(2*z)-1)
+        
+        def x_fjc(params,f,T=T):
+            '''
+            fjc function for ODR fitting
+            '''
+            lambd,pii=params
+            Kb=(1.38065e-23)
+            therm=Kb*T
+            
+            #x=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
+            x=(1/lambd)*(coth(f*(1/pii)/therm) - (therm*pii)/f)
+            return x
+        
+        def x_fjc_plfix(params,f,pl_value=pl_value,T=T):
+            '''
+            fjc function for ODR fitting
+            '''
+            lambd=params
+            pii=1/pl_value
+            Kb=(1.38065e-23)
+            therm=Kb*T
+            #y=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
+            x=(1/lambd)*(coth(f*(1/pii)/therm) - (therm*pii)/f)
+            return x
+        
+        #make the ODR fit
+        realdata=scipy.odr.RealData(ychunk_corr_up,xchunk_corr_up)
+        if pl_value:
+            model=scipy.odr.Model(x_fjc_plfix)
+            o = scipy.odr.ODR(realdata, model, p0_plfix)
+        else:
+            model=scipy.odr.Model(x_fjc)
+            o = scipy.odr.ODR(realdata, model, p0)
+        
+        o.set_job(fit_type=2)
+        out=o.run()
+        fit_out=[(1/i) for i in out.beta]
+        
+        #Calculate fit errors from output standard deviations.
+        #We must propagate the error because we fit the *inverse* parameters!
+        #The error = (error of the inverse)*(value**2)
+        fit_errors=[]
+        for sd,value in zip(out.sd_beta, fit_out):
+            err_real=sd*(value**2)
+            fit_errors.append(err_real)
+        
+        def fjc_eval(y,params,pl_value,T):    
+            '''
+            Evaluates the WLC function
+            '''
+            if not pl_value:
+                lambd, pii = params
+            else:
+                lambd = params
+        
+            if pl_value:
+                pii=1/pl_value
+        
+            Kb=(1.38065e-23) #boltzmann constant
+            therm=Kb*T #so we have thermal energy
+            #return ( (therm*pii/4.0) * (((1-(x*lambd))**-2.0) - 1 + (4.0*x*lambd)) )
+            return (1/lambd)*(coth(y*(1/pii)/therm) - (therm*pii)/y)
+            
+        
+        #STEP 3: plotting the fit
+        
+        #obtain domain to plot the fit - from contact point to last_index plus 20 points
+        thule_index=last_index+10
+        if thule_index > len(xvector): #for rare cases in which we fit something at the END of whole curve.
+            thule_index = len(xvector)
+        #reverse etc. the domain
+        '''
+        xfit_chunk=xvector[clicked_points[0].index:thule_index]
+        xfit_chunk.reverse()
+        xfit_chunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xfit_chunk]
+        xfit_chunk_corr_up=scipy.array(xfit_chunk_corr_up)
+    
+        #the fitted curve: reflip, re-uncorrect
+        yfit=wlc_eval(xfit_chunk_corr_up, out.beta, pl_value,T)
+        yfit_down=[-y for y in yfit]
+        yfit_corr_down=[y+clicked_points[0].graph_coords[1] for y in yfit_down]
+        '''
+        #xfit_chunk=xvector[clicked_points[0].index:thule_index]
+        
+        #yfit=wlc_eval(xfit_chunk_corr_up, out.beta, pl_value,T)
+        ychunk=yvector[clicked_points[0].index:thule_index]
+        yfit_down=[-y for y in ychunk]
+        yfit_corr_down=[y+clicked_points[0].graph_coords[1] for y in yfit_down]
+        yfit_corr_down=scipy.array(yfit_corr_down)
+        
+        #the fitted curve: reflip, re-uncorrect
+        xfit=fjc_eval(yfit_corr_down, out.beta, pl_value,T)
+        xfit=list(xfit)
+        xfit.reverse()
+        xfit_chunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xfit]
+        #xfit_chunk_corr_up=scipy.array(xfit_chunk_corr_up)
+               
+        
+        
+        #print yfit_chunk_corr_up
+        #print xfit_corr_down
+            
+        if return_errors:
+            return fit_out, yfit_corr_down, xfit_chunk_corr_up, fit_errors
+        else:
+            return fit_out, yfit_corr_down, xfit_chunk_corr_up, None
+    
+    
     def do_wlc(self,args):
         '''
         WLC
@@ -245,11 +403,21 @@ class fitCommands:
         points=self._measure_N_points(N=2, whatset=1)
         points=[contact_point]+points
         try:
-            params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
+            if self.config['fit_function']=='wlc':
+                params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
+            elif self.config['fit_function']=='fjc':
+                params, yfit, xfit, fit_errors = self.fjc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
+            else:
+                print 'No recognized fit function defined!'
+                print 'Set your fit function to wlc or fjc.'
+                return
+            
         except:
             print 'Fit not possible. Probably wrong interval -did you click two *different* points?'
             return
         
+        #FIXME: print "Kuhn length" for FJC
+        print 'Fit function:',self.config['fit_function']
         print 'Contour length: ',params[0]*(1.0e+9),' nm'
         to_dump='contour '+self.current.path+' '+str(params[0]*(1.0e+9))+' nm'
         self.outlet.push(to_dump)
@@ -289,7 +457,15 @@ class fitCommands:
             fitplot.colors+=[None,None]
         
         self._send_plot([fitplot])
-                
+    
+  
+    
+    
+    
+    
+    #----------
+    
+    
     def find_contact_point(self,plot=False):
         '''
         Finds the contact point on the curve.

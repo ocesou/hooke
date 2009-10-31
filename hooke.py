@@ -474,8 +474,8 @@ class MainWindow(wx.Frame):
 
         for plot in self.plots:
             '''
-                MAIN LOOP FOR ALL PLOTS (now only 2 are allowed but...)
-                '''
+            MAIN LOOP FOR ALL PLOTS (now only 2 are allowed but...)
+            '''
             if 'destination' in dir(plot):
                 dest=plot.destination
 
