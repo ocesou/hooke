@@ -204,6 +204,7 @@ Syntax: set [variable] [value]
         try: #try to have a numeric value
             value=float(args[1])
         except ValueError: #if it cannot be converted to float, it's None, or a string...
+            value=args[1]
             if value.lower()=='none':
                 value=None
             else:
