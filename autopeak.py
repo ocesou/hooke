@@ -238,9 +238,17 @@ class autopeakCommands:
             if abs(peak_point.index-other_fit_point.index) < 2:
                 continue
             
-            params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T, return_errors=True)
-            
+            if self.config['fit_function']=='wlc':
                 
+                params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T, return_errors=True)
+            elif self.config['fit_function']=='fjc':
+                params, yfit, xfit, fit_errors = self.fjc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T, return_errors=True)
+            else:
+                print 'Unknown fit function'
+                print 'Please set fit_function as wlc or fjc'
+                return
+            
+            
             #Measure forces
             delta_to_measure=displayed_plot.vectors[1][1][peak-delta_force:peak+delta_force]
             y=min(delta_to_measure)
@@ -298,6 +306,7 @@ class autopeakCommands:
         self._send_plot([fitplot])
         #self.do_peaks('')
         
+        print 'Using fit function: ',self.config['fit_function']
         print 'Measurements for all peaks detected:'
         print 'contour (nm)', c_lengths
         print 'sigma contour (nm)',sigma_c_lengths
