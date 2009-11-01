@@ -332,17 +332,42 @@ class fitCommands:
     def do_wlc(self,args):
         '''
         WLC
-        (fit plugin)
-        Fits a worm-like chain entropic rise to a given chunk of the curve.
+        (fit.py plugin)
+        
+        See the fit command
+        '''
+        self.do_fit(args)
+    
+    def do_fjc(self,args):
+        '''
+        FJC
+        (fit.py plugin)
+        
+        See the fit command
+        '''
+        self.do_fit(args)
+    
+    def do_fit(self,args):
+        '''
+        FIT
+        (fit.py plugin)
+        Fits an entropic elasticity function to a given chunk of the curve.
 
         First you have to click a contact point.
         Then you have to click the two edges of the data you want to fit.
-        The function is the simple polynomial worm-like chain as proposed by 
+        
+        The fit function depends on the fit_function variable. You can set it with the command
+        "set fit_function wlc" or  "set fit_function fjc" depending on the function you prefer.
+        
+        For WLC, the function is the simple polynomial worm-like chain as proposed by 
         C.Bustamante, J.F.Marko, E.D.Siggia and S.Smith (Science. 1994 
         Sep 9;265(5178):1599-600.)
+        
+        For FJC, ref: 
+        C.Ray and B.B. Akhremitchev; http://www.chem.duke.edu/~boris/research/force_spectroscopy/fit_efjc.pdf
 
         Arguments:
-        pl=[value] : Use a fixed persistent length for the fit. If pl is not given, 
+        pl=[value] : Use a fixed persistent length (WLC) or Kuhn length (FJC) for the fit. If pl is not given, 
                      the fit will be a 2-variable  
                      fit. DO NOT put spaces between 'pl', '=' and the value.
                      The value must be in nanometers. 
@@ -359,7 +384,7 @@ class fitCommands:
         reclick : redefines by hand the contact point, if noauto has been used before
                   but the user is unsatisfied of the previously choosen contact point.
         ---------
-        Syntax: wlc [pl=(value)] [t=value] [noauto]
+        Syntax: fit [pl=(value)] [t=value] [noauto]
         '''
         pl_value=None
         T=self.config['temperature']
