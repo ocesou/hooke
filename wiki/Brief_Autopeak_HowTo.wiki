@@ -1,4 +1,5 @@
 #summary How to use Hooke's AUTOPEAK command
+#labels Phase-Support
 
 The AUTOPEAK command can speed up the quantitative analysis of a given curve considerably. When invoked, AUTOPEAK performs automatically a fixed sequence of measurements on the current curve and outputs the relevant parameters. When no custom parameters are utilized, the sequence of measurement steps looks like this:
 
@@ -21,6 +22,22 @@ autopeak [noauto] [reclick] [rebase] [usepoints] [pl=value] [t=value]
 }}}
 
 =How to customize the analysis=
+
+==(0) Decide what function to use==
+In Hooke latest revisions you can choose the elasticity function to use to fit your peaks. The relevant variable is called FIT_FUNCTION and you can set it this way
+
+{{{
+set fit_function wlc
+}}}
+
+if you want a worm-like chain model of entropic elasticity or
+
+{{{
+set fit_function fjc
+}}}
+
+if you prefer a freely jointed chain model.
+If you don't know what this means, it probably means that you want WLC (the default). The documentation below assumes that we're using WLC, but it makes no difference to it if you're using WLC instead of FJC (it may or may not make a difference to your data though)
 
 ==(1) Finding Peaks==
 
