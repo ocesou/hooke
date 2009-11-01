@@ -433,8 +433,10 @@ class fitCommands:
         try:
             if self.config['fit_function']=='wlc':
                 params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
+                name_of_charlength='Persistent length'
             elif self.config['fit_function']=='fjc':
                 params, yfit, xfit, fit_errors = self.fjc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
+                name_of_charlength='Kuhn length'
             else:
                 print 'No recognized fit function defined!'
                 print 'Set your fit function to wlc or fjc.'
@@ -450,7 +452,7 @@ class fitCommands:
         to_dump='contour '+self.current.path+' '+str(params[0]*(1.0e+9))+' nm'
         self.outlet.push(to_dump)
         if len(params)==2: #if we did choose 2-value fit
-            print 'Persistent length: ',params[1]*(1.0e+9),' nm'
+            print name_of_charlength+': ',params[1]*(1.0e+9),' nm'
             to_dump='persistent '+self.current.path+' '+str(params[1]*(1.0e+9))+' nm'
             self.outlet.push(to_dump)
         
@@ -458,7 +460,7 @@ class fitCommands:
             fit_nm=[i*(10**9) for i in fit_errors]
             print 'Standard deviation (contour length)', fit_nm[0]
             if len(fit_nm)>1:
-                print 'Standard deviation (persistent length)', fit_nm[1]
+                print 'Standard deviation ('+name_of_charlength+')', fit_nm[1]
             
             
         #add the clicked points in the final PlotObject
@@ -487,10 +489,7 @@ class fitCommands:
         self._send_plot([fitplot])
     
   
-    
-    
-    
-    
+
     #----------
     
     
