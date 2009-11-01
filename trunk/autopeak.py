@@ -22,7 +22,7 @@ class autopeakCommands:
         (autopeak.py)
         Automatically performs a number of analyses on the peaks of the given curve.
         Currently it automatically:
-        - fits peaks with WLC function
+        - fits peaks with WLC or FJC function (depending on how the fit_function variable is set)
         - measures peak maximum forces with a baseline
         - measures slope in proximity of peak maximum
         Requires flatten plotmanipulator , fit.py plugin , flatfilts.py plugin with convfilt
@@ -61,12 +61,15 @@ class autopeakCommands:
         
         Useful variables (to set with SET command):
         ---
-        temperature= temperature of the system for wlc fit (in K)
+        fit_function = type of function to use for elasticity. If "wlc" worm-like chain is used, if "fjc" freely jointed
+                       chain is used
+        
+        temperature= temperature of the system for wlc/fjc fit (in K)
         
         auto_slope_span = number of points on which measure the slope, for slope
         
-        auto_fit_nm = number of nm to fit before the peak maximum, for WLC (if usepoints false)
-        auto_fit_points = number of points to fit before the peak maximum, for WLC (if usepoints true)
+        auto_fit_nm = number of nm to fit before the peak maximum, for WLC/FJC (if usepoints false)
+        auto_fit_points = number of points to fit before the peak maximum, for WLC/FJC (if usepoints true)
         
         baseline_clicks = -1: no baseline, f=0 at the contact point (whether hand-picked or automatically found)
                            0: automatic baseline
@@ -74,6 +77,9 @@ class autopeakCommands:
                            2: let user click points of baseline
         auto_left_baseline = length in nm to use as baseline from the right point (if baseline_clicks=0 , 1)
         auto_right_baseline = distance in nm of peak-most baseline point from last peak (if baseline_clicks = 0)
+        
+        auto_min_p ; auto_max_p = Minimum and maximum persistence length (if using WLC) or Kuhn length (if using FJC)
+                                outside of which the peak is automatically discarded (in nm)
         '''
         
         #MACROS.
