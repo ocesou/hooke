@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from libhooke import WX_GOOD, ClickedPoint
 import wxversion
@@ -321,26 +322,31 @@ class autopeakCommands:
         print 'forces (pN)',forces
         print 'slopes (N/m)',slopes
         
-        #Ask the user what peaks to ignore from analysis.
-        print 'Peaks to ignore (0,1...n from contact point,return to take all)'
-        print 'N to discard measurement'
-        exclude_raw=raw_input('Input:')
-        if exclude_raw=='N':
-            print 'Discarded.'
-            return
-        if not exclude_raw=='':
-            exclude=exclude_raw.split(',')
-            try:
-                exclude=[int(item) for item in exclude]
-                for i in exclude:
-                    c_lengths[i]=None
-                    p_lengths[i]=None
-                    forces[i]=None
-                    slopes[i]=None
-                    sigma_c_lengths[i]=None
-                    sigma_p_lengths[i]=None
-            except:
-                 print 'Bad input, taking all...'
+        controller=False
+        while controller==False:
+	  #Ask the user what peaks to ignore from analysis.
+	  print 'Peaks to ignore (0,1...n from contact point,return to take all)'
+	  print 'N to discard measurement'
+	  exclude_raw=raw_input('Input:')
+	  if exclude_raw=='N':
+	      print 'Discarded.'
+	      return
+	  if not exclude_raw=='':
+	      exclude=exclude_raw.split(',')
+	      try:
+		  exclude=[int(item) for item in exclude]
+		  for i in exclude:
+		      c_lengths[i]=None
+		      p_lengths[i]=None
+		      forces[i]=None
+		      slopes[i]=None
+		      sigma_c_lengths[i]=None
+		      sigma_p_lengths[i]=None
+                      controller=True
+	      except:
+		  print 'Bad input.'
+                  controller=False
+
         #Clean data vectors from ignored peaks        
         #FIXME:code duplication
         c_lengths=[item for item in c_lengths if item != None]
