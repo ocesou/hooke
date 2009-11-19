@@ -331,6 +331,8 @@ class autopeakCommands:
 	  if exclude_raw=='N':
 	      print 'Discarded.'
 	      return
+	  if exclude_raw=='':
+	      controller=True
 	  if not exclude_raw=='':
 	      exclude=exclude_raw.split(',')
 	      try:
