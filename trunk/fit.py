@@ -294,8 +294,14 @@ class fitCommands:
             thule_index = len(xvector)
         #reverse etc. the domain
         ychunk=yvector[clicked_points[0].index:thule_index]
-        #print clicked_points[0].graph_coords[1]
-        y_evalchunk=np.linspace(min(ychunk),max(ychunk),100)
+
+        if len(ychunk)>0:
+            y_evalchunk=np.linspace(min(ychunk),max(ychunk),100)
+        else:
+            #Empty y-chunk. It happens whenever we set the contact point after a recognized peak,
+            #or other buggy situations. Kludge to live with it now...
+            ychunk=yvector[:thule_index]
+            y_evalchunk=np.linspace(min(ychunk),max(ychunk),100)
             
         yfit_down=[-y for y in y_evalchunk]
         yfit_corr_down=[y+clicked_points[0].graph_coords[1] for y in yfit_down]
