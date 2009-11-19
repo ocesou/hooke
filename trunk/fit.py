@@ -43,10 +43,13 @@ class fitCommands:
         and S.Smith (Science. 1994 Sep 9;265(5178):1599-600.)
         '''
     
-        '''clicked_points[0] = contact point (calculated or hand-clicked)
-        clicked_points[1] and [2] are edges of chunk'''
+        '''
+        clicked_points[0] = contact point (calculated or hand-clicked)
+        clicked_points[1] and [2] are edges of chunk
+        '''
     
         #STEP 1: Prepare the vectors to apply the fit.
+        
         
         if pl_value is not None:
             pl_value=pl_value/(10**9)
@@ -172,10 +175,11 @@ class fitCommands:
         Freely-jointed chain function
         ref: C.Ray and B.B. Akhremitchev; http://www.chem.duke.edu/~boris/research/force_spectroscopy/fit_efjc.pdf
         '''
-    
-        '''clicked_points[0] = contact point (calculated or hand-clicked)
-        clicked_points[1] and [2] are edges of chunk'''
-    
+        '''
+        clicked_points[0] is the contact point (calculated or hand-clicked)
+        clicked_points[1] and [2] are edges of chunk
+        '''
+        
         #STEP 1: Prepare the vectors to apply the fit.
         if pl_value is not None:
             pl_value=pl_value/(10**9)
@@ -183,7 +187,7 @@ class fitCommands:
         #indexes of the selected chunk
         first_index=min(clicked_points[1].index, clicked_points[2].index)
         last_index=max(clicked_points[1].index, clicked_points[2].index)
-               
+        
         #getting the chunk and reverting it
         xchunk,ychunk=xvector[first_index:last_index],yvector[first_index:last_index]
         xchunk.reverse()
@@ -191,6 +195,7 @@ class fitCommands:
         #put contact point at zero and flip around the contact point (the fit wants a positive growth for extension and force)
         xchunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xchunk]
         ychunk_corr_up=[-(y-clicked_points[0].graph_coords[1]) for y in ychunk]
+        
         
         #make them arrays
         xchunk_corr_up=scipy.array(xchunk_corr_up)
@@ -283,29 +288,15 @@ class fitCommands:
             
         
         #STEP 3: plotting the fit
-        
         #obtain domain to plot the fit - from contact point to last_index plus 20 points
         thule_index=last_index+10
         if thule_index > len(xvector): #for rare cases in which we fit something at the END of whole curve.
             thule_index = len(xvector)
         #reverse etc. the domain
-        '''
-        xfit_chunk=xvector[clicked_points[0].index:thule_index]
-        xfit_chunk.reverse()
-        xfit_chunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xfit_chunk]
-        xfit_chunk_corr_up=scipy.array(xfit_chunk_corr_up)
-    
-        #the fitted curve: reflip, re-uncorrect
-        yfit=wlc_eval(xfit_chunk_corr_up, out.beta, pl_value,T)
-        yfit_down=[-y for y in yfit]
-        yfit_corr_down=[y+clicked_points[0].graph_coords[1] for y in yfit_down]
-        '''
-        #xfit_chunk=xvector[clicked_points[0].index:thule_index]
-        
-        #yfit=wlc_eval(xfit_chunk_corr_up, out.beta, pl_value,T)
         ychunk=yvector[clicked_points[0].index:thule_index]
         #print clicked_points[0].graph_coords[1]
         y_evalchunk=np.linspace(min(ychunk),max(ychunk),100)
+            
         yfit_down=[-y for y in y_evalchunk]
         yfit_corr_down=[y+clicked_points[0].graph_coords[1] for y in yfit_down]
         yfit_corr_down=scipy.array(yfit_corr_down)
@@ -317,16 +308,22 @@ class fitCommands:
         xfit_chunk_corr_up=[-(x-clicked_points[0].graph_coords[0]) for x in xfit]
         
         #xfit_chunk_corr_up=scipy.array(xfit_chunk_corr_up)
-        deltay=yfit_down[0]-yvector[clicked_points[0].index]
-        yfit_corr_down=[y-deltay for y in yfit_down]
+        #deltay=yfit_down[0]-yvector[clicked_points[0].index]
         
-        #print yfit_chunk_corr_up
-        #print xfit_corr_down
+        #This is a terrible, terrible kludge to find the point where it should normalize (and from where it should plot)
+        xxxdists=[]
+        for index in scipy.arange(1,len(xfit_chunk_corr_up),1):
+            xxxdists.append((clicked_points[0].graph_coords[0]-xfit_chunk_corr_up[index])**2)           
+        normalize_index=xxxdists.index(min(xxxdists))
+        #End of kludge
+        
+        deltay=yfit_down[normalize_index]-clicked_points[0].graph_coords[1]
+        yfit_corr_down=[y-deltay for y in yfit_down]
             
         if return_errors:
-            return fit_out, yfit_corr_down, xfit_chunk_corr_up, fit_errors
+            return fit_out, yfit_corr_down[normalize_index+1:], xfit_chunk_corr_up[normalize_index+1:], fit_errors
         else:
-            return fit_out, yfit_corr_down, xfit_chunk_corr_up, None
+            return fit_out, yfit_corr_down[normalize_index+1:], xfit_chunk_corr_up[normalize_index+1:], None
     
     
     def do_wlc(self,args):
