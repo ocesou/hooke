@@ -273,6 +273,7 @@ class ClickedPoint:
         '''
                    
         #FIXME: a general algorithm using min() is needed!
+        print '---DEPRECATED FIND_GRAPH_COORDS_OLD---'
         best_index=0
         best_dist=10**9 #should be more than enough given the scale
                 
@@ -289,7 +290,7 @@ class ClickedPoint:
             
     def find_graph_coords(self,xvector,yvector):
         '''
-        Given a clicked point on the plot, finds the nearest point in the dataset (in X) that
+        Given a clicked point on the plot, finds the nearest point in the dataset that
         corresponds to the clicked point.
         '''
         dists=[]
