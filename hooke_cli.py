@@ -295,9 +295,9 @@ Syntax: genlist [input files]
             else:
                 SLASH="/"
             if list_path[-1] == SLASH:
-                list_path=list_path+'*.*'
+                list_path=list_path+'*'
             else:    
-                list_path=list_path+SLASH+'*.*'
+                list_path=list_path+SLASH+'*'
         
         #expanding correctly the input list with the glob module :)        
         list_files=glob.glob(list_path)
