@@ -16,7 +16,7 @@ In any given path `IP` stands for `your IgorPro directory` (tipically `C:\Progra
 
 
 = Activating HDF5 export in Igor Pro =
-
+You only need to do this step once.
 This is a quick-install guide, more details can be found in `IP\More Extensions\File Loaders\HDF5 Help.ihf` 
 
  # Make a shortcut of `IP\More Extensions\File Loaders\HDF5.xop` into `IP\Igor Extensions\` folder
