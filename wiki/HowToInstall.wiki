@@ -51,7 +51,19 @@ A [http://www.python.org/community/sigs/current/distutils-sig/doc/ distutils] ba
 to do
 
 == Installation notes for Linux ==
-to do
+Ubuntu users can follow these instructions for installing Hooke (tested in Ubuntu 9.10 Karmic Koala)
 
+ # Open a console and type `sudo aptitude install python-wxgtk2.8 python-scipy python-numpy python-matplotlib`
+ # Download wxmpl from http://agni.phys.iit.edu/~kmcivor/wxmpl/
+ # Extract the tar.gz or .zip package and enter the newly created directory
+ # Type `sudo python setup.py install`
+
+For HDF5 support (*only* Igor Pro users!)
+ # Download h5py and hdf5 support packages (when ubuntu 10.4 is available you probably can do this with apt-get/aptitude)
+  * http://packages.ubuntu.com/lucid/libhdf5-serial-1.8.3 (or higher version)
+  * http://packages.ubuntu.com/lucid/python-h5py
+ # Install manually the packages, open a console, move to the directory where you placed the .debs and type:
+  * `sudo dpkg -i libhdf5-serial-**version**.deb`
+  * `sudo dpkg -i python-h5py-**version**.deb`
 == Installation notes for Mac OS X ==
 to do
