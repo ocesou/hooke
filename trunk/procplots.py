@@ -156,6 +156,41 @@ class procplotsCommands:
         plot.vectors[1][0]=[(zpoint-deflpoint) for zpoint,deflpoint in zip(plot.vectors[1][0],defl_ret)]
 
         return plot
+
+
+    def plotmanip_centerzero(self, plot, current, customvalue=None):
+        '''
+        Centers the force curve so the median (the free level) corresponds to 0 N
+        Assumes that:
+        - plot.vectors[0][1] is the Y of extension curve
+        - plot.vectors[1][1] is the Y of retraction curve
+        
+       
+        '''
+        #use only for force spectroscopy experiments!
+        if current.curve.experiment != 'smfs':
+            return plot
+    
+        if customvalue != None:
+            execute_me=customvalue
+        else:
+            execute_me=self.config['centerzero']
+        if not execute_me:
+            return plot
+     
+        
+	
+	levelapp=float(np.median(plot.vectors[0][1]))
+	levelret=float(np.median(plot.vectors[1][1]))
+
+	level=(levelapp+levelret)/2	
+
+	approach=[i-level for i in plot.vectors[0][1]]
+	retract=[i-level for i in plot.vectors[1][1]]
+	
+	plot.vectors[0][1]=approach	
+	plot.vectors[1][1]=retract	
+        return plot
     
     '''
     def plotmanip_detriggerize(self, plot, current, customvalue=None):
