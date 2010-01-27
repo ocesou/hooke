@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 '''
 FLATFILTS
@@ -147,7 +148,7 @@ class flatfiltsCommands:
     #-----Convolution-based peak recognition and filtering.
     #Requires the libpeakspot.py library
     
-    def has_peaks(self, plot, abs_devs=None):
+    def has_peaks(self, plot, abs_devs=None, maxpeak=True, window=10):
         '''
         Finds peak position in a force curve.
         FIXME: should be moved in libpeakspot.py
@@ -176,12 +177,24 @@ class flatfiltsCommands:
         above=lps.abovenoise(convoluted,noise_level,cut_index,abs_devs)     
         peak_location,peak_size=lps.find_peaks(above,seedouble=self.convfilt_config['seedouble'])
                 
-        #take the maximum
+        #take the minimum or the maximum of a peak
         for i in range(len(peak_location)):
             peak=peak_location[i]
-            maxpk=min(yret[peak-10:peak+10])
-            index_maxpk=yret[peak-10:peak+10].index(maxpk)+(peak-10)
-            peak_location[i]=index_maxpk
+            valpk=min(yret[peak-window:peak+window])  #maximum in force (near the unfolding point)
+            index_pk=yret[peak-window:peak+window].index(valpk)+(peak-window)            
+
+            if maxpeak==False:
+               valpk=max(yret[peak:peak+window]) #minimum in force, near the baseline
+               index_pk=yret[peak:peak+window].index(valpk)+(peak)
+
+#  Let's explain that for the minimum.  Immaging that we know that there is a peak at position/region 100 and you have found its y-value,
+#  Now you look in the array, from 100-10 to 100+10  (if the window is 10).
+#  This "100-10 to 100+10" is substancially a new array with its index. In this array you have 20
+#  elements, so the index of your y-value will be 10.
+#  Now to find the index in the TOTAL array you have to add the "position" of the "region" (that in this case
+#  correspond to 100) and also substract the window size ---> (+100-10)
+
+            peak_location[i]=index_pk
             
         return peak_location,peak_size
     
@@ -319,7 +332,10 @@ class flatfiltsCommands:
                 item.peak_size=peak_size
                 item.curve=None #empty the item object, to further avoid memory leak
                 notflat_list.append(item)
-        
+
+            for i in range(1000):
+		 k=0
+
         #Warn that no flattening had been done.
         if not ('flatten' in self.config['plotmanips']):
             print 'Flatten manipulator was not found. Processing was done without flattening.'
