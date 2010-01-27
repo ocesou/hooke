@@ -31,26 +31,9 @@ class multidistanceCommands:
      deviation = number of times the convolution signal is above the noise absolute deviation.
      '''
 
-     def find_current_peaks(noflatten, a):
-            #Find peaks.
-	    if len(a)==0:
-                 a=self.convfilt_config['mindeviation']
-            try:
-                 abs_devs=float(a)
-            except:
-		 print "Bad input, using default."
-                 abs_devs=self.convfilt_config['mindeviation']
-
-            defplot=self.current.curve.default_plots()[0]
-            if not noflatten:
-                flatten=self._find_plotmanip('flatten') #Extract flatten plotmanip
-                defplot=flatten(defplot, self.current, customvalue=1) #Flatten curve before feeding it to has_peaks
-            pk_loc,peak_size=self.has_peaks(defplot, abs_devs)
-            return pk_loc, peak_size
-
       
      noflatten=False
-     peaks_location, peak_size=find_current_peaks(noflatten, args)
+     peaks_location, peak_size=self.find_current_peaks(noflatten)
      
      #if no peaks, we have nothing to plot. exit.
      if len(peaks_location)==0:

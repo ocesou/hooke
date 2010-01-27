@@ -82,52 +82,7 @@ class autopeakCommands:
         auto_min_p ; auto_max_p = Minimum and maximum persistence length (if using WLC) or Kuhn length (if using FJC)
                                 outside of which the peak is automatically discarded (in nm)
         '''
-        
-        #MACROS.
-        #FIXME: to move outside function
-        def fit_interval_nm(start_index,plot,nm,backwards):
-            '''
-            Calculates the number of points to fit, given a fit interval in nm
-            start_index: index of point
-            plot: plot to use
-            backwards: if true, finds a point backwards.
-            '''
-            whatset=1 #FIXME: should be decidable
-            x_vect=plot.vectors[1][0]
             
-            c=0
-            i=start_index
-            start=x_vect[start_index]
-            maxlen=len(x_vect)
-            while abs(x_vect[i]-x_vect[start_index])*(10**9) < nm:
-                if i==0 or i==maxlen-1: #we reached boundaries of vector!
-                    return c
-                
-                if backwards:
-                    i-=1
-                else:
-                    i+=1
-                c+=1
-            return c
-                
-        def pickup_contact_point():
-            '''macro to pick up the contact point by clicking'''
-            contact_point=self._measure_N_points(N=1, whatset=1)[0]
-            contact_point_index=contact_point.index
-            self.wlccontact_point=contact_point
-            self.wlccontact_index=contact_point.index
-            self.wlccurrent=self.current.path
-            return contact_point, contact_point_index
-        
-        def find_current_peaks(noflatten):
-            #Find peaks.
-            defplot=self.current.curve.default_plots()[0]
-            if not noflatten:
-                flatten=self._find_plotmanip('flatten') #Extract flatten plotmanip
-                defplot=flatten(defplot, self.current, customvalue=1) #Flatten curve before feeding it to has_peaks
-            peak_location,peak_size=self.has_peaks(defplot, self.convfilt_config['mindeviation'])
-            return peak_location, peak_size
-    
         #default fit etc. variables
         pl_value=None
         T=self.config['temperature']
@@ -191,7 +146,7 @@ class autopeakCommands:
         #--END COMMAND LINE PARSING--
         
         
-        peak_location, peak_size = find_current_peaks(noflatten)
+        peak_location, peak_size = self.find_current_peaks(noflatten)
         
         if len(peak_location) == 0:
             print 'No peaks to fit.'
@@ -201,23 +156,7 @@ class autopeakCommands:
         
         #Pick up force baseline
         if rebase:
-            clicks=self.config['baseline_clicks']
-            if clicks==0:
-                self.basepoints=[]
-                base_index_0=peak_location[-1]+fit_interval_nm(peak_location[-1], displayed_plot, self.config['auto_right_baseline'],False)
-                self.basepoints.append(self._clickize(displayed_plot.vectors[1][0],displayed_plot.vectors[1][1],base_index_0))
-                base_index_1=self.basepoints[0].index+fit_interval_nm(self.basepoints[0].index, displayed_plot, self.config['auto_left_baseline'],False)
-                self.basepoints.append(self._clickize(displayed_plot.vectors[1][0],displayed_plot.vectors[1][1],base_index_1))
-            elif clicks>0:
-                print 'Select baseline'
-                if clicks==1:
-                    self.basepoints=self._measure_N_points(N=1, whatset=whatset)
-                    base_index_1=self.basepoints[0].index+fit_interval_nm(self.basepoints[0].index, displayed_plot, self.config['auto_left_baseline'], False)
-                    self.basepoints.append(self._clickize(displayed_plot.vectors[1][0],displayed_plot.vectors[1][1],base_index_1))
-                else:
-                    self.basepoints=self._measure_N_points(N=2, whatset=whatset)
-            
-            self.basecurrent=self.current.path
+            self.basepoints=self.baseline_points(peak_location, displayed_plot)
         
         boundaries=[self.basepoints[0].index, self.basepoints[1].index]
         boundaries.sort()
@@ -235,7 +174,7 @@ class autopeakCommands:
             #WLC FITTING
             #define fit interval
             if not usepoints:
-                fit_points=fit_interval_nm(peak, displayed_plot, self.config['auto_fit_nm'], True)
+                fit_points=self.fit_interval_nm(peak, displayed_plot, self.config['auto_fit_nm'], True)
             peak_point=self._clickize(displayed_plot.vectors[1][0],displayed_plot.vectors[1][1],peak)
             other_fit_point=self._clickize(displayed_plot.vectors[1][0],displayed_plot.vectors[1][1],peak-fit_points)
             
@@ -311,7 +250,6 @@ class autopeakCommands:
         
         #Show wlc fits and peak locations
         self._send_plot([fitplot])
-        #self.do_peaks('')
         
         print 'Using fit function: ',self.config['fit_function']
         print 'Measurements for all peaks detected:'
