@@ -22,7 +22,7 @@ We need full support for most force spectroscopy data files. Please help us by:
     Still _indirect_ support, requires Igor export scripts provided by Rolf Schmidt et al. available in the subversion reporsitory. See Mfp1dSupport for the details.
 
   * *MFP 3D* (needs testing!)
-  See [http://code.google.com/p/hooke/wiki/HDF5 HDF5] for instructions on how to export and use MFP3D files for use with Hooke
+    See [http://code.google.com/p/hooke/wiki/HDF5 HDF5] for instructions on how to export and use MFP3D files for use with Hooke
 
   * Simple *comma-separated values*
     drivers: csv.py
