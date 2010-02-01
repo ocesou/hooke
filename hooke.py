@@ -3,812 +3,1287 @@
 '''
 HOOKE - A force spectroscopy review & analysis tool
 
-(C) 2008 Massimo Sandal
-
-Copyright (C) 2008 Massimo Sandal (University of Bologna, Italy).
+Copyright 2008 by Massimo Sandal (University of Bologna, Italy).
+Copyright 2010 by Rolf Schmidt (Concordia University, Canada).
 
 This program is released under the GNU General Public License version 2.
 '''
 
-from libhooke import HOOKE_VERSION
-from libhooke import WX_GOOD
-
-import os
-
 import wxversion
-wxversion.select(WX_GOOD)
-import wx
-import wxmpl
-from wx.lib.newevent import NewEvent
+import lib.libhooke as lh
+wxversion.select(lh.WX_GOOD)
 
-import matplotlib.numerix as nx
-import scipy as sp
+from configobj import ConfigObj
+import copy
+import os.path
+import platform
+import time
+#import wx
+import wx.html
+import wx.lib.agw.aui as aui
+import wx.lib.evtmgr as evtmgr
+import wx.propgrid as wxpg
 
-from threading import *
-import Queue
+from matplotlib import __version__ as mpl_version
+from numpy import __version__ as numpy_version
+from scipy import __version__ as scipy_version
+from sys import version as python_version
+from wx import __version__ as wx_version
 
-from hooke_cli import HookeCli
-from libhooke import *
-import libhookecurve as lhc
+try:
+    from agw import cubecolourdialog as CCD
+except ImportError: # if it's not there locally, try the wxPython lib.
+    import wx.lib.agw.cubecolourdialog as CCD
 
-#import file versions, just to know with what we're working...
-from hooke_cli import __version__ as hookecli_version
+#set the Hooke directory
+lh.hookeDir = os.path.abspath(os.path.dirname(__file__))
+from config.config import config
+import drivers
+import lib.playlist
+import lib.plotmanipulator
+import panels.commands
+import panels.perspectives
+import panels.playlist
+import panels.plot
+import panels.propertyeditor
+import panels.results
+import plugins
 
 global __version__
-global events_from_gui
-global config
-global CLI_PLUGINS
-global GUI_PLUGINS
-global LOADED_PLUGINS
-global PLOTMANIP_PLUGINS
-global FILE_DRIVERS
+global __codename__
+global __releasedate__
+__version__ = lh.HOOKE_VERSION[0]
+__codename__ = lh.HOOKE_VERSION[1]
+__releasedate__ = lh.HOOKE_VERSION[2]
+__release_name__ = lh.HOOKE_VERSION[1]
 
-__version__=HOOKE_VERSION[0]
-__release_name__=HOOKE_VERSION[1]
+#TODO: add general preferences to Hooke
+#this might be useful
+#ID_Config = wx.NewId()
+ID_About = wx.NewId()
+ID_Next = wx.NewId()
+ID_Previous = wx.NewId()
 
-events_from_gui=Queue.Queue() #GUI ---> CLI COMMUNICATION
+ID_ViewAssistant = wx.NewId()
+ID_ViewCommands = wx.NewId()
+ID_ViewFolders = wx.NewId()
+ID_ViewOutput = wx.NewId()
+ID_ViewPlaylists = wx.NewId()
+ID_ViewProperties = wx.NewId()
+ID_ViewResults = wx.NewId()
 
-print 'Starting Hooke.'
-#CONFIGURATION FILE PARSING
-config_obj=HookeConfig()
-config=config_obj.load_config('hooke.conf')
+ID_DeletePerspective = wx.NewId()
+ID_SavePerspective = wx.NewId()
 
-#IMPORTING PLUGINS
+ID_FirstPerspective = ID_SavePerspective + 1000
+#I hope we'll never have more than 1000 perspectives
+ID_FirstPlot = ID_SavePerspective + 2000
 
-CLI_PLUGINS=[]
-GUI_PLUGINS=[]
-PLOTMANIP_PLUGINS=[]
-LOADED_PLUGINS=[]
+class Hooke(wx.App):
 
-plugin_commands_namespaces=[]
-plugin_gui_namespaces=[]
-for plugin_name in config['plugins']:
-    try:
-        plugin=__import__(plugin_name)
-        try:
-            eval('CLI_PLUGINS.append(plugin.'+plugin_name+'Commands)') #take Command plugin classes
-            plugin_commands_namespaces.append(dir(eval('plugin.'+plugin_name+'Commands')))
-        except:
-            pass
-        try:
-            eval('GUI_PLUGINS.append(plugin.'+plugin_name+'Gui)') #take Gui plugin classes
-            plugin_gui_namespaces.append(dir(eval('plugin.'+plugin_name+'Gui')))
-        except:
-            pass
-    except ImportError:
-        print 'Cannot find plugin ',plugin_name
-    else:
-        LOADED_PLUGINS.append(plugin_name)
-        print 'Imported plugin ',plugin_name
+    def OnInit(self):
+        self.SetAppName('Hooke')
+        self.SetVendorName('')
 
-#eliminate names common to all namespaces
-for i in range(len(plugin_commands_namespaces)):
-    plugin_commands_namespaces[i]=[item for item in plugin_commands_namespaces[i] if (item != '__doc__' and item != '__module__' and item != '_plug_init')]
-#check for conflicts in namespaces between plugins
-#FIXME: only in commands now, because I don't have Gui plugins to check
-#FIXME: how to check for plugin-defined variables (self.stuff) ??
-plugin_commands_names=[]
-whatplugin_defines=[]
-plugin_gui_names=[]
-for namespace,plugin_name in zip(plugin_commands_namespaces, config['plugins']):
-    for item in namespace:
-        if item in plugin_commands_names:
-            i=plugin_commands_names.index(item) #we exploit the fact index gives the *first* occurrence of a name...
-            print 'Error. Plugin ',plugin_name,' defines a function already defined by ',whatplugin_defines[i],'!'
-            print 'This should not happen. Please disable one or both plugins and contact the plugin authors to solve the conflict.'
-            print 'Hooke cannot continue.'
-            exit()
-        else:
-            plugin_commands_names.append(item)
-            whatplugin_defines.append(plugin_name)
+        windowPosition = (config['main']['left'], config['main']['top'])
+        windowSize = (config['main']['width'], config['main']['height'])
 
+        #setup the splashscreen
+        if config['splashscreen']['show']:
+            filename = lh.get_file_path('hooke.jpg', ['resources'])
+            if os.path.isfile(filename):
+                bitmap = wx.Image(filename).ConvertToBitmap()
+                splashStyle = wx.SPLASH_CENTRE_ON_SCREEN|wx.SPLASH_TIMEOUT
+                splashDuration = config['splashscreen']['duration']
+                wx.SplashScreen(bitmap, splashStyle, splashDuration, None, -1)
+                wx.Yield()
+                '''
+                we need for the splash screen to disappear
+                for whatever reason splashDuration and sleep do not correspond to each other
+                at least not on Windows
+                maybe it's because duration is in milliseconds and sleep in seconds
+                thus we need to increase the sleep time a bit
+                a factor of 1.2 seems to work quite well
+                '''
+                sleepFactor = 1.2
+                time.sleep(sleepFactor * splashDuration / 1000)
 
-config['loaded_plugins']=LOADED_PLUGINS #FIXME: kludge -this should be global but not in config!
-#IMPORTING DRIVERS
-#FIXME: code duplication
-FILE_DRIVERS=[]
-LOADED_DRIVERS=[]
-for driver_name in config['drivers']:
-    try:
-        driver=__import__(driver_name)
-        try:
-            eval('FILE_DRIVERS.append(driver.'+driver_name+'Driver)')
-        except:
-            pass
-    except ImportError:
-        print 'Cannot find driver ',driver_name
-    else:
-        LOADED_DRIVERS.append(driver_name)
-        print 'Imported driver ',driver_name
-config['loaded_drivers']=LOADED_DRIVERS
-
-#LIST OF CUSTOM WX EVENTS FOR CLI ---> GUI COMMUNICATION
-#FIXME: do they need to be here?
-list_of_events={}
-
-plot_graph, EVT_PLOT = NewEvent()
-list_of_events['plot_graph']=plot_graph
-
-plot_contact, EVT_PLOT_CONTACT = NewEvent()
-list_of_events['plot_contact']=plot_contact
-
-measure_points, EVT_MEASURE_POINTS = NewEvent()
-list_of_events['measure_points']=measure_points
-
-export_image, EVT_EXPORT_IMAGE = NewEvent()
-list_of_events['export_image']=export_image
-
-close_plot, EVT_CLOSE_PLOT = NewEvent()
-list_of_events['close_plot'] = close_plot
-
-show_plots, EVT_SHOW_PLOTS = NewEvent()
-list_of_events['show_plots'] = show_plots
-
-get_displayed_plot, EVT_GET_DISPLAYED_PLOT = NewEvent()
-list_of_events['get_displayed_plot'] = get_displayed_plot
-#------------
-
-class CliThread(Thread):
-
-    def __init__(self,frame,list_of_events):
-        Thread.__init__(self)
-
-        #here we have to put temporary references to pass to the cli object.
-        self.frame=frame
-        self.list_of_events=list_of_events
-
-        self.debug=0 #to be used in the future
-
-    def run(self):
-        print '\n\nThis is Hooke, version',__version__ , __release_name__
-        print
-        print '(c) Massimo Sandal & others, 2006-2008. Released under the GNU Lesser General Public License Version 3'
-        print 'Hooke is Free software.'
-        print '----'
-        print ''
+        plugin_objects = []
+        for plugin in config['plugins']:
+            if config['plugins'][plugin]:
+                filename = ''.join([plugin, '.py'])
+                path = lh.get_file_path(filename, ['plugins'])
+                if os.path.isfile(path):
+                    #get the corresponding filename and path
+                    plugin_name = ''.join(['plugins.', plugin])
+                    #import the module
+                    __import__(plugin_name)
+                    #get the file that contains the plugin
+                    class_file = getattr(plugins, plugin)
+                    #get the class that contains the commands
+                    class_object = getattr(class_file, plugin + 'Commands')
+                    plugin_objects.append(class_object)
 
         def make_command_class(*bases):
-            #FIXME: perhaps redundant
-            return type(HookeCli)("HookeCliPlugged", bases + (HookeCli,), {})
-        cli = make_command_class(*CLI_PLUGINS)(self.frame,self.list_of_events,events_from_gui,config,FILE_DRIVERS)
-        cli.cmdloop()
+            #create metaclass with plugins and plotmanipulators
+            return type(HookeFrame)("HookeFramePlugged", bases + (HookeFrame,), {})
+        frame = make_command_class(*plugin_objects)(parent=None, id=wx.ID_ANY, title='Hooke', pos=windowPosition, size=windowSize)
+        frame.Show(True)
+        self.SetTopWindow(frame)
 
-'''
-GUI CODE
+        return True
 
-FIXME: put it in a separate module in the future?
-'''
-class MainMenuBar(wx.MenuBar):
-    '''
-    Creates the menu bar
-    '''
-    def __init__(self):
-        wx.MenuBar.__init__(self)
-        '''the menu description. the key of the menu is XX&Menu, where XX is a number telling
-        the order of the menus on the menubar.
-        &Menu is the Menu text
-        the corresponding argument is ('&Item', 'itemname'), where &Item is the item text and itemname
-        the inner reference to use in the self.menu_items dictionary.
-
-        See create_menus() to see how it works
-
-        Note: the mechanism on page 124 of "wxPython in Action" is less awkward, maybe, but I want
-        binding to be performed later. Perhaps I'm wrong :)
-        ''' 
-
-        self.menu_desc={'00&File':[('&Open playlist','openplaymenu'),('&Exit','exitmenu')], 
-                        '01&Edit':[('&Export text...','exporttextmenu'),('&Export image...','exportimagemenu')],
-                        '02&Help':[('&About Hooke','aboutmenu')]}
-        self.create_menus()
-
-    def create_menus(self):
-        '''
-        Smartish routine to create the menu from the self.menu_desc dictionary
-        Hope it's a workable solution for the future.
-        '''
-        self.menus=[] #the menu objects to append to the menubar
-        self.menu_items={} #the single menu items dictionary, to bind to events
-
-        names=self.menu_desc.keys() #we gotta sort, because iterating keys goes in odd order
-        names.sort()
-
-        for name in names:
-            self.menus.append(wx.Menu())
-            for menu_item in self.menu_desc[name]:
-                self.menu_items[menu_item[1]]=self.menus[-1].Append(-1, menu_item[0])
-
-        for menu,name in zip(self.menus,names):
-            self.Append(menu,name[2:])
-
-class MainPanel(wx.Panel):
-    def __init__(self,parent,id):  
-
-        wx.Panel.__init__(self,parent,id)
-        self.splitter = wx.SplitterWindow(self)
-
-ID_FRAME=100        
-class MainWindow(wx.Frame):
-    '''we make a frame inheriting wx.Frame and setting up things on the init'''
-    def __init__(self,parent,id,title):
-
-        #-----------------------------
-        #WX WIDGETS INITIALIZATION
-
-        wx.Frame.__init__(self,parent,ID_FRAME,title,size=(800,600),style=wx.DEFAULT_FRAME_STYLE|wx.NO_FULL_REPAINT_ON_RESIZE)
-
-        self.mainpanel=MainPanel(self,-1)
-        self.cpanels=[]
-
-        self.cpanels.append(wx.Panel(self.mainpanel.splitter,-1))
-        self.cpanels.append(wx.Panel(self.mainpanel.splitter,-1))
-
-        self.statusbar=wx.StatusBar(self,-1)
-        self.SetStatusBar(self.statusbar)
-
-        self.mainmenubar=MainMenuBar()
-        self.SetMenuBar(self.mainmenubar)
-
-        self.controls=[]
-        self.figures=[]
-        self.axes=[]
-
-        #This is our matplotlib plot
-        self.controls.append(wxmpl.PlotPanel(self.cpanels[0],-1))
-        self.controls.append(wxmpl.PlotPanel(self.cpanels[1],-1))
-        #These are our figure and axes, so to have easy references
-        #Also, we initialize
-        self.figures=[control.get_figure() for control in self.controls]
-        self.axes=[figure.gca() for figure in self.figures]
-
-        self.cpanels[1].Hide()
-        self.mainpanel.splitter.Initialize(self.cpanels[0])
-
-        self.sizer_dance() #place/size the widgets
-
-        self.controls[0].SetSize(self.cpanels[0].GetSize())
-        self.controls[1].SetSize(self.cpanels[1].GetSize())
-
-        #resize the frame to properly draw on Windows
-        frameSize=self.GetSize()
-        frameSize.DecBy(1, 1)
-        self.SetSize(frameSize)
-        '''
-        #if you need the exact same size as before DecBy, uncomment this block
-        frameSize.IncBy(1, 1)
-        self.SetSize(frameSize)
-        '''
-
-        #-------------------------------------------
-        #NON-WX WIDGETS INITIALIZATION
-
-        #Flags.
-        self.click_plot=0
-
-        #FIXME: These could become a single flag with different (string?) values
-        #self.on_measure_distance=False
-        #self.on_measure_force=False
-
-        self.plot_fit=False
-
-        #Number of points to be clicked
-        self.num_of_points = 2
-
-        #Data.
-        '''
-            self.current_x_ext=[[],[]]
-            self.current_y_ext=[[],[]]
-            self.current_x_ret=[[],[]]
-            self.current_y_ret=[[],[]]
+    def OnExit(self):
+        return True
 
 
-            self.current_x_unit=[None,None]
-            self.current_y_unit=[None,None]
-            '''
+class HookeFrame(wx.Frame):
 
-        #Initialize xaxes, yaxes
-        #FIXME: should come from config
-        self.current_xaxes=0
-        self.current_yaxes=0
+    def __init__(self, parent, id=-1, title='', pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.DEFAULT_FRAME_STYLE|wx.SUNKEN_BORDER|wx.CLIP_CHILDREN):
+        #call parent constructor
+        wx.Frame.__init__(self, parent, id, title, pos, size, style)
+        self.config = config
+        self.CreateApplicationIcon()
+        #self.configs contains: {the name of the Commands file: corresponding ConfigObj}
+        self.configs = {}
+        #self.displayed_plot holds the currently displayed plot
+        self.displayed_plot = None
+        #self.playlists contains: {the name of the playlist: [playlist, tabIndex, plotID]}
+        self.playlists = {}
+        #list of all plotmanipulators
+        self.plotmanipulators = []
+        #self.plugins contains: {the name of the plugin: [caption, function]}
+        self.plugins = {}
 
-        #Other
+        #tell FrameManager to manage this frame
+        self._mgr = aui.AuiManager()
+        self._mgr.SetManagedWindow(self)
+        #set the gradient style
+        self._mgr.GetArtProvider().SetMetric(aui.AUI_DOCKART_GRADIENT_TYPE, aui.AUI_GRADIENT_NONE)
+        #set transparent drag
+        self._mgr.SetFlags(self._mgr.GetFlags() ^ aui.AUI_MGR_TRANSPARENT_DRAG)
 
+        # set up default notebook style
+        self._notebook_style = aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TAB_EXTERNAL_MOVE | wx.NO_BORDER
+        self._notebook_theme = 0
 
-        self.index_buffer=[]
+        #holds the perspectives: {name, perspective_str}
+        self._perspectives = {}
 
-        self.clicked_points=[]
+        # min size for the frame itself isn't completely done.
+        # see the end up FrameManager::Update() for the test
+        # code. For now, just hard code a frame minimum size
+        self.SetMinSize(wx.Size(500, 500))
+        #create panels here
+        self.panelAssistant = self.CreatePanelAssistant()
+        self.panelCommands = self.CreatePanelCommands()
+        self.panelFolders = self.CreatePanelFolders()
+        self.panelPlaylists = self.CreatePanelPlaylists()
+        self.panelProperties = self.CreatePanelProperties()
+        self.panelOutput = self.CreatePanelOutput()
+        self.panelResults = self.CreatePanelResults()
+        self.plotNotebook = self.CreateNotebook()
+        #self.textCtrlCommandLine=self.CreateCommandLine()
 
-        self.measure_set=None
+        # add panes
+        self._mgr.AddPane(self.panelFolders, aui.AuiPaneInfo().Name('Folders').Caption('Folders').Left().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelPlaylists, aui.AuiPaneInfo().Name('Playlists').Caption('Playlists').Left().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.plotNotebook, aui.AuiPaneInfo().Name('Plots').CenterPane().PaneBorder(False))
+        self._mgr.AddPane(self.panelCommands, aui.AuiPaneInfo().Name('Commands').Caption('Settings and commands').Right().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelProperties, aui.AuiPaneInfo().Name('Properties').Caption('Properties').Right().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelAssistant, aui.AuiPaneInfo().Name('Assistant').Caption('Assistant').Right().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelOutput, aui.AuiPaneInfo().Name('Output').Caption('Output').Bottom().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelResults, aui.AuiPaneInfo().Name('Results').Caption('Results').Bottom().CloseButton(True).MaximizeButton(False))
+        #self._mgr.AddPane(self.textCtrlCommandLine, aui.AuiPaneInfo().Name('CommandLine').CaptionVisible(False).Fixed().Bottom().Layer(2).CloseButton(False).MaximizeButton(False))
+        #self._mgr.AddPane(panelBottom, aui.AuiPaneInfo().Name("panelCommandLine").Bottom().Position(1).CloseButton(False).MaximizeButton(False))
 
-        self.events_from_gui = events_from_gui
+        # add the toolbars to the manager
+        #self.toolbar=self.CreateToolBar()
+        self.toolbarNavigation=self.CreateToolBarNavigation()
+        #self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('toolbar').Caption('Toolbar').ToolbarPane().Top().Layer(1).Row(1).LeftDockable(False).RightDockable(False))
+        self._mgr.AddPane(self.toolbarNavigation, aui.AuiPaneInfo().Name('toolbarNavigation').Caption('Navigation').ToolbarPane().Top().Layer(1).Row(1).LeftDockable(False).RightDockable(False))
+        # "commit" all changes made to FrameManager
+        self._mgr.Update()
+        #create the menubar after the panes so that the default perspective
+        #is created with all panes open
+        self.CreateMenuBar()
+        self.statusbar = self.CreateStatusbar()
+        self._BindEvents()
 
-        '''
-            This dictionary keeps all the flags and the relative functon names that
-            have to be called when a point is clicked.
-            That is:
-            - if point is clicked AND foo_flag=True
-            - foo()
-
-            Conversely, foo_flag is True if a corresponding event is launched by the CLI.
-
-            self.ClickedPoints() takes care of handling this
-            '''
-
-        self.click_flags_functions={'measure_points':[False, 'MeasurePoints']}
-
-        #Binding of custom events from CLI --> GUI functions!                       
-        #FIXME: Should use the self.Bind() syntax
-        EVT_PLOT(self, self.PlotCurve)
-        EVT_PLOT_CONTACT(self, self.PlotContact)
-        EVT_GET_DISPLAYED_PLOT(self, self.OnGetDisplayedPlot)
-        EVT_MEASURE_POINTS(self, self.OnMeasurePoints)
-        EVT_EXPORT_IMAGE(self,self.ExportImage)
-        EVT_CLOSE_PLOT(self, self.OnClosePlot)
-        EVT_SHOW_PLOTS(self, self.OnShowPlots)
-
-        #This event and control decide what happens when I click on the plot 0.
-        wxmpl.EVT_POINT(self, self.controls[0].GetId(), self.ClickPoint0)
-        wxmpl.EVT_POINT(self, self.controls[1].GetId(), self.ClickPoint1)
-
-        #RUN PLUGIN-SPECIFIC INITIALIZATION
+        name = self.config['perspectives']['active']
+        menu_item = self.GetPerspectiveMenuItem(name)
+        if menu_item is not None:
+            self.OnRestorePerspective(menu_item)
+            #TODO: config setting to remember playlists from last session
+        self.playlists = self.panelPlaylists.Playlists
+        #define the list of active drivers
+        self.drivers = []
+        for driver in self.config['drivers']:
+            if self.config['drivers'][driver]:
+                #get the corresponding filename and path
+                filename = ''.join([driver, '.py'])
+                path = lh.get_file_path(filename, ['drivers'])
+                #the driver is active for driver[1] == 1
+                if os.path.isfile(path):
+                    #driver files are located in the 'drivers' subfolder
+                    driver_name = ''.join(['drivers.', driver])
+                    __import__(driver_name)
+                    class_file = getattr(drivers, driver)
+                    for command in dir(class_file):
+                        if command.endswith('Driver'):
+                            self.drivers.append(getattr(class_file, command))
+        #import all active plugins and plotmanips
+        #add 'core.ini' to self.configs (this is not a plugin and thus must be imported separately)
+        ini_path = lh.get_file_path('core.ini', ['plugins'])
+        plugin_config = ConfigObj(ini_path)
+        #self.config.merge(plugin_config)
+        self.configs['core'] = plugin_config
         #make sure we execute _plug_init() for every command line plugin we import
-        for plugin_name in config['plugins']:
-            try:
-                plugin=__import__(plugin_name)
-                try:
-                    eval('plugin.'+plugin_name+'Gui._plug_init(self)')
-                    pass
-                except AttributeError:
-                    pass
-            except ImportError:
-                pass
-
-
-
-    #WX-SPECIFIC FUNCTIONS
-    def sizer_dance(self):
-        '''
-            adjust size and placement of wxpython widgets.
-            '''
-        self.splittersizer = wx.BoxSizer(wx.VERTICAL)
-        self.splittersizer.Add(self.mainpanel.splitter, 1, wx.EXPAND)
-
-        self.plot1sizer = wx.BoxSizer()
-        self.plot1sizer.Add(self.controls[0], 1, wx.EXPAND)
-
-        self.plot2sizer = wx.BoxSizer()
-        self.plot2sizer.Add(self.controls[1], 1, wx.EXPAND)
-
-        self.panelsizer=wx.BoxSizer()
-        self.panelsizer.Add(self.mainpanel, -1, wx.EXPAND)
-
-        self.cpanels[0].SetSizer(self.plot1sizer)
-        self.cpanels[1].SetSizer(self.plot2sizer)
-
-        self.mainpanel.SetSizer(self.splittersizer)
-        self.SetSizer(self.panelsizer)
-
-    def binding_dance(self):
-        self.Bind(wx.EVT_MENU, self.OnOpenPlayMenu, self.menubar.menu_items['openplaymenu'])
-        self.Bind(wx.EVT_MENU, self.OnExitMenu, self.menubar.menu_items['exitmenu'])
-        self.Bind(wx.EVT_MENU, self.OnExportText, self.menubar.menu_items['exporttextmenu'])
-        self.Bind(wx.EVT_MENU, self.OnExportImage, self.menubar.menu_items['exportimagemenu'])
-        self.Bind(wx.EVT_MENU, self.OnAboutMenu, self.menubar.menu_items['aboutmenu'])
-
-    # DOUBLE PLOT MANAGEMENT
-    #----------------------
-    def show_both(self):
-        '''
-            Shows both plots.
-            '''
-        self.mainpanel.splitter.SplitHorizontally(self.cpanels[0],self.cpanels[1])
-        self.mainpanel.splitter.SetSashGravity(0.5)
-        self.mainpanel.splitter.SetSashPosition(300) #FIXME: we should get it and restore it
-        self.mainpanel.splitter.UpdateSize()
-
-    def close_plot(self,plot):
-        '''
-            Closes one plot - only if it's open
-            '''
-        if not self.cpanels[plot].IsShown():
-            return
-        if plot != 0:
-            self.current_plot_dest = 0
-        else:
-            self.current_plot_dest = 1
-        self.cpanels[plot].Hide()
-        self.mainpanel.splitter.Unsplit(self.cpanels[plot])
-        self.mainpanel.splitter.UpdateSize()
-
-
-    def OnClosePlot(self,event):
-        self.close_plot(event.to_close)       
-
-    def OnShowPlots(self,event):
-        self.show_both()
-
-
-    #FILE MENU FUNCTIONS
-    #--------------------
-    def OnOpenPlayMenu(self, event):
-        pass 
-
-    def OnExitMenu(self,event):
-        pass
-
-    def OnExportText(self,event):
-        pass
-
-    def OnExportImage(self,event):
-        pass
-
-    def OnAboutMenu(self,event):
-        pass
-
-    #PLOT INTERACTION    
-    #----------------                        
-    def PlotCurve(self,event):
-        '''
-            plots the current ext,ret curve.
-            '''
-        dest=0
-
-        #FIXME: BAD kludge following. There should be a well made plot queue mechanism, with replacements etc.
-        #---
-        #If we have only one plot in the event, we already have one in self.plots and this is a secondary plot,
-        #do not erase self.plots but append the new plot to it.
-        if len(event.plots) == 1 and event.plots[0].destination != 0 and len(self.plots) == 1:
-            self.plots.append(event.plots[0])
-        #if we already have two plots and a new secondary plot comes, we substitute the previous
-        if len(event.plots) == 1 and event.plots[0].destination != 0 and len(self.plots) > 1:
-            self.plots[1] = event.plots[0]
-        else:
-            self.plots = event.plots
-
-        #FIXME. Should be in PlotObject, somehow
-        c=0
-        for plot in self.plots:
-            if self.plots[c].styles==[]:
-                self.plots[c].styles=[None for item in plot.vectors] 
-            if self.plots[c].colors==[]:
-                self.plots[c].colors=[None for item in plot.vectors] 
-
-        for plot in self.plots:
-            '''
-            MAIN LOOP FOR ALL PLOTS (now only 2 are allowed but...)
-            '''
-            if 'destination' in dir(plot):
-                dest=plot.destination
-
-            #if the requested panel is not shown, show it
-            if not ( self.cpanels[dest].IsShown() ):
-                self.show_both()
-
-            self.axes[dest].hold(False)
-            self.current_vectors=plot.vectors
-            self.current_title=plot.title
-            self.current_plot_dest=dest #let's try this way to take into account the destination plot...
-
-            c=0
-
-            if len(plot.colors)==0:
-                plot.colors=[None] * len(plot.vectors)
-            if len(plot.styles)==0:
-                plot.styles=[None] * len(plot.vectors)     
-
-            for vectors_to_plot in self.current_vectors: 
-                if plot.styles[c]=='scatter':
-                    if plot.colors[c]==None:
-                        self.axes[dest].scatter(vectors_to_plot[0], vectors_to_plot[1])
-                    else:
-                        self.axes[dest].scatter(vectors_to_plot[0], vectors_to_plot[1],color=plot.colors[c])
-                else:
-                    if plot.colors[c]==None:
-                        self.axes[dest].plot(vectors_to_plot[0], vectors_to_plot[1])
-                    else:
-                        self.axes[dest].plot(vectors_to_plot[0], vectors_to_plot[1], color=plot.colors[c])
-                self.axes[dest].hold(True)
-                c+=1
-
-            '''
-                for vectors_to_plot in self.current_vectors:
-                    if len(vectors_to_plot)==2: #3d plots are to come...
-                        if len(plot.styles) > 0 and plot.styles[c] == 'scatter':
-                            self.axes[dest].scatter(vectors_to_plot[0],vectors_to_plot[1])
-                        elif len(plot.styles) > 0 and plot.styles[c] == 'scatter_red':
-                            self.axes[dest].scatter(vectors_to_plot[0],vectors_to_plot[1],color='red')
-                        else:
-                            self.axes[dest].plot(vectors_to_plot[0],vectors_to_plot[1])
-
-                        self.axes[dest].hold(True)
-                        c+=1
-                    else:
+        for plugin in self.config['plugins']:
+            if self.config['plugins'][plugin]:
+                filename = ''.join([plugin, '.py'])
+                path = lh.get_file_path(filename, ['plugins'])
+                if os.path.isfile(path):
+                    #get the corresponding filename and path
+                    plugin_name = ''.join(['plugins.', plugin])
+                    try:
+                        #import the module
+                        module = __import__(plugin_name)
+                        #prepare the ini file for inclusion
+                        ini_path = path.replace('.py', '.ini')
+                        #include ini file
+                        plugin_config = ConfigObj(ini_path)
+                        #self.config.merge(plugin_config)
+                        self.configs[plugin] = plugin_config
+                        #add to plugins
+                        commands = eval('dir(module.' + plugin+ '.' + plugin + 'Commands)')
+                        #keep only commands (ie names that start with 'do_')
+                        #TODO: check for existing commands and warn the user!
+                        commands = [command for command in commands if command.startswith('do_')]
+                        if commands:
+                            self.plugins[plugin] = commands
+                        try:
+                            #initialize the plugin
+                            eval('module.' + plugin+ '.' + plugin + 'Commands._plug_init(self)')
+                        except AttributeError:
+                            pass
+                    except ImportError:
                         pass
-                '''               
-            #FIXME: tackles only 2d plots
-            self.axes[dest].set_xlabel(plot.units[0])
-            self.axes[dest].set_ylabel(plot.units[1])
+        #initialize the commands tree
+        commands = dir(HookeFrame)
+        commands = [command for command in commands if command.startswith('do_')]
+        if commands:
+            self.plugins['core'] = commands
+        self.panelCommands.Initialize(self.plugins)
+        for command in dir(self):
+            if command.startswith('plotmanip_'):
+                self.plotmanipulators.append(lib.plotmanipulator.Plotmanipulator(method=getattr(self, command), command=command))
 
-            #FIXME: set smaller fonts
-            self.axes[dest].set_title(plot.title)
+        #load default list, if possible
+        self.do_loadlist(self.config['core']['list'])
+        #self.do_loadlist()
 
-            if plot.xaxes: 
-                #swap X axis
-                xlim=self.axes[dest].get_xlim()
-                self.axes[dest].set_xlim((xlim[1],xlim[0])) 
-            if plot.yaxes:
-                #swap Y axis
-                ylim=self.axes[dest].get_ylim()        
-                self.axes[dest].set_ylim((ylim[1],ylim[0])) 
+    def _BindEvents(self):
+        #TODO: figure out if we can use the eventManager for menu ranges
+        #and events of 'self' without raising an assertion fail error
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        # Show How To Use The Closing Panes Event
+        self.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnNotebookPageClose)
+        #menu
+        evtmgr.eventManager.Register(self.OnAbout, wx.EVT_MENU, win=self, id=wx.ID_ABOUT)
+        evtmgr.eventManager.Register(self.OnClose, wx.EVT_MENU, win=self, id=wx.ID_EXIT)
+        #view
+        self.Bind(wx.EVT_MENU_RANGE, self.OnView, id=ID_ViewAssistant, id2=ID_ViewResults)
+        #perspectives
+        self.Bind(wx.EVT_MENU, self.OnDeletePerspective, id=ID_DeletePerspective)
+        self.Bind(wx.EVT_MENU, self.OnSavePerspective, id=ID_SavePerspective)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnRestorePerspective, id=ID_FirstPerspective, id2=ID_FirstPerspective+1000)
+        #toolbar
+        evtmgr.eventManager.Register(self.OnNext, wx.EVT_TOOL, win=self, id=ID_Next)
+        evtmgr.eventManager.Register(self.OnPrevious, wx.EVT_TOOL, win=self, id=ID_Previous)
+        #self.Bind(.EVT_AUITOOLBAR_TOOL_DROPDOWN, self.OnDropDownToolbarItem, id=ID_DropDownToolbarItem)
+        #dir control
+        treeCtrl = self.panelFolders.GetTreeCtrl()
+        #tree.Bind(wx.EVT_LEFT_UP, self.OnDirCtrl1LeftUp)
+        #tree.Bind(wx.EVT_LEFT_DOWN, self.OnGenericDirCtrl1LeftDown)
+        treeCtrl.Bind(wx.EVT_LEFT_DCLICK, self.OnDirCtrlLeftDclick)
+        #playlist tree
+        self.panelPlaylists.PlaylistsTree.Bind(wx.EVT_LEFT_DOWN, self.OnPlaylistsLeftDown)
+        self.panelPlaylists.PlaylistsTree.Bind(wx.EVT_LEFT_DCLICK, self.OnPlaylistsLeftDclick)
+        #commands tree
+        evtmgr.eventManager.Register(self.OnExecute, wx.EVT_BUTTON, self.panelCommands.ExecuteButton)
+        evtmgr.eventManager.Register(self.OnTreeCtrlCommandsSelectionChanged, wx.EVT_TREE_SEL_CHANGED, self.panelCommands.CommandsTree)
+        evtmgr.eventManager.Register(self.OnTreeCtrlItemActivated, wx.EVT_TREE_ITEM_ACTIVATED, self.panelCommands.CommandsTree)
+        #property editor
+        self.panelProperties.pg.Bind(wxpg.EVT_PG_CHANGED, self.OnPropGridChanged)
+        #results panel
+        self.panelResults.results_list.OnCheckItem = self.OnResultsCheck
 
-            self.controls[dest].draw()
-
-
-    def PlotContact(self,event):
-        '''
-            plots the contact point
-            DEPRECATED!
-            '''
-        self.axes[0].hold(True)
-        self.current_contact_index=event.contact_index
-
-        #now we fake a clicked point 
-        self.clicked_points.append(ClickedPoint())
-        self.clicked_points[-1].absolute_coords=self.current_x_ret[dest][self.current_contact_index], self.current_y_ret[dest][self.current_contact_index]
-        self.clicked_points[-1].is_marker=True    
-
-        self._replot()
-        self.clicked_points=[]
-
-    def OnMeasurePoints(self,event):
-        '''
-            trigger flags to measure N points
-            '''
-        self.click_flags_functions['measure_points'][0]=True
-        if 'num_of_points' in dir(event):
-            self.num_of_points=event.num_of_points
-        if 'set' in dir(event):    
-            self.measure_set=event.set            
-
-    def ClickPoint0(self,event):
-        self.current_plot_dest=0
-        self.ClickPoint(event)
-    def ClickPoint1(self,event):
-        self.current_plot_dest=1
-        self.ClickPoint(event)
-
-    def ClickPoint(self,event):
-        '''
-            this function decides what to do when we receive a left click on the axes.
-            We trigger other functions:
-            - the action chosen by the CLI sends an event
-            - the event raises a flag : self.click_flags_functions['foo'][0]
-            - the raised flag wants the function in self.click_flags_functions[1] to be called after a click
-            '''
-        for key, value in self.click_flags_functions.items():
-            if value[0]:
-                eval('self.'+value[1]+'(event)')
-
-
-
-    def MeasurePoints(self,event,current_set=1):
-        dest=self.current_plot_dest
-        try:
-            current_set=self.measure_set
-        except AttributeError:
-            pass
-
-        #find the current plot matching the clicked destination
-        plot=self._plot_of_dest()
-        if len(plot.vectors)-1 < current_set: #what happens if current_set is 1 and we have only 1 vector?
-            current_set=current_set-len(plot.vectors)
-
-        xvector=plot.vectors[current_set][0]
-        yvector=plot.vectors[current_set][1]
-
-        self.clicked_points.append(ClickedPoint())            
-        self.clicked_points[-1].absolute_coords=event.xdata, event.ydata
-        self.clicked_points[-1].find_graph_coords(xvector,yvector)
-        self.clicked_points[-1].is_marker=True    
-        self.clicked_points[-1].is_line_edge=True
-        self.clicked_points[-1].dest=dest                
-
-        self._replot()
-
-        if len(self.clicked_points)==self.num_of_points:
-            self.events_from_gui.put(self.clicked_points)
-            #restore to default state:
-            self.clicked_points=[]
-            self.click_flags_functions['measure_points'][0]=False    
-
-
-    def OnGetDisplayedPlot(self,event):
-        if 'dest' in dir(event):
-            self.GetDisplayedPlot(event.dest)
+    def _GetActiveFileIndex(self):
+        lib.playlist.Playlist = self.GetActivePlaylist()
+        #get the selected item from the tree
+        selected_item = self.panelPlaylists.PlaylistsTree.GetSelection()
+        #test if a playlist or a curve was double-clicked
+        if self.panelPlaylists.PlaylistsTree.ItemHasChildren(selected_item):
+            return -1
         else:
-            self.GetDisplayedPlot(self.current_plot_dest)
+            count = 0
+            selected_item = self.panelPlaylists.PlaylistsTree.GetPrevSibling(selected_item)
+            while selected_item.IsOk():
+                count += 1
+                selected_item = self.panelPlaylists.PlaylistsTree.GetPrevSibling(selected_item)
+            return count
 
-    def GetDisplayedPlot(self,dest):
+    def _GetPlaylistTab(self, name):
+        for index, page in enumerate(self.plotNotebook._tabs._pages):
+            if page.caption == name:
+                return index
+        return -1
+
+    def _GetUniquePlaylistName(self, name):
+        playlist_name = name
+        count = 1
+        while playlist_name in self.playlists:
+            playlist_name = ''.join([name, str(count)])
+            count += 1
+        return playlist_name
+
+    def _RestorePerspective(self, name):
+        self._mgr.LoadPerspective(self._perspectives[name])
+        self.config['perspectives']['active'] = name
+        self._mgr.Update()
+        all_panes = self._mgr.GetAllPanes()
+        for pane in all_panes:
+            if not pane.name.startswith('toolbar'):
+                if pane.name == 'Assistant':
+                    self.MenuBar.FindItemById(ID_ViewAssistant).Check(pane.window.IsShown())
+                if pane.name == 'Folders':
+                    self.MenuBar.FindItemById(ID_ViewFolders).Check(pane.window.IsShown())
+                if pane.name == 'Playlists':
+                    self.MenuBar.FindItemById(ID_ViewPlaylists).Check(pane.window.IsShown())
+                if pane.name == 'Commands':
+                    self.MenuBar.FindItemById(ID_ViewCommands).Check(pane.window.IsShown())
+                if pane.name == 'Properties':
+                    self.MenuBar.FindItemById(ID_ViewProperties).Check(pane.window.IsShown())
+                if pane.name == 'Output':
+                    self.MenuBar.FindItemById(ID_ViewOutput).Check(pane.window.IsShown())
+                if pane.name == 'Results':
+                    self.MenuBar.FindItemById(ID_ViewResults).Check(pane.window.IsShown())
+
+    def _SavePerspectiveToFile(self, name, perspective):
+        filename = ''.join([name, '.txt'])
+        filename = lh.get_file_path(filename, ['perspectives'])
+        perspectivesFile = open(filename, 'w')
+        perspectivesFile.write(perspective)
+        perspectivesFile.close()
+
+    def _UnbindEvents(self):
+        #menu
+        evtmgr.eventManager.DeregisterListener(self.OnAbout)
+        evtmgr.eventManager.DeregisterListener(self.OnClose)
+        #toolbar
+        evtmgr.eventManager.DeregisterListener(self.OnNext)
+        evtmgr.eventManager.DeregisterListener(self.OnPrevious)
+        #commands tree
+        evtmgr.eventManager.DeregisterListener(self.OnExecute)
+        evtmgr.eventManager.DeregisterListener(self.OnTreeCtrlCommandsSelectionChanged)
+
+    def AddPlaylist(self, playlist=None, name='Untitled'):
+        if playlist and playlist.count > 0:
+            playlist.name = self._GetUniquePlaylistName(name)
+            playlist.reset()
+            self.AddToPlaylists(playlist)
+
+    def AddPlaylistFromFiles(self, files=[], name='Untitled'):
+        if files:
+            playlist = lib.playlist.Playlist(self, self.drivers)
+            for item in files:
+                playlist.add_curve(item)
+        if playlist.count > 0:
+            playlist.name = self._GetUniquePlaylistName(name)
+            playlist.reset()
+            self.AddTayliss(playlist)
+
+    def AddToPlaylists(self, playlist):
+        if playlist.count > 0:
+            #setup the playlist in the Playlist tree
+            tree_root = self.panelPlaylists.PlaylistsTree.GetRootItem()
+            playlist_root = self.panelPlaylists.PlaylistsTree.AppendItem(tree_root, playlist.name, 0)
+            #add all files to the Playlist tree
+#            files = {}
+            for index, file_to_add in enumerate(playlist.files):
+                #TODO: optionally remove the extension from the name of the curve
+                #item_text, extension = os.path.splitext(curve.name)
+                #curve_ID = self.panelPlaylists.PlaylistsTree.AppendItem(playlist_root, item_text, 1)
+                file_ID = self.panelPlaylists.PlaylistsTree.AppendItem(playlist_root, file_to_add.name, 1)
+                if index == playlist.index:
+                    self.panelPlaylists.PlaylistsTree.SelectItem(file_ID)
+            playlist.reset()
+            #create the plot tab and add playlist to the dictionary
+            plotPanel = panels.plot.PlotPanel(self, ID_FirstPlot + len(self.playlists))
+            notebook_tab = self.plotNotebook.AddPage(plotPanel, playlist.name, True)
+            #tab_index = self.plotNotebook.GetSelection()
+            playlist.figure = plotPanel.get_figure()
+            self.playlists[playlist.name] = playlist
+            #self.playlists[playlist.name] = [playlist, figure]
+            self.panelPlaylists.PlaylistsTree.Expand(playlist_root)
+            self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+            self.UpdatePlot()
+
+    def AppendToOutput(self, text):
+        self.panelOutput.AppendText(''.join([text, '\n']))
+
+    def AppliesPlotmanipulator(self, name):
         '''
-            returns to the CLI the currently displayed plot for the given destination
-            '''
-        displayed_plot=self._plot_of_dest(dest)
-        events_from_gui.put(displayed_plot)
-
-    def ExportImage(self,event):
+        returns True if the plotmanipulator 'name' is applied, False otherwise
+        name does not contain 'plotmanip_', just the name of the plotmanipulator (e.g. 'flatten')
         '''
-            exports an image as a file.
-            Current supported file formats: png, eps
-            (matplotlib docs say that jpeg should be supported too, but with .jpg it doesn't work for me!)
-            '''
-        #dest=self.current_plot_dest
-        dest=event.dest
-        filename=event.name
-        self.figures[dest].savefig(filename)
+        return self.GetBoolFromConfig('core', 'plotmanipulators', name)
 
-    '''
-        def _find_nearest_point(self, mypoint, dataset=1):
+    def CreateApplicationIcon(self):
+        iconFile = 'resources' + os.sep + 'microscope.ico'
+        icon = wx.Icon(iconFile, wx.BITMAP_TYPE_ICO)
+        self.SetIcon(icon)
 
-            #Given a clicked point on the plot, finds the nearest point in the dataset (in X) that
-            #corresponds to the clicked point.
+    def CreateCommandLine(self):
+        return wx.TextCtrl(self, -1, '', style=wx.NO_BORDER|wx.EXPAND)
 
-            dest=self.current_plot_dest
+    def CreatePanelAssistant(self):
+        panel = wx.TextCtrl(self, -1, '', wx.Point(0, 0), wx.Size(150, 90), wx.NO_BORDER|wx.TE_MULTILINE)
+        panel.SetEditable(False)
+        return panel
 
-            xvector=plot.vectors[dataset][0]
-            yvector=plot.vectors[dataset][1]
+    def CreatePanelCommands(self):
+        return panels.commands.Commands(self)
 
-            #Ye Olde sorting algorithm...
-            #FIXME: is there a better solution?
-            index=0
-            best_index=0
-            best_diff=10^9 #hope we never go over this magic number :(
-            for point in xvector:
-                diff=abs(point-mypoint)
-                if diff<best_diff:
-                    best_index=index
-                    best_diff=diff
-                index+=1
+    def CreatePanelFolders(self):
+        #set file filters
+        filters = self.config['folders']['filters']
+        index = self.config['folders'].as_int('filterindex')
+        #set initial directory
+        folder = self.config['core']['workdir']
+        return wx.GenericDirCtrl(self, -1, dir=folder, size=(200, 250), style=wx.DIRCTRL_SHOW_FILTERS, filter=filters, defaultFilter=index)
 
-            return best_index,xvector[best_index],yvector[best_index]
-         '''   
+    def CreatePanelOutput(self):
+        return wx.TextCtrl(self, -1, '', wx.Point(0, 0), wx.Size(150, 90), wx.NO_BORDER|wx.TE_MULTILINE)
 
-    def _plot_of_dest(self,dest=None):
-        '''
-            returns the plot that has the current destination
-            '''
-        if dest==None:
-            dest=self.current_plot_dest
+    def CreatePanelPlaylists(self):
+        return panels.playlist.Playlists(self)
 
-        plot=None
-        for aplot in self.plots:
-            if aplot.destination == dest:
-                plot=aplot
+    def CreatePanelProperties(self):
+        return panels.propertyeditor.PropertyEditor(self)
+
+    def CreatePanelResults(self):
+        return panels.results.Results(self)
+
+    def CreatePanelWelcome(self):
+        #TODO: move into panels.welcome
+        ctrl = wx.html.HtmlWindow(self, -1, wx.DefaultPosition, wx.Size(400, 300))
+        introStr = '<h1>Welcome to Hooke</h1>' + \
+                 '<h3>Features</h3>' + \
+                 '<ul>' + \
+                 '<li>View, annotate, measure force files</li>' + \
+                 '<li>Worm-like chain fit of force peaks</li>' + \
+                 '<li>Automatic convolution-based filtering of empty files</li>' + \
+                 '<li>Automatic fit and measurement of multiple force peaks</li>' + \
+                 '<li>Handles force-clamp force experiments (experimental)</li>' + \
+                 '<li>It is extensible by users by means of plugins and drivers</li>' + \
+                 '</ul>' + \
+                 '<p>See the <a href="http://code.google.com/p/hooke/wiki/DocumentationIndex">DocumentationIndex</a> for more information</p>'
+        ctrl.SetPage(introStr)
+        return ctrl
+
+    def CreateMenuBar(self):
+        menu_bar = wx.MenuBar()
+        self.SetMenuBar(menu_bar)
+        #file
+        file_menu = wx.Menu()
+        file_menu.Append(wx.ID_EXIT, 'Exit\tCtrl-Q')
+#        edit_menu.AppendSeparator();
+#        edit_menu.Append(ID_Config, 'Preferences')
+        #view
+        view_menu = wx.Menu()
+        view_menu.AppendCheckItem(ID_ViewFolders, 'Folders\tF5')
+        view_menu.AppendCheckItem(ID_ViewPlaylists, 'Playlists\tF6')
+        view_menu.AppendCheckItem(ID_ViewCommands, 'Commands\tF7')
+        view_menu.AppendCheckItem(ID_ViewProperties, 'Properties\tF8')
+        view_menu.AppendCheckItem(ID_ViewAssistant, 'Assistant\tF9')
+        view_menu.AppendCheckItem(ID_ViewResults, 'Results\tF10')
+        view_menu.AppendCheckItem(ID_ViewOutput, 'Output\tF11')
+        #perspectives
+#        perspectives_menu = self.CreatePerspectivesMenu()
+        perspectives_menu = wx.Menu()
+
+        #help
+        help_menu = wx.Menu()
+        help_menu.Append(wx.ID_ABOUT, 'About Hooke')
+        #put it all together
+        menu_bar.Append(file_menu, 'File')
+#        menu_bar.Append(edit_menu, 'Edit')
+        menu_bar.Append(view_menu, 'View')
+        menu_bar.Append(perspectives_menu, "Perspectives")
+        self.UpdatePerspectivesMenu()
+        menu_bar.Append(help_menu, 'Help')
+
+    def CreateNotebook(self):
+        # create the notebook off-window to avoid flicker
+        client_size = self.GetClientSize()
+        ctrl = aui.AuiNotebook(self, -1, wx.Point(client_size.x, client_size.y), wx.Size(430, 200), self._notebook_style)
+        arts = [aui.AuiDefaultTabArt, aui.AuiSimpleTabArt, aui.VC71TabArt, aui.FF2TabArt, aui.VC8TabArt, aui.ChromeTabArt]
+        art = arts[self._notebook_theme]()
+        ctrl.SetArtProvider(art)
+        #uncomment if we find a nice icon
+        #page_bmp = wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, wx.Size(16, 16))
+        ctrl.AddPage(self.CreatePanelWelcome(), "Welcome", False)
+        return ctrl
+
+    def CreateStatusbar(self):
+        statusbar = self.CreateStatusBar(2, wx.ST_SIZEGRIP)
+        statusbar.SetStatusWidths([-2, -3])
+        statusbar.SetStatusText('Ready', 0)
+        welcomeString=u'Welcome to Hooke (version '+__version__+', '+__release_name__+')!'
+        statusbar.SetStatusText(welcomeString, 1)
+        return statusbar
+
+    def CreateToolBarNavigation(self):
+        toolbar = wx.ToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize, wx.TB_FLAT | wx.TB_NODIVIDER)
+        toolbar.SetToolBitmapSize(wx.Size(16,16))
+        toolbar_bmpBack = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK, wx.ART_OTHER, wx.Size(16, 16))
+        toolbar_bmpForward = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD, wx.ART_OTHER, wx.Size(16, 16))
+        toolbar.AddLabelTool(ID_Previous, 'Previous', toolbar_bmpBack, shortHelp='Previous curve')
+        toolbar.AddLabelTool(ID_Next, 'Next', toolbar_bmpForward, shortHelp='Next curve')
+        toolbar.Realize()
+        return toolbar
+
+    def DeleteFromPlaylists(self, name):
+        if name in self.playlists:
+            del self.playlists[name]
+        tree_root = self.panelPlaylists.PlaylistsTree.GetRootItem()
+        item, cookie = self.panelPlaylists.PlaylistsTree.GetFirstChild(tree_root)
+        while item.IsOk():
+            playlist_name = self.panelPlaylists.PlaylistsTree.GetItemText(item)
+            if playlist_name == name:
+                try:
+                    self.panelPlaylists.PlaylistsTree.Delete(item)
+                except:
+                    pass
+            item = self.panelPlaylists.PlaylistsTree.GetNextSibling(item)
+
+    def GetActiveFigure(self):
+        playlist_name = self.GetActivePlaylistName()
+        figure = self.playlists[playlist_name].figure
+        if figure is not None:
+            return figure
+        return None
+
+    def GetActiveFile(self):
+        playlist = self.GetActivePlaylist()
+        if playlist is not None:
+            return playlist.get_active_file()
+        return None
+
+    def GetActivePlaylist(self):
+        playlist_name = self.GetActivePlaylistName()
+        if playlist_name in self.playlists:
+            return self.playlists[playlist_name]
+        return None
+
+    def GetActivePlaylistName(self):
+        #get the selected item from the tree
+        selected_item = self.panelPlaylists.PlaylistsTree.GetSelection()
+        #test if a playlist or a curve was double-clicked
+        if self.panelPlaylists.PlaylistsTree.ItemHasChildren(selected_item):
+            playlist_item = selected_item
+        else:
+            #get the name of the playlist
+            playlist_item = self.panelPlaylists.PlaylistsTree.GetItemParent(selected_item)
+        #now we have a playlist
+        return self.panelPlaylists.PlaylistsTree.GetItemText(playlist_item)
+
+    def GetActivePlot(self):
+        playlist = self.GetActivePlaylist()
+        if playlist is not None:
+            return playlist.get_active_file().plot
+        return None
+
+    def GetDisplayedPlot(self):
+        plot = copy.deepcopy(self.displayed_plot)
+        plot.curves = []
+        plot.curves = copy.deepcopy(plot.curves)
         return plot
 
-    def _replot(self):
+    def GetDisplayedPlotCorrected(self):
+        plot = copy.deepcopy(self.displayed_plot)
+        plot.curves = []
+        plot.curves = copy.deepcopy(plot.corrected_curves)
+        return plot
+
+    def GetDisplayedPlotRaw(self):
+        plot = copy.deepcopy(self.displayed_plot)
+        plot.curves = []
+        plot.curves = copy.deepcopy(plot.raw_curves)
+        return plot
+
+    def GetDockArt(self):
+        return self._mgr.GetArtProvider()
+
+    def GetBoolFromConfig(self, *args):
+        if len(args) == 2:
+            plugin = args[0]
+            section = args[0]
+            key = args[1]
+        elif len(args) == 3:
+            plugin = args[0]
+            section = args[1]
+            key = args[2]
+        if self.configs.has_key(plugin):
+            config = self.configs[plugin]
+            return config[section][key].as_bool('value')
+        return None
+
+    def GetColorFromConfig(self, *args):
+        if len(args) == 2:
+            plugin = args[0]
+            section = args[0]
+            key = args[1]
+        elif len(args) == 3:
+            plugin = args[0]
+            section = args[1]
+            key = args[2]
+        if self.configs.has_key(plugin):
+            config = self.configs[plugin]
+            color_tuple = eval(config[section][key]['value'])
+            color = [value / 255.0 for value in color_tuple]
+            return color
+        return None
+
+    def GetFloatFromConfig(self, *args):
+        if len(args) == 2:
+            plugin = args[0]
+            section = args[0]
+            key = args[1]
+        elif len(args) == 3:
+            plugin = args[0]
+            section = args[1]
+            key = args[2]
+        if self.configs.has_key(plugin):
+            config = self.configs[plugin]
+            return config[section][key].as_float('value')
+        return None
+
+    def GetIntFromConfig(self, *args):
+        if len(args) == 2:
+            plugin = args[0]
+            section = args[0]
+            key = args[1]
+        elif len(args) == 3:
+            plugin = args[0]
+            section = args[1]
+            key = args[2]
+        if self.configs.has_key(plugin):
+            config = self.configs[plugin]
+            return config[section][key].as_int('value')
+        return None
+
+    def GetStringFromConfig(self, *args):
+        if len(args) == 2:
+            plugin = args[0]
+            section = args[0]
+            key = args[1]
+        elif len(args) == 3:
+            plugin = args[0]
+            section = args[1]
+            key = args[2]
+        if self.configs.has_key(plugin):
+            config = self.configs[plugin]
+            return config[section][key]['value']
+        return None
+
+    def GetPerspectiveMenuItem(self, name):
+        if self._perspectives.has_key(name):
+            perspectives_list = [key for key, value in self._perspectives.iteritems()]
+            perspectives_list.sort()
+            index = perspectives_list.index(name)
+            perspective_Id = ID_FirstPerspective + index
+            menu_item = self.MenuBar.FindItemById(perspective_Id)
+            return menu_item
+        else:
+            return None
+
+    def HasPlotmanipulator(self, name):
         '''
-            this routine is needed for a fresh clean-and-replot of interface
-            otherwise, refreshing works very badly :(
+        returns True if the plotmanipulator 'name' is loaded, False otherwise
+        '''
+        for plotmanipulator in self.plotmanipulators:
+            if plotmanipulator.command == name:
+                return True
+        return False
 
-            thanks to Ken McIvor, wxmpl author!
-            '''
-        dest=self.current_plot_dest
-        #we get current zoom limits
-        xlim=self.axes[dest].get_xlim()
-        ylim=self.axes[dest].get_ylim()           
-        #clear axes
-        self.axes[dest].cla()
+    def OnAbout(self, event):
+        message = 'Hooke\n\n'+\
+            'A free, open source data analysis platform\n\n'+\
+            'Copyright 2006-2008 by Massimo Sandal\n'+\
+            'Copyright 2010 by Dr. Rolf Schmidt\n\n'+\
+            'Hooke is released under the GNU General Public License version 2.'
+        dialog = wx.MessageDialog(self, message, 'About Hooke', wx.OK | wx.ICON_INFORMATION)
+        dialog.ShowModal()
+        dialog.Destroy()
 
-        #Plot curve:         
-        #find the current plot matching the clicked destination
-        plot=self._plot_of_dest()
-        #plot all superimposed plots 
-        c=0 
-        if len(plot.colors)==0:
-            plot.colors=[None] * len(plot.vectors)
-        if len(plot.styles)==0:
-            plot.styles=[None] * len(plot.vectors)     
-        for plotset in plot.vectors: 
-            if plot.styles[c]=='scatter':
-                if plot.colors[c]==None:
-                    self.axes[dest].scatter(plotset[0], plotset[1])
+    def OnClose(self, event):
+        #apply changes
+        self.config['main']['height'] = str(self.GetSize().GetHeight())
+        self.config['main']['left'] = str(self.GetPosition()[0])
+        self.config['main']['top'] = str(self.GetPosition()[1])
+        self.config['main']['width'] = str(self.GetSize().GetWidth())
+        #save the configuration file to 'config/hooke.ini'
+        self.config.write()
+        #save all plugin config files
+        for config in self.configs:
+            plugin_config = self.configs[config]
+            plugin_config.write()
+        self._UnbindEvents()
+        self._mgr.UnInit()
+        del self._mgr
+        self.Destroy()
+
+    def OnDeletePerspective(self, event):
+        dialog = panels.perspectives.Perspectives(self, -1, 'Delete perspective(s)')
+        dialog.CenterOnScreen()
+        dialog.ShowModal()
+        dialog.Destroy()
+        self.UpdatePerspectivesMenu()
+        #unfortunately, there is a bug in wxWidgets (Ticket #3258) that
+        #makes the radio item indicator in the menu disappear
+        #the code should be fine once this issue is fixed
+
+    def OnDirCtrlLeftDclick(self, event):
+        file_path = self.panelFolders.GetPath()
+        if os.path.isfile(file_path):
+            if file_path.endswith('.hkp'):
+                self.do_loadlist(file_path)
+        event.Skip()
+
+    def OnEraseBackground(self, event):
+        event.Skip()
+
+    def OnExecute(self, event):
+        item = self.panelCommands.CommandsTree.GetSelection()
+        if item.IsOk():
+            if not self.panelCommands.CommandsTree.ItemHasChildren(item):
+                item_text = self.panelCommands.CommandsTree.GetItemText(item)
+                command = ''.join(['self.do_', item_text, '()'])
+                #self.AppendToOutput(command + '\n')
+                exec(command)
+
+    def OnExit(self, event):
+        self.Close()
+
+    def OnNext(self, event):
+        '''
+        NEXT
+        Go to the next curve in the playlist.
+        If we are at the last curve, we come back to the first.
+        -----
+        Syntax: next, n
+        '''
+        selected_item = self.panelPlaylists.PlaylistsTree.GetSelection()
+        if self.panelPlaylists.PlaylistsTree.ItemHasChildren(selected_item):
+            #GetFirstChild returns a tuple
+            #we only need the first element
+            next_item = self.panelPlaylists.PlaylistsTree.GetFirstChild(selected_item)[0]
+        else:
+            next_item = self.panelPlaylists.PlaylistsTree.GetNextSibling(selected_item)
+            if not next_item.IsOk():
+                parent_item = self.panelPlaylists.PlaylistsTree.GetItemParent(selected_item)
+                #GetFirstChild returns a tuple
+                #we only need the first element
+                next_item = self.panelPlaylists.PlaylistsTree.GetFirstChild(parent_item)[0]
+        self.panelPlaylists.PlaylistsTree.SelectItem(next_item, True)
+        if not self.panelPlaylists.PlaylistsTree.ItemHasChildren(selected_item):
+            playlist = self.GetActivePlaylist()
+            if playlist.count > 1:
+                playlist.next()
+                self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+                self.UpdatePlot()
+
+    def OnNotebookPageClose(self, event):
+        ctrl = event.GetEventObject()
+        playlist_name = ctrl.GetPageText(ctrl._curpage)
+        self.DeleteFromPlaylists(playlist_name)
+
+    def OnPaneClose(self, event):
+        event.Skip()
+
+    def OnPlaylistsLeftDclick(self, event):
+        if self.panelPlaylists.PlaylistsTree.Count > 0:
+            playlist_name = self.GetActivePlaylistName()
+            #if that playlist already exists
+            #we check if it is the active playlist (ie selected in panelPlaylists)
+            #and switch to it if necessary
+            if playlist_name in self.playlists:
+                index = self.plotNotebook.GetSelection()
+                current_playlist = self.plotNotebook.GetPageText(index)
+                if current_playlist != playlist_name:
+                    index = self._GetPlaylistTab(playlist_name)
+                    self.plotNotebook.SetSelection(index)
+                #if a curve was double-clicked
+                item = self.panelPlaylists.PlaylistsTree.GetSelection()
+                if not self.panelPlaylists.PlaylistsTree.ItemHasChildren(item):
+                    index = self._GetActiveFileIndex()
                 else:
-                    self.axes[dest].scatter(plotset[0], plotset[1],color=plot.colors[c])
+                    index = 0
+                if index >= 0:
+                    playlist = self.GetActivePlaylist()
+                    playlist.index = index
+                    self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+                    self.UpdatePlot()
+            #if you uncomment the following line, the tree will collapse/expand as well
+            #event.Skip()
+
+    def OnPlaylistsLeftDown(self, event):
+        hit_item, hit_flags = self.panelPlaylists.PlaylistsTree.HitTest(event.GetPosition())
+        if (hit_flags & wx.TREE_HITTEST_ONITEM) != 0:
+            self.panelPlaylists.PlaylistsTree.SelectItem(hit_item)
+            playlist_name = self.GetActivePlaylistName()
+            playlist = self.GetActivePlaylist()
+            #if a curve was clicked
+            item = self.panelPlaylists.PlaylistsTree.GetSelection()
+            if not self.panelPlaylists.PlaylistsTree.ItemHasChildren(item):
+                index = self._GetActiveFileIndex()
+                if index >= 0:
+                    playlist.index = index
+            self.playlists[playlist_name] = playlist
+        event.Skip()
+
+    def OnPrevious(self, event):
+        '''
+        PREVIOUS
+        Go to the previous curve in the playlist.
+        If we are at the first curve, we jump to the last.
+        -------
+        Syntax: previous, p
+        '''
+        #playlist = self.playlists[self.GetActivePlaylistName()][0]
+        #select the previous curve and tell the user if we wrapped around
+        #self.AppendToOutput(playlist.previous())
+        selected_item = self.panelPlaylists.PlaylistsTree.GetSelection()
+        if self.panelPlaylists.PlaylistsTree.ItemHasChildren(selected_item):
+            previous_item = self.panelPlaylists.PlaylistsTree.GetLastChild(selected_item)
+        else:
+            previous_item = self.panelPlaylists.PlaylistsTree.GetPrevSibling(selected_item)
+            if not previous_item.IsOk():
+                parent_item = self.panelPlaylists.PlaylistsTree.GetItemParent(selected_item)
+                previous_item = self.panelPlaylists.PlaylistsTree.GetLastChild(parent_item)
+        self.panelPlaylists.PlaylistsTree.SelectItem(previous_item, True)
+        playlist = self.GetActivePlaylist()
+        if playlist.count > 1:
+            playlist.previous()
+            self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+            self.UpdatePlot()
+
+    def OnPropGridChanged (self, event):
+        prop = event.GetProperty()
+        if prop:
+            item_section = self.panelProperties.SelectedTreeItem
+            item_plugin = self.panelCommands.CommandsTree.GetItemParent(item_section)
+            plugin = self.panelCommands.CommandsTree.GetItemText(item_plugin)
+            config = self.configs[plugin]
+            property_section = self.panelCommands.CommandsTree.GetItemText(item_section)
+            property_key = prop.GetName()
+            property_value = prop.GetDisplayedString()
+
+            config[property_section][property_key]['value'] = property_value
+
+    def OnRestorePerspective(self, event):
+        name = self.MenuBar.FindItemById(event.GetId()).GetLabel()
+        self._RestorePerspective(name)
+#        self._mgr.LoadPerspective(self._perspectives[name])
+#        self.config['perspectives']['active'] = name
+#        self._mgr.Update()
+#        all_panes = self._mgr.GetAllPanes()
+#        for pane in all_panes:
+#            if not pane.name.startswith('toolbar'):
+#                if pane.name == 'Assistant':
+#                    self.MenuBar.FindItemById(ID_ViewAssistant).Check(pane.window.IsShown())
+#                if pane.name == 'Folders':
+#                    self.MenuBar.FindItemById(ID_ViewFolders).Check(pane.window.IsShown())
+#                if pane.name == 'Playlists':
+#                    self.MenuBar.FindItemById(ID_ViewPlaylists).Check(pane.window.IsShown())
+#                if pane.name == 'Commands':
+#                    self.MenuBar.FindItemById(ID_ViewCommands).Check(pane.window.IsShown())
+#                if pane.name == 'Properties':
+#                    self.MenuBar.FindItemById(ID_ViewProperties).Check(pane.window.IsShown())
+#                if pane.name == 'Output':
+#                    self.MenuBar.FindItemById(ID_ViewOutput).Check(pane.window.IsShown())
+#                if pane.name == 'Results':
+#                    self.MenuBar.FindItemById(ID_ViewResults).Check(pane.window.IsShown())
+
+    def OnResultsCheck(self, index, flag):
+        #TODO: fix for multiple results
+        results = self.GetActivePlot().results
+        fit_function_str = self.GetStringFromConfig('results', 'show_results', 'fit_function')
+        results[fit_function_str].results[index].visible = flag
+        self.UpdatePlot()
+
+    def OnSavePerspective(self, event):
+
+        def nameExists(name):
+            menu_position = self.MenuBar.FindMenu('Perspectives') 
+            menu = self.MenuBar.GetMenu(menu_position)
+            for item in menu.GetMenuItems():
+                if item.GetText() == name:
+                    return True
+            return False
+
+        done = False
+        while not done:
+            dialog = wx.TextEntryDialog(self, 'Enter a name for the new perspective:', 'Save perspective')
+            dialog.SetValue('New perspective')
+            if dialog.ShowModal() != wx.ID_OK:
+                return
             else:
-                if plot.colors[c]==None:
-                    self.axes[dest].plot(plotset[0], plotset[1])
+                name = dialog.GetValue()
+
+            if nameExists(name):
+                dialogConfirm = wx.MessageDialog(self, 'A file with this name already exists.\n\nDo you want to replace it?', 'Confirm', wx.YES_NO|wx.ICON_QUESTION|wx.CENTER)
+                if dialogConfirm.ShowModal() == wx.ID_YES:
+                    done = True
+            else:
+                done = True
+
+        perspective = self._mgr.SavePerspective()
+        self._SavePerspectiveToFile(name, perspective)
+        self.config['perspectives']['active'] = name
+        self.UpdatePerspectivesMenu()
+#        if nameExists(name):
+#            #check the corresponding menu item
+#            menu_item = self.GetPerspectiveMenuItem(name)
+#            #replace the perspectiveStr in _pespectives
+#            self._perspectives[name] = perspective
+#        else:
+#            #because we deal with radio items, we need to do some extra work
+#            #delete all menu items from the perspectives menu
+#            for item in self._perspectives_menu.GetMenuItems():
+#                self._perspectives_menu.DeleteItem(item)
+#            #recreate the perspectives menu
+#            self._perspectives_menu.Append(ID_SavePerspective, 'Save Perspective')
+#            self._perspectives_menu.Append(ID_DeletePerspective, 'Delete Perspective')
+#            self._perspectives_menu.AppendSeparator()
+#            #convert the perspectives dictionary into a list
+#            # the list contains:
+#            #[0]: name of the perspective
+#            #[1]: perspective
+#            perspectives_list = [key for key, value in self._perspectives.iteritems()]
+#            perspectives_list.append(name)
+#            perspectives_list.sort()
+#            #add all previous perspectives
+#            for index, item in enumerate(perspectives_list):
+#                menu_item = self._perspectives_menu.AppendRadioItem(ID_FirstPerspective + index, item)
+#                if item == name:
+#                    menu_item.Check()
+#            #add the new perspective to _perspectives
+#            self._perspectives[name] = perspective
+
+    def OnSize(self, event):
+        event.Skip()
+
+    def OnTreeCtrlCommandsSelectionChanged(self, event):
+        selected_item = event.GetItem()
+        if selected_item is not None:
+            plugin = ''
+            section = ''
+            #deregister/register the listener to avoid infinite loop
+            evtmgr.eventManager.DeregisterListener(self.OnTreeCtrlCommandsSelectionChanged)
+            self.panelCommands.CommandsTree.SelectItem(selected_item)
+            evtmgr.eventManager.Register(self.OnTreeCtrlCommandsSelectionChanged, wx.EVT_TREE_SEL_CHANGED, self.panelCommands.CommandsTree)
+            self.panelProperties.SelectedTreeItem = selected_item
+            #if a command was clicked
+            properties = []
+            if not self.panelCommands.CommandsTree.ItemHasChildren(selected_item):
+                item_plugin = self.panelCommands.CommandsTree.GetItemParent(selected_item)
+                plugin = self.panelCommands.CommandsTree.GetItemText(item_plugin)
+                if self.configs.has_key(plugin):
+                    #config = self.panelCommands.CommandsTree.GetPyData(item_plugin)
+                    config = self.configs[plugin]
+                    section = self.panelCommands.CommandsTree.GetItemText(selected_item)
+                    #display docstring in help window
+                    doc_string = eval('self.do_' + section + '.__doc__')
+                    if section in config:
+                        for option in config[section]:
+                            properties.append([option, config[section][option]])
+            else:
+                plugin = self.panelCommands.CommandsTree.GetItemText(selected_item)
+                if plugin != 'core':
+                    doc_string = eval('plugins.' + plugin + '.' + plugin + 'Commands.__doc__')
                 else:
-                    self.axes[dest].plot(plotset[0], plotset[1], color=plot.colors[c])
-            '''    
-                if len(plot.styles) > 0 and plot.styles[c]=='scatter':
-                    self.axes[dest].scatter(plotset[0], plotset[1],color=plot.colors[c])
-                elif len(plot.styles) > 0 and plot.styles[c] == 'scatter_red':
-                    self.axes[dest].scatter(plotset[0],plotset[1],color='red')
-                else:
-                    self.axes[dest].plot(plotset[0], plotset[1])
-                '''
-            c+=1
-        #plot points we have clicked
-        for item in self.clicked_points:
-            if item.is_marker:
-                if item.graph_coords==(None,None): #if we have no graph coords, we display absolute coords
-                    self.axes[dest].scatter([item.absolute_coords[0]],[item.absolute_coords[1]])
-                else:
-                    self.axes[dest].scatter([item.graph_coords[0]],[item.graph_coords[1]])               
+                    doc_string = 'The module "core" contains Hooke core functionality'
+            if doc_string is not None:
+                self.panelAssistant.ChangeValue(doc_string)
+            else:
+                self.panelAssistant.ChangeValue('')
+            panels.propertyeditor.PropertyEditor.Initialize(self.panelProperties, properties)
+            #save the currently selected command/plugin to the config file
+            self.config['command']['command'] = section
+            self.config['command']['plugin'] = plugin
 
-        if self.plot_fit:
-            print 'DEBUGGING WARNING: use of self.plot_fit is deprecated!'
-            self.axes[dest].plot(self.plot_fit[0],self.plot_fit[1])
+    def OnTreeCtrlItemActivated(self, event):
+        self.OnExecute(event)
 
-        self.axes[dest].hold(True)      
-        #set old axes again
-        self.axes[dest].set_xlim(xlim)
-        self.axes[dest].set_ylim(ylim)
-        #set title and names again...
-        self.axes[dest].set_title(self.current_title)           
-        self.axes[dest].set_xlabel(plot.units[0])
-        self.axes[dest].set_ylabel(plot.units[1])
-        #and redraw!
-        self.controls[dest].draw()
+    def OnView(self, event):
+        menu_id = event.GetId()
+        menu_item = self.MenuBar.FindItemById(menu_id)
+        menu_label = menu_item.GetLabel()
+
+        pane = self._mgr.GetPane(menu_label)
+        pane.Show(not pane.IsShown())
+        #if we don't do the following, the Folders pane does not resize properly on hide/show
+        if pane.caption == 'Folders' and pane.IsShown() and pane.IsDocked():
+            #folders_size = pane.GetSize()
+            self.panelFolders.Fit()
+        self._mgr.Update()
+
+    def _measure_N_points(self, N, message='', whatset=lh.RETRACTION):
+        '''
+        General helper function for N-points measurements
+        By default, measurements are done on the retraction
+        '''
+        if message != '':
+            dialog = wx.MessageDialog(None, message, 'Info', wx.OK)
+            dialog.ShowModal()
+
+        figure = self.GetActiveFigure()
+
+        xvector = self.displayed_plot.curves[whatset].x
+        yvector = self.displayed_plot.curves[whatset].y
+
+        clicked_points = figure.ginput(N, timeout=-1, show_clicks=True)
+
+        points = []
+        for clicked_point in clicked_points:
+            point = lh.ClickedPoint()
+            point.absolute_coords = clicked_point[0], clicked_point[1]
+            point.dest = 0
+            #TODO: make this optional?
+            #so far, the clicked point is taken, not the corresponding data point
+            point.find_graph_coords(xvector, yvector)
+            point.is_line_edge = True
+            point.is_marker = True
+            points.append(point)
+        return points
+
+    def _clickize(self, xvector, yvector, index):
+        '''
+        returns a ClickedPoint() object from an index and vectors of x, y coordinates
+        '''
+        point = lh.ClickedPoint()
+        point.index = index
+        point.absolute_coords = xvector[index], yvector[index]
+        point.find_graph_coords(xvector, yvector)
+        return point
+
+    def _delta(self, color='black', message='Click 2 points', show=True, whatset=1):
+        '''
+        calculates the difference between two clicked points
+        '''
+        clicked_points = self._measure_N_points(N=2, message=message, whatset=whatset)
+        dx = abs(clicked_points[0].graph_coords[0] - clicked_points[1].graph_coords[0])
+        dy = abs(clicked_points[0].graph_coords[1] - clicked_points[1].graph_coords[1])
+
+        plot = self.GetDisplayedPlotCorrected()
+
+        curve = plot.curves[whatset]
+        unitx = curve.units.x
+        unity = curve.units.y
+
+        #TODO: move this to clicked_points?
+        if show:
+            for point in clicked_points:
+                points = copy.deepcopy(curve)
+                points.x = point.graph_coords[0]
+                points.y = point.graph_coords[1]
+
+                points.color = color
+                points.size = 20
+                points.style = 'scatter'
+                plot.curves.append(points)
+
+        self.UpdatePlot(plot)
+
+        return dx, unitx, dy, unity
+
+    def do_plotmanipulators(self):
+        '''
+        Please select the plotmanipulators you would like to use
+        and define the order in which they will be applied to the data.
+
+        Click 'Execute' to apply your changes.
+        '''
+        self.UpdatePlot()
+
+    def do_test(self):
+        self.AppendToOutput(self.config['perspectives']['active'])
+        pass
+
+    def do_version(self):
+        '''
+        VERSION
+        ------
+        Prints the current version and codename, plus library version. Useful for debugging.
+        '''
+        self.AppendToOutput('Hooke ' + __version__ + ' (' + __codename__ + ')')
+        self.AppendToOutput('Released on: ' + __releasedate__)
+        self.AppendToOutput('---')
+        self.AppendToOutput('Python version: ' + python_version)
+        self.AppendToOutput('WxPython version: ' + wx_version)
+        self.AppendToOutput('Matplotlib version: ' + mpl_version)
+        self.AppendToOutput('SciPy version: ' + scipy_version)
+        self.AppendToOutput('NumPy version: ' + numpy_version)
+        self.AppendToOutput('---')
+        self.AppendToOutput('Platform: ' + str(platform.uname()))
+        #TODO: adapt to 'new' config
+        #self.AppendToOutput('---')
+        #self.AppendToOutput('Loaded plugins:', self.config['loaded_plugins'])
+
+    def UpdatePerspectivesMenu(self):
+        #add perspectives to menubar and _perspectives
+        perspectivesDirectory = os.path.join(lh.hookeDir, 'perspectives')
+        self._perspectives = {}
+        if os.path.isdir(perspectivesDirectory):
+            perspectiveFileNames = os.listdir(perspectivesDirectory)
+            for perspectiveFilename in perspectiveFileNames:
+                filename = lh.get_file_path(perspectiveFilename, ['perspectives'])
+                if os.path.isfile(filename):
+                    perspectiveFile = open(filename, 'rU')
+                    perspective = perspectiveFile.readline()
+                    perspectiveFile.close()
+                    if perspective != '':
+                        name, extension = os.path.splitext(perspectiveFilename)
+                        if extension == '.txt':
+                            self._perspectives[name] = perspective
+
+        #in case there are no perspectives
+        if not self._perspectives:
+            perspective = self._mgr.SavePerspective()
+            self._perspectives['Default'] = perspective
+            self._SavePerspectiveToFile('Default', perspective)
+
+        selected_perspective = self.config['perspectives']['active']
+        if not self._perspectives.has_key(selected_perspective):
+            self.config['perspectives']['active'] = 'Default'
+            selected_perspective = 'Default'
+
+        perspectives_list = [key for key, value in self._perspectives.iteritems()]
+        perspectives_list.sort()
+
+        #get the Perspectives menu
+        menu_position = self.MenuBar.FindMenu('Perspectives') 
+        menu = self.MenuBar.GetMenu(menu_position)
+        #delete all menu items
+        for item in menu.GetMenuItems():
+            menu.DeleteItem(item)
+        #rebuild the menu by adding the standard menu items
+        menu.Append(ID_SavePerspective, 'Save Perspective')
+        menu.Append(ID_DeletePerspective, 'Delete Perspective')
+        menu.AppendSeparator()
+        #add all previous perspectives
+        for index, label in enumerate(perspectives_list):
+            menu_item = menu.AppendRadioItem(ID_FirstPerspective + index, label)
+            if label == selected_perspective:
+                self._RestorePerspective(label)
+                menu_item.Check(True)
+
+    def UpdatePlaylistsTreeSelection(self):
+        playlist = self.GetActivePlaylist()
+        if playlist is not None:
+            if playlist.index >= 0:
+                self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+                self.UpdatePlot()
+
+    def UpdatePlot(self, plot=None):
+
+        def add_to_plot(curve):
+            if curve.visible and curve.x and curve.y:
+                destination = (curve.destination.column - 1) * number_of_rows + curve.destination.row - 1
+                axes_list[destination].set_title(curve.title)
+                axes_list[destination].set_xlabel(curve.units.x)
+                axes_list[destination].set_ylabel(curve.units.y)
+                if curve.style == 'plot':
+                    axes_list[destination].plot(curve.x, curve.y, color=curve.color, label=curve.label, zorder=1)
+                if curve.style == 'scatter':
+                    axes_list[destination].scatter(curve.x, curve.y, color=curve.color, label=curve.label, s=curve.size, zorder=2)
+
+        if plot is None:
+            active_file = self.GetActiveFile()
+            if not active_file.driver:
+                active_file.identify(self.drivers)
+            self.displayed_plot = copy.deepcopy(active_file.plot)
+            #add raw curves to plot
+            self.displayed_plot.raw_curves = copy.deepcopy(self.displayed_plot.curves)
+            #apply all active plotmanipulators and add the 'manipulated' data
+            for plotmanipulator in self.plotmanipulators:
+                if self.GetBoolFromConfig('core', 'plotmanipulators', plotmanipulator.name):
+                    self.displayed_plot = plotmanipulator.method(self.displayed_plot, active_file)
+            #add corrected curves to plot
+            self.displayed_plot.corrected_curves = copy.deepcopy(self.displayed_plot.curves)
+        else:
+            active_file = None
+            self.displayed_plot = copy.deepcopy(plot)
+
+        figure = self.GetActiveFigure()
+
+        figure.clear()
+        figure.suptitle(self.displayed_plot.title, fontsize=14)
+
+        axes_list =[]
+
+        number_of_columns = max([curve.destination.column for curve in self.displayed_plot.curves])
+        number_of_rows = max([curve.destination.row for curve in self.displayed_plot.curves])
+
+        for index in range(number_of_rows * number_of_columns):
+            axes_list.append(figure.add_subplot(number_of_rows, number_of_columns, index + 1))
+
+        for curve in self.displayed_plot.curves:
+            add_to_plot(curve)
+
+        #make sure the titles of 'subplots' do not overlap with the axis labels of the 'main plot'
+        figure.subplots_adjust(hspace=0.3)
+
+        #TODO: add multiple results support to fit in curve.results:
+        #get the fit_function results to display
+        fit_function_str = self.GetStringFromConfig('results', 'show_results', 'fit_function')
+        self.panelResults.ClearResults()
+        plot = self.GetActivePlot()
+        if plot is not None:
+            if plot.results.has_key(fit_function_str):
+                for curve in plot.results[fit_function_str].results:
+                    add_to_plot(curve)
+                self.panelResults.DisplayResults(plot.results[fit_function_str])
+            else:
+                self.panelResults.ClearResults()
+
+        figure.canvas.draw()
+
+        for axes in axes_list:
+            #TODO: add legend as global option or per graph option
+            #axes.legend()
+            axes.figure.canvas.draw()
 
 
-class MySplashScreen(wx.SplashScreen):
-    """
-    Create a splash screen widget.
-    That's just a fancy addition... every serious application has a splash screen!
-    """
-    def __init__(self, frame):
-        # This is a recipe to a the screen.
-        # Modify the following variables as necessary.
-        #aBitmap = wx.Image(name = "wxPyWiki.jpg").ConvertToBitmap()
-        aBitmap=wx.Image(name='hooke.jpg').ConvertToBitmap()
-        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT
-        splashDuration = 2000 # milliseconds
-        splashCallback = None
-        # Call the constructor with the above arguments in exactly the
-        # following order.
-        wx.SplashScreen.__init__(self, aBitmap, splashStyle,
-                                 splashDuration, None, -1)
-        wx.EVT_CLOSE(self, self.OnExit)
-        self.frame=frame
-        wx.Yield()
+if __name__ == '__main__':
 
-    def OnExit(self, evt):
-        self.Hide()
+    ## now, silence a deprecation warning for py2.3
+    import warnings
+    warnings.filterwarnings("ignore", "integer", DeprecationWarning, "wxPython.gdi")
 
-        self.frame.Show()
-        # The program will freeze without this line.
-        evt.Skip()  # Make sure the default handler runs too...
+    redirect = True
+    if __debug__:
+        redirect=False
 
-
-#------------------------------------------------------------------------------
-
-def main():
-
-    #save the directory where Hooke is located
-    config['hookedir']=os.getcwd()
-
-    #now change to the working directory.
-    try:
-        os.chdir(config['workdir'])
-    except OSError:
-        print "Warning: Invalid work directory."
-
-    app=wx.PySimpleApp()
-
-    def make_gui_class(*bases):
-        return type(MainWindow)("MainWindowPlugged", bases + (MainWindow,), {})
-
-    main_frame = make_gui_class(*GUI_PLUGINS)(None, -1, ('Hooke '+__version__))
-
-    #FIXME. The frame.Show() is called by the splashscreen here! Ugly as hell.
-
-    mysplash=MySplashScreen(main_frame)
-    mysplash.Show()
-
-    my_cmdline=CliThread(main_frame, list_of_events)
-    my_cmdline.start()
-
+    app = Hooke(redirect=redirect)
 
     app.MainLoop()
 
-main()
+
