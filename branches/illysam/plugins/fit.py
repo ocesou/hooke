@@ -27,6 +27,13 @@ import scipy.odr
 from lib.libhooke import coth
 
 class fitCommands(object):
+    '''
+    Do not use any of the following commands directly:
+    - wlc
+    - fjc
+    - fjcPEG
+    These commands are not implemented properly yet. However, the properties you set for these commands are used for the autopeak command.
+    '''
 
     def _plug_init(self):
         self.wlccurrent=None
