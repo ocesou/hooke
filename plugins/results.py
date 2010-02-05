@@ -17,8 +17,11 @@ class resultsCommands(object):
 
     def _plug_init(self):
         pass
-    
+
     def do_clear_results(self):
+        '''
+        Deletes all fitting results from the curve.
+        '''
         plot = self.GetActivePlot()
         if plot is not None:
             plot.results.clear()
@@ -26,4 +29,7 @@ class resultsCommands(object):
 
 
     def do_show_results(self):
+        '''
+        Select which fitting results should be displayed on the plot.
+        '''
         self.UpdatePlot()

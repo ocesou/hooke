@@ -49,6 +49,8 @@ import panels.propertyeditor
 import panels.results
 import plugins
 
+import lib.igor
+
 global __version__
 global __codename__
 global __releasedate__
@@ -931,7 +933,7 @@ class HookeFrame(wx.Frame):
     def OnSavePerspective(self, event):
 
         def nameExists(name):
-            menu_position = self.MenuBar.FindMenu('Perspectives') 
+            menu_position = self.MenuBar.FindMenu('Perspectives')
             menu = self.MenuBar.GetMenu(menu_position)
             for item in menu.GetMenuItems():
                 if item.GetText() == name:
@@ -1124,7 +1126,9 @@ class HookeFrame(wx.Frame):
         self.UpdatePlot()
 
     def do_test(self):
-        self.AppendToOutput(self.config['perspectives']['active'])
+        '''
+        Use this command for testing purposes. You find do_test in hooke.py.
+        '''
         pass
 
     def do_version(self):
@@ -1179,7 +1183,7 @@ class HookeFrame(wx.Frame):
         perspectives_list.sort()
 
         #get the Perspectives menu
-        menu_position = self.MenuBar.FindMenu('Perspectives') 
+        menu_position = self.MenuBar.FindMenu('Perspectives')
         menu = self.MenuBar.GetMenu(menu_position)
         #delete all menu items
         for item in menu.GetMenuItems():

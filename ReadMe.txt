@@ -1,0 +1,94 @@
+Hooke(GUI)
+Hooke(GUI) is a GUI-only version of Hooke. The fact that all commands can be chosen from the GUI and do not need to be typed into the command line, provides a different user experience. This might be beneficial for some users.
+
+The GUI code is based on the examples from the wxPython DEMO, copyright 1997-2006 by Robin DUnn and Total Control Software.
+
+The property editor is based on the code in test_propgrid.py provided with the wxPropertyGrid download copyright 2006-2009 by Jaakko Salli.
+
+
+== Installation ==
+Please follow the installation guidelines for Hooke. You don't need to install wxMPL to run Hooke(GUI). However, you need to install ConfigObj (http://www.voidspace.org.uk/python/configobj.html) and wxPropertyGrid (http://wxpropgrid.sourceforge.net/cgi-bin/index). Follow the installation instructions on the respective websites.
+Unfortunately, there seem to be some issues with wxPropertyGrid on Linux, Mac OS X and other nix systems.
+
+Hooke(GUI) has been developed and tested with this combination of libraries on Windows (XP, Vista, 7):
+
+  * Python: 2.6.4
+  * wxPython: 2.8.10.1
+  * wxPropertyGrid: 1.4.9.1
+  * matplotlib: 0.99.1
+  * SciPy: 0.7.1
+  * NumPy: 1.3.0
+
+The program will probably work fine with other combinations as well. If you can make it work, please post your combination on the Hooke website indicating that you are using Hooke(GUI).
+
+This version is not yet complete but provides the basic functionality required to do simple force curve filtering and autopeak analysis.
+
+
+== Interface ==
+Starting Hooke(GUI) for the first time, you will see the central plot area with the current plot surrounded by the following windows (the F key toggles the visibility of the window):
+
+  # Folders (F5)
+  # Playlists (F6)
+  # Commands (or Settings and commands) (F7)
+  # Properties (F8)
+  # Assistant (F9)
+  # Results (F10)
+  # Output (F11)
+
+
+Initially, the window will be rather small in order to work with small screen resolutions. Adjust the size and position to your liking.
+
+Above the windows you see the navigation toolbar to switch from one curve to another (next/previous).
+
+=== 1. Folders ===
+Here you can navigate your file system and double click on a saved playlist to open it. In order to change the starting folder, you have to edit _hooke.ini_ in the _config_ folder (core/workdir). In the near future, core settings will be made editable from the GUI.
+
+=== 2. Playlists ===
+You can manage several playlists in this window. As the GUI is rather flexible, it is possible to display the curves from different playlists side by side to compare them (relatively handy when comparing different fit parameters). You can double-click a file in the playlist to display it in the plot area. Deleting entire playlists or single files can be accomplished by right-clicking and selecting 'Delete'.
+
+=== 3. Commands (or Settings and commands) ===
+All available commands (_i.e._ do_COMMAND) are listed under their corresponding plug-in. In order to see a plug-in and its commands, you have to edit _hooke.ini_ in the _config_ folder (plugins/PLUGINNAME = True). Selecting a plug-in or command will display the associated help in the Assistant window (see below). You can edit the properties of the selected command in the Properties window (see below) and click 'Execute' to run the selected command. If you do not need to modify any properties, you can double-click a command to run it.
+
+=== 4. Properties ===
+The properties for the command selected in the Commands window (see above) are displayed here. Edit the properties to your satisfaction (some need to be confirmed by hitting enter, this seems to be a problem in wxPropertyGrid) and click the 'Execute' button to run the selected command. Floating point values are limited to a certain number of decimals (limitation of wxPropertyGrid?) so be careful when using floating point values.
+
+=== 5. Assistant ===
+Selecting a plug-in or command in the Commands window will display the associated help here. The help for the plug-in should give a general description of the plug-in. The help for a command should describe the properties available for this command and suggest reasonable
+default values if possible. feel free to point out missing help content.
+
+=== 6. Results ===
+The results from the 'autopeak' command are displayed here. Initially, all results are checked (i.e visible). If you want to hide a fit, simply uncheck it. Hidden curves will not be exported either. You can only display one type of fit result (WLC, FJC, etc.) at a time (results plug-in - show_results).
+
+=== 7. Output ===
+The Output window serves as a log where pertinent information is displayed. If something does not work the way you expect it, have a look here to see if there is more information available.
+
+== General remarks ==
+Ignore the text on the Welcome tab. This tab is more like a proof of principle and will contain a short how-to in the future (once the howto is written).
+
+Hooke(GUI) will remember the size and position of the main window.
+
+You can arrange the windows any which way you like and save this arrangement as a perspective. Hooke(GUI) will always start with the last used perspective and you can switch from one perspective to another by selecting a perspective from the perspectives menu. After deleting a perspective, the radio indicator in the perspectives menu disappears (known bug in wxPython). This is only a visual problem and does not affect anything else.
+
+In order to pan the plot, zoom in and out and export the plot of your force curves, use the plot toolbar under the plot. A more detailed description is available on the matplotlib website (http://matplotlib.sourceforge.net/users/navigation_toolbar.html).
+
+== Some plug-ins and commands ==
+  * replot (plot): replots the current force curve from scratch eliminating any secondary plots
+  * fjc/fjcPEG/wlc (fit): do not use any of these commands directly, they are not implemented properly yet. However, the properties you set for these commands are used for the autopeak command
+  * plotmanipulators (core): select the plotmanipulators you want to use and arrange them in the proper order
+  * test (test): use this for testing purposes. You find do_test in hooke.py
+  * clear_results (results): deletes all fitting results from the curve
+  * show_results (results): select which fitting results should be displayed on the plot
+  * overlay (export): exports all retraction curves in a playlist on the same scale. This is achieved by determining the maximum x window and adding x(max) and x(min) to all curves that are shorter than the maximum x window. Make sure to filter your playlist before running this command!
+
+== Basic analysis and autopeak ==
+Please follow the steps for basic analysis described on the Hooke website. Instead of typing in the command at the command-line, select it in the Commands window, set your properties in the Properties window and click on 'Execute'.
+
+The Brief_Autopeak_HowTo tutorial on the Hooke website is also applicable. In Hooke(GUI) you need to setup the type of fit you want to use: in the Properties of the autopeak command (autopeak plug-in) select wlc, fjc or fjcPEG from the dropdown list for the fit_function.
+
+In order to display the fitted curves on the plot, select the same type of fit in the Properties of the show_results command (results plug-in).
+
+Be advised that notes are not yet available in Hooke(GUI).
+
+== Brief Plug-in/Properties tutorial ==
+Have a look at the files in the _plugins_ folder. The python files contain the plotmanipulators (_i.e._ plotmanip_NAME), commands (_i.e._ do_COMMAND) and auxilliary methods. The ini files contain the information for the Properties window. You can already use a fair number of datatypes (_e.g._ integer, float, boolean, list, color, etc.) and more can be added. Be careful when using floats as there is a limit to the number of decimals (see above). The plotmanipulators and commands should read the properties directly from the ini file instead of having them passed to them as arguments. For the time being, accessor methods are located in hooke.py (_e.g._ GetBoolFromConfig()).
+A more detailed description will be made available.

@@ -20,4 +20,7 @@ class plotCommands(object):
         pass
 
     def do_replot(self):
+        '''
+        Replots the current force curve from scratch eliminating any secondary plots.
+        '''
         self.UpdatePlot()
