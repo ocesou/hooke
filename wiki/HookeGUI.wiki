@@ -33,7 +33,7 @@ Starting Hooke(GUI) for the first time, you will see the central plot area with 
   # Results (F10)
   # Output (F11)
 
-[http://nanoscience-dev.concordia.ca/custom/images/hooke/hooke%20gui%20screenshot.jpg Screenshot]
+http://nanoscience-dev.concordia.ca/custom/images/hooke/hooke%20gui%20screenshot.jpg
 
 Initially, the window will be rather small in order to work with small screen resolutions. Adjust the size and position to your liking.
 
