@@ -1,4 +1,4 @@
-#summary Intorduction to Hooke(GUI).
+#summary Introduction to Hooke(GUI).
 
 = Hooke(GUI) =
 
