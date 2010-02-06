@@ -16,7 +16,7 @@ import wxversion
 wxversion.select(lh.WX_GOOD)
 
 import copy
-from numpy import arange, diff, fft
+from numpy import arange, diff, fft, median
 from scipy.signal import medfilt
 
 from lib.peakspot import conv_dx
@@ -80,6 +80,7 @@ class procplotsCommands:
         '''
         column = self.GetIntFromConfig('procplots', 'derivplot', 'column')
         row = self.GetIntFromConfig('procplots', 'derivplot', 'row')
+        #TODO: what os select good for?
         select = self.GetBoolFromConfig('procplots', 'derivplot', 'select')
         whatset_str = self.GetStringFromConfig('procplots', 'derivplot', 'whatset')
         whatset = []
@@ -190,6 +191,31 @@ class procplotsCommands:
 
         return plot
 
+    def plotmanip_centerzero(self, plot, current, customvalue=False):
+        '''
+        Centers the force curve so the median (the free level) corresponds to 0 N
+        '''
+        #use only for force spectroscopy experiments!
+        if current.driver.experiment != 'smfs':
+            return plot
+    
+        if not customvalue:
+            customvalue = self.GetBoolFromConfig('procplots', 'centerzero')
+        if not customvalue:
+            return plot
+
+        levelapp = float(median(plot.curves[lh.EXTENSION].y))
+        levelret = float(median(plot.curves[lh.RETRACTION].y))
+    
+        level = (levelapp + levelret)/2    
+    
+        plot.curves[lh.EXTENSION].y = [i-level for i in plot.curves[lh.EXTENSION].y]
+        plot.curves[lh.RETRACTION].y = [i-level for i in plot.curves[lh.RETRACTION].y]
+        
+#        plot.vectors[0][1]=approach    
+#        plot.vectors[1][1]=retract    
+        return plot
+    
 #FFT---------------------------
     def fft_plot(self, curve, boundaries=[0, -1]):
         '''
