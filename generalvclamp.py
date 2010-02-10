@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 
 '''
 generalvclamp.py
@@ -182,6 +183,16 @@ class generalvclampCommands:
         valn=[[] for item in range(max_exponent)]
         yrn=[0.0 for item in range(max_exponent)]
         errn=[0.0 for item in range(max_exponent)]
+        
+        #Check if we have a proper numerical value
+        try:
+            zzz=int(max_cycles)
+        except:
+            #Loudly and annoyingly complain if it's not a number, then fallback to zero
+            print '''Warning: flatten value is not a number!
+            Use "set flatten" or edit hooke.conf to set it properly
+            Using zero.'''
+            max_cycles=0
         
         for i in range(int(max_cycles)):
             
