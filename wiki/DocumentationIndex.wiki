@@ -31,3 +31,6 @@
   *  A series of slides useful to understand how the Hooke source code works can be found elsewhere on this website (see [http://hooke.googlecode.com/files/hookecore01.pdf one], [http://hooke.googlecode.com/files/hookecore02.pdf two], [http://hooke.googlecode.com/files/hookecore3.pdf three], [http://hooke.googlecode.com/files/hookecore4.pdf four])
 
   * To write drivers and plugins, also look  [http://hooke.googlecode.com/files/hookecore05_plugins.pdf here] and [http://hooke.googlecode.com/files/hookecore06_drivers.pdf here] !
+
+= Experimental branches =
+  * [http://code.google.com/p/hooke/wiki/HookeGUI HookeGUI] , a completely revamped Hooke user interface. 
