@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 '''
 libhooke.py
@@ -24,6 +25,8 @@ import xml.dom.minidom
 import os
 import string
 import csv
+from matplotlib.ticker import ScalarFormatter
+
 
 HOOKE_VERSION=['0.8.3_devel', 'Seinei', '2008-04-16']
 WX_GOOD=['2.6','2.8'] 
@@ -249,6 +252,62 @@ class HookeConfig:
     def save_config(self, config_filename):
         print 'Not Implemented.'
         pass    
+
+
+class EngrFormatter(ScalarFormatter):
+    """A variation of the standard ScalarFormatter, using only multiples of 
+three
+in the mantissa. A fixed number of decimals can be displayed with the optional 
+parameter `ndec` . If `ndec` is None (default), the number of decimals is 
+defined
+from the current ticks.
+    """
+    def __init__(self, ndec=None, useOffset=True, useMathText=False):
+        ScalarFormatter.__init__(self, useOffset, useMathText)
+        if ndec is None or ndec < 0:
+            self.format = None
+        elif ndec == 0:
+            self.format = "%d"
+        else:
+            self.format = "%%1.%if" % ndec
+    #........................
+
+    def _set_orderOfMagnitude(self, mrange):
+	    """Sets the order of magnitude."""        
+	    locs = numpy.absolute(self.locs)
+	    if self.offset: 
+		oom = numpy.floor(numpy.log10(mrange))
+	    else:
+		if locs[0] > locs[-1]: 
+		    val = locs[-1]
+		else: 
+		    val = locs[0]
+		if val == 0: 
+		    oom = 0
+		else: 
+		    oom = numpy.floor(numpy.log10(val))
+	    if oom <= -3:
+		self.orderOfMagnitude = 3*(oom//3)
+	    elif oom <= -1:
+		self.orderOfMagnitude = -3
+	    elif oom >= 4:
+		self.orderOfMagnitude = 3*(oom//3)
+	    else:
+		self.orderOfMagnitude = 0
+
+
+    #........................
+    def _set_format(self):
+        """Sets the format string to format all ticklabels."""
+        # set the format string to format all the ticklabels
+        locs = (numpy.array(self.locs)-self.offset) /  10**self.orderOfMagnitude+1e-15
+        sigfigs = [len(str('%1.3f'% loc).split('.')[1].rstrip('0')) \
+                   for loc in locs]
+        sigfigs.sort()
+        if self.format is None:
+            self.format = '%1.' + str(sigfigs[-1]) + 'f'
+        if self._usetex or self._useMathText: self.format = '$%s$'%self.format
+
 
 
 class ClickedPoint:
