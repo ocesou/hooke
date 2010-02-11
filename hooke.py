@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 '''
 HOOKE - A force spectroscopy review & analysis tool
@@ -259,6 +260,11 @@ class MainWindow(wx.Frame):
         #Also, we initialize
         self.figures=[control.get_figure() for control in self.controls]
         self.axes=[figure.gca() for figure in self.figures]
+
+	for i in range(len(self.axes)):
+	  self.axes[i].xaxis.set_major_formatter(EngrFormatter())
+	  self.axes[i].yaxis.set_major_formatter(EngrFormatter(2))
+
 
         self.cpanels[1].Hide()
         self.mainpanel.splitter.Initialize(self.cpanels[0])
@@ -539,6 +545,11 @@ class MainWindow(wx.Frame):
                 #swap Y axis
                 ylim=self.axes[dest].get_ylim()        
                 self.axes[dest].set_ylim((ylim[1],ylim[0])) 
+
+	    for i in range(len(self.axes)):
+	      self.axes[i].xaxis.set_major_formatter(EngrFormatter())
+	      self.axes[i].yaxis.set_major_formatter(EngrFormatter(2))
+
 
             self.controls[dest].draw()
 
