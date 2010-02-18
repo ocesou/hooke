@@ -70,9 +70,11 @@ class reviewCommands:
 	    			
 	    curveset=self.current_list[c:c+10]
 	
-	    base=self.current_list[c]	
+	    base=curveset[0]	
+	    self.current=base
 	    self.do_plot(0)	
 	    multiplot=copy.deepcopy(self._get_displayed_plot(0))
+	    self.current.curve.close_all()	
 
 	    for i in range(1,10):
 		if i >= len(curveset):
@@ -85,8 +87,8 @@ class reviewCommands:
 		nextvect=nextplot.vectors
 		nextitem.curve.close_all()
 
-		nextx=nextvect[0][0]
-		nexty=nextvect[0][1]
+		nextx=nextvect[1][0]
+		nexty=nextvect[1][1]
 		#center y around 0	
 		ymedian=np.median(nexty)
 		pos=0		
@@ -129,6 +131,8 @@ class reviewCommands:
 
 	allok=0  #flag to keep from losing all the work in a slight mistake
 	while allok==0:
+		if len(keep_list) == 0:
+			return
 		save=linp.safeinput('Do you want to save the selected curves?',['y','n'])
 		if save=='y':
 			savedir=linp.safeinput('Destination directory?')
@@ -137,7 +141,8 @@ class reviewCommands:
             			print 'Destination is not a directory. Try again'
 				continue
             	if save=='n':
-			break
+			allok=1
+			return
 		
         	for item in keep_list:
             		try:
@@ -148,4 +153,4 @@ class reviewCommands:
 				allok=0
 				break
 
-	return True
+	return
