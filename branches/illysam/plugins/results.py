@@ -30,6 +30,7 @@ class resultsCommands(object):
 
     def do_show_results(self):
         '''
-        Select which fitting results should be displayed on the plot.
+        Select which type of result should be displayed on the plot.
         '''
+        self.results_str = self.GetStringFromConfig('results', 'show_results', 'result_type')
         self.UpdatePlot()

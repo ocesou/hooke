@@ -19,22 +19,24 @@ import math
 from numpy import isnan
 
 def pretty_format(fValue, sUnit='', iDecimals=-1, iMultiplier=1, bLeadingSpaces=False):
-    if fValue != 0:
-        iLeadingSpaces = 0
-        if bLeadingSpaces:
-            iLeadingSpaces = 5
-        if iMultiplier == 1:
-            iMultiplier=get_multiplier(fValue)
-        sUnitString = ''
-        if sUnit != '':
-            sUnitString = ' ' + get_prefix(iMultiplier) + sUnit
-        if iDecimals >= 0:
-            formatString = '% ' + repr(iLeadingSpaces + iDecimals) + '.' + repr(iDecimals) + 'f'
-            return formatString % (fValue / iMultiplier) + sUnitString
-        else:
-            return str(fValue / iMultiplier) + sUnitString
-    else:
+    if fValue == 0:
         return '0'
+    if isnan(fValue):
+        return 'NaN'
+
+    iLeadingSpaces = 0
+    if bLeadingSpaces:
+        iLeadingSpaces = 5
+    if iMultiplier == 1:
+        iMultiplier=get_multiplier(fValue)
+    sUnitString = ''
+    if sUnit != '':
+        sUnitString = ' ' + get_prefix(iMultiplier) + sUnit
+    if iDecimals >= 0:
+        formatString = '% ' + repr(iLeadingSpaces + iDecimals) + '.' + repr(iDecimals) + 'f'
+        return formatString % (fValue / iMultiplier) + sUnitString
+    else:
+        return str(fValue / iMultiplier) + sUnitString
     return str(fValue / iMultiplier) + ' ' + get_prefix(fValue / iMultiplier) + sUnit
 
 def get_multiplier(fValue):

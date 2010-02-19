@@ -24,7 +24,7 @@ class Playlist(object):
         self.figure = None
         self.files = []
         self.generics_dict = {}
-        self.hidden_attributes = ['curve', 'data', 'driver', 'fits', 'name', 'plots']
+        self.hidden_attributes = ['curve', 'data', 'driver', 'fits', 'name', 'plot', 'plots']
         self.index = -1
         self.name = None
         self.path = None
@@ -75,7 +75,7 @@ class Playlist(object):
 
     def load(self, filename):
         '''
-        loads a playlist file
+        Loads a playlist file
         '''
         self.filename = filename
         self.path, self.name = os.path.split(filename)
@@ -91,9 +91,9 @@ class Playlist(object):
             #rebuild a data structure from the xml attributes
             #the next two lines are here for backwards compatibility, newer playlist files use 'filename' instead of 'path'
             if element.hasAttribute('path'):
-                filename = lib.libhooke.get_file_path(element.getAttribute('path'))
+                filename = element.getAttribute('path')
             if element.hasAttribute('filename'):
-                filename = lib.libhooke.get_file_path(element.getAttribute('filename'))
+                filename = element.getAttribute('filename')
             if os.path.isfile(filename):
                 data_file = lib.file.File(filename)
                 self.files.append(data_file)

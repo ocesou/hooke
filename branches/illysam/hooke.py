@@ -156,6 +156,8 @@ class HookeFrame(wx.Frame):
         self.plotmanipulators = []
         #self.plugins contains: {the name of the plugin: [caption, function]}
         self.plugins = {}
+        #self.results_str contains the type of results we want to display
+        self.results_str = 'wlc'
 
         #tell FrameManager to manage this frame
         self._mgr = aui.AuiManager()
@@ -440,10 +442,21 @@ class HookeFrame(wx.Frame):
 
     def AppliesPlotmanipulator(self, name):
         '''
-        returns True if the plotmanipulator 'name' is applied, False otherwise
+        Returns True if the plotmanipulator 'name' is applied, False otherwise
         name does not contain 'plotmanip_', just the name of the plotmanipulator (e.g. 'flatten')
         '''
         return self.GetBoolFromConfig('core', 'plotmanipulators', name)
+
+    def ApplyPlotmanipulators(self, plot, plot_file):
+        '''
+        Apply all active plotmanipulators.
+        '''
+        if plot is not None and plot_file is not None:
+            manipulated_plot = copy.deepcopy(plot)
+            for plotmanipulator in self.plotmanipulators:
+                if self.GetBoolFromConfig('core', 'plotmanipulators', plotmanipulator.name):
+                    manipulated_plot = plotmanipulator.method(manipulated_plot, plot_file)
+            return manipulated_plot
 
     def CreateApplicationIcon(self):
         iconFile = 'resources' + os.sep + 'microscope.ico'
@@ -613,8 +626,8 @@ class HookeFrame(wx.Frame):
 
     def GetDisplayedPlot(self):
         plot = copy.deepcopy(self.displayed_plot)
-        plot.curves = []
-        plot.curves = copy.deepcopy(plot.curves)
+        #plot.curves = []
+        #plot.curves = copy.deepcopy(plot.curves)
         return plot
 
     def GetDisplayedPlotCorrected(self):
@@ -926,9 +939,10 @@ class HookeFrame(wx.Frame):
     def OnResultsCheck(self, index, flag):
         #TODO: fix for multiple results
         results = self.GetActivePlot().results
-        fit_function_str = self.GetStringFromConfig('results', 'show_results', 'fit_function')
-        results[fit_function_str].results[index].visible = flag
-        self.UpdatePlot()
+        if results.has_key(self.results_str):
+            results[self.results_str].results[index].visible = flag
+            results[self.results_str].update()
+            self.UpdatePlot()
 
     def OnSavePerspective(self, event):
 
@@ -1047,6 +1061,61 @@ class HookeFrame(wx.Frame):
             self.panelFolders.Fit()
         self._mgr.Update()
 
+    def _clickize(self, xvector, yvector, index):
+        '''
+        returns a ClickedPoint() object from an index and vectors of x, y coordinates
+        '''
+        point = lh.ClickedPoint()
+        point.index = index
+        point.absolute_coords = xvector[index], yvector[index]
+        point.find_graph_coords(xvector, yvector)
+        return point
+
+    def _delta(self, message='Click 2 points', plugin=None):
+        '''
+        calculates the difference between two clicked points
+        '''
+        if plugin is None:
+            color = 'black'
+            show_points = True
+            size = 20
+            whatset = lh.RETRACTION
+        else:
+            color = self.GetColorFromConfig(plugin.name, plugin.section, plugin.prefix + 'color')
+            show_points = self.GetBoolFromConfig(plugin.name, plugin.section, plugin.prefix + 'show_points')
+            size = self.GetIntFromConfig(plugin.name, plugin.section, plugin.prefix + 'size')
+            whatset_str = self.GetStringFromConfig(plugin.name, plugin.section, plugin.prefix + 'whatset')
+            if whatset_str == 'extension':
+                whatset = lh.EXTENSION
+            if whatset_str == 'retraction':
+                whatset = lh.RETRACTION
+
+        clicked_points = self._measure_N_points(N=2, message=message, whatset=whatset)
+        dx = abs(clicked_points[0].graph_coords[0] - clicked_points[1].graph_coords[0])
+        dy = abs(clicked_points[0].graph_coords[1] - clicked_points[1].graph_coords[1])
+
+        plot = self.GetDisplayedPlotCorrected()
+
+        curve = plot.curves[whatset]
+        unitx = curve.units.x
+        unity = curve.units.y
+
+        #TODO: move this to clicked_points?
+        if show_points:
+            for point in clicked_points:
+                points = copy.deepcopy(curve)
+                points.x = point.graph_coords[0]
+                points.y = point.graph_coords[1]
+
+                points.color = color
+                points.size = size
+                points.style = 'scatter'
+                plot.curves.append(points)
+
+        self.UpdatePlot(plot)
+
+        return dx, unitx, dy, unity
+
     def _measure_N_points(self, N, message='', whatset=lh.RETRACTION):
         '''
         General helper function for N-points measurements
@@ -1075,46 +1144,6 @@ class HookeFrame(wx.Frame):
             point.is_marker = True
             points.append(point)
         return points
-
-    def _clickize(self, xvector, yvector, index):
-        '''
-        returns a ClickedPoint() object from an index and vectors of x, y coordinates
-        '''
-        point = lh.ClickedPoint()
-        point.index = index
-        point.absolute_coords = xvector[index], yvector[index]
-        point.find_graph_coords(xvector, yvector)
-        return point
-
-    def _delta(self, color='black', message='Click 2 points', show=True, whatset=1):
-        '''
-        calculates the difference between two clicked points
-        '''
-        clicked_points = self._measure_N_points(N=2, message=message, whatset=whatset)
-        dx = abs(clicked_points[0].graph_coords[0] - clicked_points[1].graph_coords[0])
-        dy = abs(clicked_points[0].graph_coords[1] - clicked_points[1].graph_coords[1])
-
-        plot = self.GetDisplayedPlotCorrected()
-
-        curve = plot.curves[whatset]
-        unitx = curve.units.x
-        unity = curve.units.y
-
-        #TODO: move this to clicked_points?
-        if show:
-            for point in clicked_points:
-                points = copy.deepcopy(curve)
-                points.x = point.graph_coords[0]
-                points.y = point.graph_coords[1]
-
-                points.color = color
-                points.size = 20
-                points.style = 'scatter'
-                plot.curves.append(points)
-
-        self.UpdatePlot(plot)
-
-        return dx, unitx, dy, unity
 
     def do_plotmanipulators(self):
         '''
@@ -1215,7 +1244,7 @@ class HookeFrame(wx.Frame):
                 axes_list[destination].set_xlabel(curve.units.x)
                 axes_list[destination].set_ylabel(curve.units.y)
                 if curve.style == 'plot':
-                    axes_list[destination].plot(curve.x, curve.y, color=curve.color, label=curve.label, zorder=1)
+                    axes_list[destination].plot(curve.x, curve.y, color=curve.color, label=curve.label, lw=curve.linewidth, zorder=1)
                 if curve.style == 'scatter':
                     axes_list[destination].scatter(curve.x, curve.y, color=curve.color, label=curve.label, s=curve.size, zorder=2)
 
@@ -1226,10 +1255,8 @@ class HookeFrame(wx.Frame):
             self.displayed_plot = copy.deepcopy(active_file.plot)
             #add raw curves to plot
             self.displayed_plot.raw_curves = copy.deepcopy(self.displayed_plot.curves)
-            #apply all active plotmanipulators and add the 'manipulated' data
-            for plotmanipulator in self.plotmanipulators:
-                if self.GetBoolFromConfig('core', 'plotmanipulators', plotmanipulator.name):
-                    self.displayed_plot = plotmanipulator.method(self.displayed_plot, active_file)
+            #apply all active plotmanipulators
+            self.displayed_plot = self.ApplyPlotmanipulators(self.displayed_plot, active_file)
             #add corrected curves to plot
             self.displayed_plot.corrected_curves = copy.deepcopy(self.displayed_plot.curves)
         else:
@@ -1256,17 +1283,14 @@ class HookeFrame(wx.Frame):
         figure.subplots_adjust(hspace=0.3)
 
         #TODO: add multiple results support to fit in curve.results:
-        #get the fit_function results to display
-        fit_function_str = self.GetStringFromConfig('results', 'show_results', 'fit_function')
+        #display results
         self.panelResults.ClearResults()
-        plot = self.GetActivePlot()
-        if plot is not None:
-            if plot.results.has_key(fit_function_str):
-                for curve in plot.results[fit_function_str].results:
-                    add_to_plot(curve)
-                self.panelResults.DisplayResults(plot.results[fit_function_str])
-            else:
-                self.panelResults.ClearResults()
+        if self.displayed_plot.results.has_key(self.results_str):
+            for curve in self.displayed_plot.results[self.results_str].results:
+                add_to_plot(curve)
+            self.panelResults.DisplayResults(self.displayed_plot.results[self.results_str])
+        else:
+            self.panelResults.ClearResults()
 
         figure.canvas.draw()
 

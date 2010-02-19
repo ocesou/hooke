@@ -27,14 +27,9 @@ class exportCommands(object):
     def _plug_init(self):
         pass
 
-    def do_fits(self):#, ext='', folder='', prefix='', separator=''):
+    def do_fits(self):
         '''
-        Exports all approach and retraction files in a playlist and
-        all fitting results (if available) in a columnar ASCII format.
-        Please make sure that the number of points in the fit is smaller
-        or equal to the number of points in the approach/retraction.
-        For the time being, exports only one set of results (e.g. WLC
-        or FJC, not both).
+        Exports all fitting results (if available) in a columnar ASCII format.
         '''
 
         ext = self.GetStringFromConfig('export', 'fits', 'ext')
@@ -47,7 +42,6 @@ class exportCommands(object):
         active_file = self.GetActiveFile()
         plot = self.GetDisplayedPlot()
 
-        #TODO: fix for multiple results
         #add empty columns before adding new results if necessary
         if plot is not None:
             for results_str, results in plot.results.items():
@@ -88,18 +82,22 @@ class exportCommands(object):
         #add string for Other
 
         active_file = self.GetActiveFile()
-        plot = self.GetActivePlot()
-        extension = plot.curves[lh.EXTENSION]
-        retraction = plot.curves[lh.RETRACTION]
+        #create the header from the raw plot (i.e. only the force curve)
+        plot = self.GetDisplayedPlotRaw()
 
         output = []
         header_str = ''
         for index, curve in enumerate(plot.curves):
+            #TODO: only add labels for original curves (i.e. excluding anything added after the fact)
             header_str += curve.label + '_x (' + curve.units.x + ')' + separator + curve.label + '_y (' + curve.units.y + ')'
             if index < len(plot.curves) - 1:
                 header_str += separator
         output.append(header_str)
-        #TODO: add units
+
+        #export the displayed plot
+        plot = self.GetDisplayedPlot()
+        extension = plot.curves[lh.EXTENSION]
+        retraction = plot.curves[lh.RETRACTION]
         for index, row in enumerate(extension.x):
             output.append(separator.join([str(extension.x[index]), str(extension.y[index]), str(retraction.x[index]), str(retraction.y[index])]))
 
@@ -171,11 +169,15 @@ class exportCommands(object):
                 output_file.close
         progress_dialog.Destroy()
 
-    def do_results(self, filename='', separator=''):
+    def do_results(self, append=None, filename='', separator=''):
         '''
-        EXPORTFITS
         Exports all visible fit results in a playlist into a delimited text file
+        append: set append to True if you want to append to an existing results file
+        filename: the filename and path of the results file
+        separator: the separator between columns
         '''
+        if not append:
+            append = self.GetStringFromConfig('export', 'results', 'append')
         if filename == '':
             filename = self.GetStringFromConfig('export', 'results', 'filename')
         if separator == '':
@@ -203,7 +205,11 @@ class exportCommands(object):
                             output_str = ''.join([output_str, line_str, '\n'])
         if output_str != '':
             output_str = ''.join(['Analysis started ', time.asctime(), '\n', output_str])
-            output_file = open(filename, 'w')
+
+            if append and os.path.isfile(filename):
+		output_file = open(filename,'a')
+	    else:
+		output_file = open(filename, 'w')
             output_file.write(output_str)
             output_file.close
         else:

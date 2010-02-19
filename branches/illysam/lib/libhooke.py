@@ -74,9 +74,8 @@ class ClickedPoint(object):
 
         self.index=dists.index(min(dists))
         self.graph_coords=(xvector[self.index], yvector[self.index])
-#-----------------------------------------
-#CSV-HELPING FUNCTIONS
 
+#CSV-HELPING FUNCTIONS
 def transposed2(lists, defval=0):
     '''
     transposes a list of lists, i.e. from [[a,b,c],[x,y,z]] to [[a,x],[b,y],[c,z]] without losing
