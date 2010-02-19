@@ -16,6 +16,7 @@ class Curve(object):
         self.color = 'blue'
         self.destination = Destination()
         self.label = ''
+        self.linewidth = 1
         self.size = 0.5
         self.style = 'plot'
         self.title = ''

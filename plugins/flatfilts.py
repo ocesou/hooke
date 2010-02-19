@@ -129,35 +129,46 @@ class flatfiltsCommands:
     #-----Convolution-based peak recognition and filtering.
     #Requires the peakspot.py library
 
-    def has_peaks(self, plot=None):
+    def has_peaks(self, plot=None, plugin=None):
         '''
         Finds peak position in a force curve.
         FIXME: should be moved to peakspot.py
+        #TODO: should this really be moved? this is obviously tied into flatfilts/convfilt
+        #flatfilts.py is where 'has_peaks' belongs
         '''
 
-        blindwindow = self.GetFloatFromConfig('flatfilts', 'convfilt', 'blindwindow')
-        #need to convert the string that contains the list into a list
-        convolution = eval(self.GetStringFromConfig('flatfilts', 'convfilt', 'convolution'))
-        maxcut = self.GetFloatFromConfig('flatfilts', 'convfilt', 'maxcut')
-        mindeviation = self.GetFloatFromConfig('flatfilts', 'convfilt', 'mindeviation')
-        positive = self.GetBoolFromConfig('flatfilts', 'convfilt', 'positive')
-        seedouble = self.GetIntFromConfig('flatfilts', 'convfilt', 'seedouble')
-        stable = self.GetFloatFromConfig('flatfilts', 'convfilt', 'stable')
+        if plugin is None:
+            blindwindow = self.GetFloatFromConfig('flatfilts', 'convfilt', 'blindwindow')
+            #need to convert the string that contains the list into a list
+            convolution = eval(self.GetStringFromConfig('flatfilts', 'convfilt', 'convolution'))
+            maxcut = self.GetFloatFromConfig('flatfilts', 'convfilt', 'maxcut')
+            mindeviation = self.GetFloatFromConfig('flatfilts', 'convfilt', 'mindeviation')
+            positive = self.GetBoolFromConfig('flatfilts', 'convfilt', 'positive')
+            seedouble = self.GetIntFromConfig('flatfilts', 'convfilt', 'seedouble')
+            stable = self.GetFloatFromConfig('flatfilts', 'convfilt', 'stable')
+        else:
+            blindwindow = self.GetFloatFromConfig(plugin.name, plugin.section, plugin.prefix + 'blindwindow')
+            #need to convert the string that contains the list into a list
+            convolution = eval(self.GetStringFromConfig(plugin.name, plugin.section, plugin.prefix + 'convolution'))
+            maxcut = self.GetFloatFromConfig(plugin.name, plugin.section, plugin.prefix + 'maxcut')
+            mindeviation = self.GetFloatFromConfig(plugin.name, plugin.section, plugin.prefix + 'mindeviation')
+            positive = self.GetBoolFromConfig(plugin.name, plugin.section, plugin.prefix + 'positive')
+            seedouble = self.GetIntFromConfig(plugin.name, plugin.section, plugin.prefix + 'seedouble')
+            stable = self.GetFloatFromConfig(plugin.name, plugin.section, plugin.prefix + 'stable')
 
         if plot is None:
-            plot = self.GetActivePlot()
+            plot = self.GetDisplayedPlotCorrected()
 
-        xret = plot.curves[lh.RETRACTION].x
-        yret = plot.curves[lh.RETRACTION].y
+        retraction = plot.curves[lh.RETRACTION]
         #Calculate convolution
-        convoluted = lps.conv_dx(yret, convolution)
+        convoluted = lps.conv_dx(retraction.y, convolution)
 
         #surely cut everything before the contact point
         cut_index = self.find_contact_point(plot)
         #cut even more, before the blind window
-        start_x = xret[cut_index]
+        start_x = retraction.x[cut_index]
         blind_index = 0
-        for value in xret[cut_index:]:
+        for value in retraction.x[cut_index:]:
             if abs((value) - (start_x)) > blindwindow * (10 ** -9):
                 break
             blind_index += 1
@@ -169,32 +180,15 @@ class flatfiltsCommands:
         #take the maximum
         for i in range(len(peak_location)):
             peak = peak_location[i]
-            maxpk = min(yret[peak - 10:peak + 10])
-            index_maxpk = yret[peak - 10:peak + 10].index(maxpk) + (peak - 10)
+            maxpk = min(retraction.y[peak - 10:peak + 10])
+            index_maxpk = retraction.y[peak - 10:peak + 10].index(maxpk) + (peak - 10)
             peak_location[i] = index_maxpk
-
-        return peak_location, peak_size
-
-    def exec_has_peaks(self, item):
-        '''
-        encapsulates has_peaks for the purpose of correctly treating the curve objects in the convfilt loop,
-        to avoid memory leaks
-        '''
-        #TODO: things have changed, check for the memory leak again
-
-        if self.HasPlotmanipulator('plotmanip_flatten'):
-            #If flatten is present, use it for better recognition of peaks...
-            flat_plot = self.plotmanip_flatten(item.plot, item, customvalue=1)
-
-        peak_location, peak_size = self.has_peaks(flat_plot)
 
         return peak_location, peak_size
 
     def do_peaks(self, plugin=None, peak_location=None, peak_size=None):
         '''
-        PEAKS
-        (flatfilts.py)
-        Test command for convolution filter / test.
+        Test command for convolution filter.
         ----
         Syntax: peaks [deviations]
         absolute deviation = number of times the convolution signal is above the noise absolute deviation.
@@ -222,17 +216,15 @@ class flatfiltsCommands:
             self.AppendToOutput('Found ' + str(len(peak_location)) + peak_str)
 
         if peak_location:
-            xplotted_ret = plot.curves[lh.RETRACTION].x
-            yplotted_ret = plot.curves[lh.RETRACTION].y
-            xgood = [xplotted_ret[index] for index in peak_location]
-            ygood = [yplotted_ret[index] for index in peak_location]
+            retraction = plot.curves[lh.RETRACTION]
 
             peaks = lib.curve.Curve()
             peaks.color = color
             peaks.size = size
             peaks.style = 'scatter'
-            peaks.x = xgood
-            peaks.y = ygood
+            peaks.title = 'Peaks'
+            peaks.x = [retraction.x[index] for index in peak_location]
+            peaks.y = [retraction.y[index] for index in peak_location]
 
             plot.curves.append(peaks)
 
@@ -240,26 +232,17 @@ class flatfiltsCommands:
 
     def do_convfilt(self):
         '''
-        CONVFILT
-        (flatfilts.py)
         Filters out flat (featureless) files of the current playlist,
         creating a playlist containing only the files with potential
         features.
         ------------
-        Syntax:
-        convfilt [min_npks min_deviation]
-
-        min_npks = minmum number of peaks
-        (to set the default, see convfilt.conf file; CONVCONF and SETCONF commands)
-
-        min_deviation = minimum signal/noise ratio *in the convolution*
-        (to set the default, see convfilt.conf file; CONVCONF and SETCONF commands)
-
-        If called without arguments, it uses default values.
+        min_npks: minmum number of peaks
+        min_deviation: minimum signal/noise ratio *in the convolution*
         '''
 
         self.AppendToOutput('Processing playlist...')
         self.AppendToOutput('(Please wait)')
+        apply_plotmanipulators = self.GetStringFromConfig('flatfilts', 'convfilt', 'apply_plotmanipulators')
         minpeaks = self.GetIntFromConfig('flatfilts', 'convfilt', 'minpeaks')
         features = []
         playlist = self.GetActivePlaylist()
@@ -271,7 +254,8 @@ class flatfiltsCommands:
             file_index += 1
             try:
                 current_file.identify(self.drivers)
-                peak_location, peak_size = self.exec_has_peaks(copy.deepcopy(current_file))
+                plot = self.ApplyPlotmanipulators(current_file.plot, current_file)
+                peak_location, peak_size = self.has_peaks(plot)
                 number_of_peaks = len(peak_location)
                 if number_of_peaks != 1:
                     if number_of_peaks > 0:
@@ -293,10 +277,7 @@ class flatfiltsCommands:
                 current_file.peak_size = peak_size
                 features.append(file_index - 1)
 
-        #Warn that no flattening had been done.
-        if not self.HasPlotmanipulator('plotmanip_flatten'):
-            self.AppendToOutput('Flatten manipulator was not found. Processing was done without flattening.')
-            self.AppendToOutput('Try to enable it in the configuration file for better results.')
+        #TODO: warn when flatten is not applied?
         if not features:
             self.AppendToOutput('Found nothing interesting. Check the playlist, could be a bug or criteria could be too stringent.')
         else:

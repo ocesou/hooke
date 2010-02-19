@@ -10,6 +10,8 @@ Copyright 2009 by Dr. Rolf Schmidt (Concordia University, Canada)
 This program is released under the GNU General Public License version 2.
 '''
 
+from numpy import nan
+
 import prettyformat
 import lib.curve
 
@@ -127,15 +129,17 @@ class Results(object):
 
     def set_multipliers(self, index=0):
         if self.has_results():
-            if index >= 0 and index < len(self.results):
-                for column in self.columns:
-                    #result will contain the results dictionary at 'index'
-                    result = self.results[index][0]
-                    #in position 0 of the result we find the value
-                    self.multipliers[column] = prettyformat.get_multiplier(result[column][0])
-                self.has_multipliers = True
+            for column in self.columns:
+                #result will contain the results dictionary at 'index'
+                result = self.results[index].result
+                #in position 0 of the result we find the value
+                self.multipliers[column] = prettyformat.get_multiplier(result[column])
+            self.has_multipliers = True
         else:
             self.has_multipliers = False
+
+    def update(self):
+        pass
 
 
 class ResultsFJC(Results):
@@ -153,20 +157,41 @@ class ResultsFJC(Results):
 
     def set_multipliers(self, index=0):
         if self.has_results():
-            if index >= 0 and index < len(self.results):
-                for column in self.columns:
-                    #result will contain the results dictionary at 'index'
-                    result = self.results[index].result
-                    #in position 0 of the result we find the value
-                    if column == 'sigma contour length':
-                        self.multipliers[column] = self.multipliers['Contour length']
-                    elif column == 'sigma Kuhn length':
-                        self.multipliers[column] = self.multipliers['Kuhn length']
-                    else:
-                        self.multipliers[column] = prettyformat.get_multiplier(result[column])
-                self.has_multipliers = True
+            for column in self.columns:
+                #result will contain the results dictionary at 'index'
+                result = self.results[index].result
+                #in position 0 of the result we find the value
+                if column == 'sigma contour length':
+                    self.multipliers[column] = self.multipliers['Contour length']
+                elif column == 'sigma Kuhn length':
+                    self.multipliers[column] = self.multipliers['Kuhn length']
+                else:
+                    self.multipliers[column] = prettyformat.get_multiplier(result[column])
+            self.has_multipliers = True
         else:
             self.has_multipliers = False
+
+class ResultsMultiDistance(Results):
+    def __init__(self):
+        Results.__init__(self)
+        self.columns = ['Distance']
+        self.units['Distance'] = 'm'
+        self.set_decimals(2)
+
+    def update(self):
+        if (self.results) > 0:
+            for result in self.results:
+                if result.visible:
+                    reference_peak = result.x
+                    break
+
+            for result in self.results:
+                if result.visible:
+                    result.result['Distance'] = reference_peak - result.x
+                    reference_peak = result.x
+                else:
+                    result.result['Distance'] = nan
+
 
 class ResultsWLC(Results):
     def __init__(self):
@@ -183,17 +208,16 @@ class ResultsWLC(Results):
 
     def set_multipliers(self, index=0):
         if self.has_results():
-            if index >= 0 and index < len(self.results):
-                for column in self.columns:
-                    #result will contain the results dictionary at 'index'
-                    result = self.results[index].result
-                    #in position 0 of the result we find the value
-                    if column == 'sigma contour length':
-                        self.multipliers[column] = self.multipliers['Contour length']
-                    elif column == 'sigma persistence length':
-                        self.multipliers[column] = self.multipliers['Persistence length']
-                    else:
-                        self.multipliers[column] = prettyformat.get_multiplier(result[column])
-                self.has_multipliers = True
+            for column in self.columns:
+                #result will contain the results dictionary at 'index'
+                result = self.results[index].result
+                #in position 0 of the result we find the value
+                if column == 'sigma contour length':
+                    self.multipliers[column] = self.multipliers['Contour length']
+                elif column == 'sigma persistence length':
+                    self.multipliers[column] = self.multipliers['Persistence length']
+                else:
+                    self.multipliers[column] = prettyformat.get_multiplier(result[column])
+            self.has_multipliers = True
         else:
             self.has_multipliers = False

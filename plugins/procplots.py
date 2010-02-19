@@ -72,11 +72,7 @@ class procplotsCommands:
 
     def do_derivplot(self):
         '''
-        DERIVPLOT
-        (procplots.py plugin)
-        Plots the discrete differentiation of the currently displayed force curve retraction
-        ---------
-        Syntax: derivplot
+        Plots the discrete differentiation of the currently displayed force curve.
         '''
         column = self.GetIntFromConfig('procplots', 'derivplot', 'column')
         row = self.GetIntFromConfig('procplots', 'derivplot', 'row')
@@ -106,6 +102,12 @@ class procplotsCommands:
             plot.curves.append(deriv_curve)
 
         self.UpdatePlot(plot)
+
+    def do_replot(self):
+        '''
+        Replots the current force curve from scratch eliminating any secondary plots.
+        '''
+        self.UpdatePlot()
 
     def do_subtplot(self):
         '''
@@ -198,7 +200,7 @@ class procplotsCommands:
         #use only for force spectroscopy experiments!
         if current.driver.experiment != 'smfs':
             return plot
-    
+
         if not customvalue:
             customvalue = self.GetBoolFromConfig('procplots', 'centerzero')
         if not customvalue:
@@ -206,16 +208,14 @@ class procplotsCommands:
 
         levelapp = float(median(plot.curves[lh.EXTENSION].y))
         levelret = float(median(plot.curves[lh.RETRACTION].y))
-    
-        level = (levelapp + levelret)/2    
-    
+
+        level = (levelapp + levelret)/2
+
         plot.curves[lh.EXTENSION].y = [i-level for i in plot.curves[lh.EXTENSION].y]
         plot.curves[lh.RETRACTION].y = [i-level for i in plot.curves[lh.RETRACTION].y]
-        
-#        plot.vectors[0][1]=approach    
-#        plot.vectors[1][1]=retract    
+
         return plot
-    
+
 #FFT---------------------------
     def fft_plot(self, curve, boundaries=[0, -1]):
         '''
