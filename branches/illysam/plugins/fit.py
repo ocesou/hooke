@@ -24,8 +24,6 @@ import numpy as np
 import scipy.stats
 import scipy.odr
 
-from lib.libhooke import coth
-
 class fitCommands(object):
     '''
     Do not use any of the following commands directly:
@@ -242,7 +240,7 @@ class fitCommands(object):
             therm=Kb*T
 
             #x=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
-            x=(1/lambd)*(coth(f*(1/pii)/therm) - (therm*pii)/f)
+            x=(1/lambd)*(lh.coth(f*(1/pii)/therm) - (therm*pii)/f)
             return x
 
         def x_fjc_plfix(params,f,pl_value=pl_value,T=T):
@@ -254,7 +252,7 @@ class fitCommands(object):
             Kb=(1.38065e-23)
             therm=Kb*T
             #y=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
-            x=(1/lambd)*(coth(f*(1/pii)/therm) - (therm*pii)/f)
+            x=(1/lambd)*(lh.coth(f*(1/pii)/therm) - (therm*pii)/f)
             return x
 
         #make the ODR fit
@@ -293,7 +291,7 @@ class fitCommands(object):
             Kb = (1.38065e-23) #Boltzmann constant
             therm = Kb * T #so we have thermal energy
             #return ( (therm*pii/4.0) * (((1-(x*lambd))**-2.0) - 1 + (4.0*x*lambd)) )
-            return (1 / lambd) * (coth(y * (1 / pii) / therm) - (therm * pii) / y)
+            return (1 / lambd) * (lh.coth(y * (1 / pii) / therm) - (therm * pii) / y)
 
 
         #STEP 3: plotting the fit
@@ -404,7 +402,7 @@ class fitCommands(object):
 
             #x=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
 
-            x=(1/lambd)*(1 / (exp(delta_G) + 1) + (L_helical/L_planar) * (1 / (exp(-delta_G) + 1))) * (coth(f*(1/pii)/therm) - (therm*pii)/f)
+            x=(1/lambd)*(1 / (exp(delta_G) + 1) + (L_helical/L_planar) * (1 / (exp(-delta_G) + 1))) * (lh.coth(f*(1/pii)/therm) - (therm*pii)/f)
             return x
 
         def x_fjcPEG_plfix(params,f,pl_value=pl_value,T=T):
@@ -416,7 +414,7 @@ class fitCommands(object):
             Kb=(1.38065e-23)
             therm=Kb*T
             #y=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
-            x=(1/lambd)*(1 / (exp(delta_G) + 1) + (L_helical/L_planar) * (1 / (exp(-delta_G) + 1))) * (coth(f*(1/pii)/therm) - (therm*pii)/f)
+            x=(1/lambd)*(1 / (exp(delta_G) + 1) + (L_helical/L_planar) * (1 / (exp(-delta_G) + 1))) * (lh.coth(f*(1/pii)/therm) - (therm*pii)/f)
             return x
 
         #make the ODR fit
@@ -455,7 +453,7 @@ class fitCommands(object):
             Kb = (1.38065e-23) #Boltzmann constant
             therm = Kb * T #so we have thermal energy
             #return ( (therm*pii/4.0) * (((1-(x*lambd))**-2.0) - 1 + (4.0*x*lambd)) )
-            return (1/lambd)*(1 / (exp(delta_G) + 1) + (L_helical/L_planar) * (1 / (exp(-delta_G) + 1))) * (coth(y*(1/pii)/therm) - (therm*pii)/y)
+            return (1/lambd)*(1 / (exp(delta_G) + 1) + (L_helical/L_planar) * (1 / (exp(-delta_G) + 1))) * (lh.coth(y*(1/pii)/therm) - (therm*pii)/y)
 
         #STEP 3: plotting the fit
 
@@ -594,7 +592,7 @@ class fitCommands(object):
         #handle contact point arguments correctly
         if 'reclick' in args.split():
             print 'Click contact point'
-            contact_point=self._measure_N_points(N=1, whatset=1)[0]
+            contact_point=self._measure_N_points(N=1, whatset=lh.RETRACTION)[0]
             contact_point_index=contact_point.index
             self.wlccontact_point=contact_point
             self.wlccontact_index=contact_point.index
@@ -602,7 +600,7 @@ class fitCommands(object):
         elif 'noauto' in args.split():
             if self.wlccontact_index is None or self.wlccurrent != self.current.path:
                 print 'Click contact point'
-                contact_point=self._measure_N_points(N=1, whatset=1)[0]
+                contact_point=self._measure_N_points(N=1, whatset=lh.RETRACTION)[0]
                 contact_point_index=contact_point.index
                 self.wlccontact_point=contact_point
                 self.wlccontact_index=contact_point.index
@@ -618,7 +616,7 @@ class fitCommands(object):
             contact_point.is_marker=True
 
         print 'Click edges of chunk'
-        points=self._measure_N_points(N=2, whatset=1)
+        points=self._measure_N_points(N=2, whatset=lh.RETRACTION)
         points=[contact_point]+points
         try:
             if self.config['fit_function']=='wlc':

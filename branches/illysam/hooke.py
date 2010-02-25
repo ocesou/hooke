@@ -3,14 +3,14 @@
 '''
 HOOKE - A force spectroscopy review & analysis tool
 
-Copyright 2008 by Massimo Sandal (University of Bologna, Italy).
-Copyright 2010 by Rolf Schmidt (Concordia University, Canada).
+Copyright 2008 by Massimo Sandal (University of Bologna, Italy)
+Copyright 2010 by Rolf Schmidt (Concordia University, Canada)
 
 This program is released under the GNU General Public License version 2.
 '''
 
-import wxversion
 import lib.libhooke as lh
+import wxversion
 wxversion.select(lh.WX_GOOD)
 
 from configobj import ConfigObj
@@ -29,6 +29,7 @@ from numpy import __version__ as numpy_version
 from scipy import __version__ as scipy_version
 from sys import version as python_version
 from wx import __version__ as wx_version
+from matplotlib.ticker import FuncFormatter
 
 try:
     from agw import cubecolourdialog as CCD
@@ -39,8 +40,10 @@ except ImportError: # if it's not there locally, try the wxPython lib.
 lh.hookeDir = os.path.abspath(os.path.dirname(__file__))
 from config.config import config
 import drivers
+import lib.delta
 import lib.playlist
 import lib.plotmanipulator
+import lib.prettyformat
 import panels.commands
 import panels.perspectives
 import panels.playlist
@@ -717,6 +720,15 @@ class HookeFrame(wx.Frame):
             return config[section][key]['value']
         return None
 
+    def GetPlotmanipulator(self, name):
+        '''
+        Returns a plot manipulator function from its name
+        '''
+        for plotmanipulator in self.plotmanipulators:
+            if plotmanipulator.name == name:
+                return plotmanipulator
+        return None
+
     def GetPerspectiveMenuItem(self, name):
         if self._perspectives.has_key(name):
             perspectives_list = [key for key, value in self._perspectives.iteritems()]
@@ -1071,50 +1083,24 @@ class HookeFrame(wx.Frame):
         point.find_graph_coords(xvector, yvector)
         return point
 
-    def _delta(self, message='Click 2 points', plugin=None):
+    def _delta(self, message='Click 2 points', whatset=lh.RETRACTION):
         '''
         calculates the difference between two clicked points
         '''
-        if plugin is None:
-            color = 'black'
-            show_points = True
-            size = 20
-            whatset = lh.RETRACTION
-        else:
-            color = self.GetColorFromConfig(plugin.name, plugin.section, plugin.prefix + 'color')
-            show_points = self.GetBoolFromConfig(plugin.name, plugin.section, plugin.prefix + 'show_points')
-            size = self.GetIntFromConfig(plugin.name, plugin.section, plugin.prefix + 'size')
-            whatset_str = self.GetStringFromConfig(plugin.name, plugin.section, plugin.prefix + 'whatset')
-            if whatset_str == 'extension':
-                whatset = lh.EXTENSION
-            if whatset_str == 'retraction':
-                whatset = lh.RETRACTION
-
         clicked_points = self._measure_N_points(N=2, message=message, whatset=whatset)
-        dx = abs(clicked_points[0].graph_coords[0] - clicked_points[1].graph_coords[0])
-        dy = abs(clicked_points[0].graph_coords[1] - clicked_points[1].graph_coords[1])
 
         plot = self.GetDisplayedPlotCorrected()
-
         curve = plot.curves[whatset]
-        unitx = curve.units.x
-        unity = curve.units.y
 
-        #TODO: move this to clicked_points?
-        if show_points:
-            for point in clicked_points:
-                points = copy.deepcopy(curve)
-                points.x = point.graph_coords[0]
-                points.y = point.graph_coords[1]
+        delta = lib.delta.Delta()
+        delta.point1.x = clicked_points[0].graph_coords[0]
+        delta.point1.y = clicked_points[0].graph_coords[1]
+        delta.point2.x = clicked_points[1].graph_coords[0]
+        delta.point2.y = clicked_points[1].graph_coords[1]
+        delta.units.x = curve.units.x
+        delta.units.y = curve.units.y
 
-                points.color = color
-                points.size = size
-                points.style = 'scatter'
-                plot.curves.append(points)
-
-        self.UpdatePlot(plot)
-
-        return dx, unitx, dy, unity
+        return delta
 
     def _measure_N_points(self, N, message='', whatset=lh.RETRACTION):
         '''
@@ -1241,12 +1227,29 @@ class HookeFrame(wx.Frame):
             if curve.visible and curve.x and curve.y:
                 destination = (curve.destination.column - 1) * number_of_rows + curve.destination.row - 1
                 axes_list[destination].set_title(curve.title)
-                axes_list[destination].set_xlabel(curve.units.x)
-                axes_list[destination].set_ylabel(curve.units.y)
+                axes_list[destination].set_xlabel(multiplier_x + curve.units.x)
+                axes_list[destination].set_ylabel(multiplier_y + curve.units.y)
                 if curve.style == 'plot':
                     axes_list[destination].plot(curve.x, curve.y, color=curve.color, label=curve.label, lw=curve.linewidth, zorder=1)
                 if curve.style == 'scatter':
                     axes_list[destination].scatter(curve.x, curve.y, color=curve.color, label=curve.label, s=curve.size, zorder=2)
+
+        def get_format_x(x, pos):
+            'The two args are the value and tick position'
+            multiplier = lib.prettyformat.get_exponent(multiplier_x)
+            decimals_str = '%.' + str(decimals_x) + 'f'
+            return decimals_str % (x/(10 ** multiplier))
+
+        def get_format_y(x, pos):
+            'The two args are the value and tick position'
+            multiplier = lib.prettyformat.get_exponent(multiplier_y)
+            decimals_str = '%.' + str(decimals_y) + 'f'
+            return decimals_str % (x/(10 ** multiplier))
+
+        decimals_x = self.GetIntFromConfig('plot', 'x_decimals')
+        decimals_y = self.GetIntFromConfig('plot', 'y_decimals')
+        multiplier_x = self.GetStringFromConfig('plot', 'x_multiplier')
+        multiplier_y = self.GetStringFromConfig('plot', 'y_multiplier')
 
         if plot is None:
             active_file = self.GetActiveFile()
@@ -1276,6 +1279,12 @@ class HookeFrame(wx.Frame):
         for index in range(number_of_rows * number_of_columns):
             axes_list.append(figure.add_subplot(number_of_rows, number_of_columns, index + 1))
 
+        for axes in axes_list:
+            formatter_x = FuncFormatter(get_format_x)
+            formatter_y = FuncFormatter(get_format_y)
+            axes.xaxis.set_major_formatter(formatter_x)
+            axes.yaxis.set_major_formatter(formatter_y)
+
         for curve in self.displayed_plot.curves:
             add_to_plot(curve)
 
@@ -1292,13 +1301,11 @@ class HookeFrame(wx.Frame):
         else:
             self.panelResults.ClearResults()
 
-        figure.canvas.draw()
-
+        legend = self.GetBoolFromConfig('plot', 'legend')
         for axes in axes_list:
-            #TODO: add legend as global option or per graph option
-            #axes.legend()
-            axes.figure.canvas.draw()
-
+            if legend:
+                axes.legend()
+        figure.canvas.draw()
 
 if __name__ == '__main__':
 

@@ -5,7 +5,7 @@ autopeak.py
 
 Automatic peak detection and analysis.
 
-Copyright ???? by ?
+Copyright 2008 Massimo Sandal, Fabrizio Benedetti, Marco Brucale
 with modifications by Dr. Rolf Schmidt (Concordia University, Canada)
 
 This program is released under the GNU General Public License version 2.
@@ -70,10 +70,6 @@ class autopeakCommands:
 
         Configuration
         -------------
-        apply_plotmanipulators:
-            - all (all selected plotmanipulators will be applied)
-            - flatten (only the flatten plotmanipulator will be applied)
-            - none (no plotmanipulators will be applied)
         fit_function: type of function to use for elasticity. If "wlc" worm-like chain is used, if "fjc" freely jointed
                       chain is used
 
@@ -119,7 +115,7 @@ class autopeakCommands:
         if not usepl:
             pl_value = None
         else:
-            pl_value = persistence_length / 10**9
+            pl_value = persistence_length / 10 ** 9
         usepoints = self.GetBoolFromConfig('autopeak', 'usepoints')
         whatset_str = self.GetStringFromConfig('autopeak', 'whatset')
         if whatset_str == 'extension':
@@ -156,7 +152,7 @@ class autopeakCommands:
             plot = self.GetDisplayedPlotCorrected()
         filename = self.GetActiveFile().name
 
-        TODO: add convfilt option?
+        #TODO: add convfilt option?
         #--Using points instead of nm interval
         if not usepoints:
             fit_points = None

@@ -5,7 +5,7 @@ generalvclamp.py
 
 Plugin regarding general velocity clamp measurements
 
-Copyright ???? by ?
+Copyright 2008 by Massimo Sandal (University of Bologna, Italy)
 with modifications by Dr. Rolf Schmidt (Concordia University, Canada)
 
 This program is released under the GNU General Public License version 2.
@@ -15,7 +15,6 @@ import lib.libhooke as lh
 import wxversion
 wxversion.select(lh.WX_GOOD)
 
-from copy import deepcopy
 import numpy as np
 import scipy as sp
 
@@ -23,6 +22,7 @@ import warnings
 warnings.simplefilter('ignore', np.RankWarning)
 
 import lib.curve
+import lib.prettyformat
 
 class generalvclampCommands:
 
@@ -43,17 +43,50 @@ class generalvclampCommands:
         -----------------
         Syntax: distance
         '''
+        color = self.GetColorFromConfig('generalvclamp', 'distance', 'color')
+        decimals = self.GetIntFromConfig('generalvclamp', 'distance', 'decimals')
+        multiplier_str = self.GetStringFromConfig('generalvclamp', 'distance', 'multiplier')
+        multiplier = lib.prettyformat.get_exponent(multiplier_str)
+        show =  self.GetBoolFromConfig('generalvclamp', 'distance', 'show')
+        show_in_legend = self.GetBoolFromConfig('generalvclamp', 'distance', 'show_in_legend')
+        size = self.GetIntFromConfig('generalvclamp', 'distance', 'size')
+        whatset_str = self.GetStringFromConfig('generalvclamp', 'distance', 'whatset')
+        whatset = 'retraction'
+        if whatset_str == 'extension':
+            whatset = lh.EXTENSION
+        if whatset_str == 'retraction':
+            whatset = lh.RETRACTION
+
         active_file = self.GetActiveFile()
-        plot = self.GetActivePlot()
         if active_file.driver.experiment == 'clamp':
             self.AppendToOutput('You wanted to use zpiezo perhaps?')
             return
         plugin = lib.plugin.Plugin()
         plugin.name = 'generalvclamp'
         plugin.section = 'distance'
-        dx, unitx, dy, unity = self._delta(message='Click 2 points to measure the distance.', plugin=plugin)
-        #TODO: pretty format
-        self.AppendToOutput(str(dx * (10 ** 9)) + ' nm')
+        delta = self._delta(message='Click 2 points to measure the distance.', whatset=whatset)
+
+        plot = self.GetDisplayedPlotCorrected()
+        if show:
+            #add the points to the plot
+            points = lib.curve.Curve()
+            points.color = color
+            if show_in_legend:
+                points.label = 'distance'
+            else:
+                points.label = '_nolegend_'
+            points.size = size
+            points.style = 'scatter'
+            points.units.x = delta.units.x
+            points.units.y = delta.units.y
+            points.x = [delta.point1.x, delta.point2.x]
+            points.y = [delta.point1.y, delta.point2.y]
+            plot.curves.append(points)
+
+        self.UpdatePlot(plot)
+
+        output_str = lib.prettyformat.pretty_format(abs(delta.get_delta_x()), delta.units.x, decimals, 10 ** multiplier)
+        self.AppendToOutput(''.join(['Distance: ', output_str]))
 
     def do_force(self):
         '''
@@ -63,17 +96,50 @@ class generalvclampCommands:
         ---------------
         Syntax: force
         '''
+        color = self.GetColorFromConfig('generalvclamp', 'force', 'color')
+        decimals = self.GetIntFromConfig('generalvclamp', 'force', 'decimals')
+        multiplier_str = self.GetStringFromConfig('generalvclamp', 'force', 'multiplier')
+        multiplier = lib.prettyformat.get_exponent(multiplier_str)
+        show = self.GetBoolFromConfig('generalvclamp', 'force', 'show')
+        show_in_legend = self.GetBoolFromConfig('generalvclamp', 'force', 'show_in_legend')
+        size = self.GetIntFromConfig('generalvclamp', 'force', 'size')
+        whatset_str = self.GetStringFromConfig('generalvclamp', 'force', 'whatset')
+        whatset = 'retraction'
+        if whatset_str == 'extension':
+            whatset = lh.EXTENSION
+        if whatset_str == 'retraction':
+            whatset = lh.RETRACTION
+
         active_file = self.GetActiveFile()
-        plot = self.GetActivePlot()
         if active_file.driver.experiment == 'clamp':
             self.AppendToOutput('This command makes no sense for a force clamp experiment.')
             return
         plugin = lib.plugin.Plugin()
         plugin.name = 'generalvclamp'
         plugin.section = 'force'
-        dx, unitx, dy, unity = self._delta(message='Click 2 points to measure the force.', plugin=plugin)
-        #TODO: pretty format
-        self.AppendToOutput(str(dy * (10 ** 12)) + ' pN')
+        delta = self._delta(message='Click 2 points to measure the force.', whatset=whatset)
+
+        plot = self.GetDisplayedPlotCorrected()
+        if show:
+            #add the points to the plot
+            points = lib.curve.Curve()
+            points.color = color
+            if show_in_legend:
+                points.label = 'force'
+            else:
+                points.label = '_nolegend_'
+            points.size = size
+            points.style = 'scatter'
+            points.units.x = delta.units.x
+            points.units.y = delta.units.y
+            points.x = [delta.point1.x, delta.point2.x]
+            points.y = [delta.point1.y, delta.point2.y]
+            plot.curves.append(points)
+
+        self.UpdatePlot(plot)
+
+        output_str = lib.prettyformat.pretty_format(abs(delta.get_delta_y()), delta.units.y, decimals, 10 ** multiplier)
+        self.AppendToOutput(''.join(['Force: ', output_str]))
 
     def do_forcebase(self):
         '''
@@ -90,11 +156,23 @@ class generalvclampCommands:
                 max: Instead of asking for a point to measure, asks for two points and use
                      the maximum peak in between
         '''
-        color =  self.GetColorFromConfig('generalvclamp', 'forcebase', 'color')
+        baseline_color =  self.GetColorFromConfig('generalvclamp', 'forcebase', 'baseline_color')
+        baseline_show = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'baseline_show')
+        baseline_show_in_legend = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'baseline_show_in_legend')
+        baseline_size = self.GetIntFromConfig('generalvclamp', 'forcebase', 'baseline_size')
+        decimals = self.GetIntFromConfig('generalvclamp', 'forcebase', 'decimals')
+        maximum_color =  self.GetColorFromConfig('generalvclamp', 'forcebase', 'maximum_color')
+        maximum_show = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'maximum_show')
+        maximum_show_in_legend = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'maximum_show_in_legend')
+        maximum_size = self.GetIntFromConfig('generalvclamp', 'forcebase', 'maximum_size')
+        maximumrange_color =  self.GetColorFromConfig('generalvclamp', 'forcebase', 'maximumrange_color')
+        maximumrange_show = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'maximumrange_show')
+        maximumrange_show_in_legend = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'maximumrange_show_in_legend')
+        maximumrange_size = self.GetIntFromConfig('generalvclamp', 'forcebase', 'maximumrange_size')
         maxpoint = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'max')
+        multiplier_str = self.GetStringFromConfig('generalvclamp', 'forcebase', 'multiplier')
+        multiplier = lib.prettyformat.get_exponent(multiplier_str)
         rebase = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'rebase')
-        show_points = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'show_points')
-        size = self.GetIntFromConfig('generalvclamp', 'forcebase', 'size')
         whatset_str = self.GetStringFromConfig('generalvclamp', 'forcebase', 'whatset')
         whatset = 'retraction'
         if whatset_str == 'extension':
@@ -104,34 +182,30 @@ class generalvclampCommands:
 
         plot = self.GetDisplayedPlotCorrected()
 
-        clicked_points = []
-
         filename = self.GetActiveFile().name
         if rebase or (self.basecurrent != filename):
             self.basepoints = self._measure_N_points(N=2, message='Click on 2 points to select the baseline.', whatset=whatset)
             self.basecurrent = filename
-            clicked_points = self.basepoints
 
-        #TODO: maxpoint does not seem to be picking up the 'real' minimum (at least not with test.hkp/default.000)
+        #TODO: maxpoint does not seem to be picking up the 'real' maximum (at least not with test.hkp/default.000)
+        maximumrange_points = []
+        maximum_point = []
         if maxpoint:
-            boundpoints = []
-            points = self._measure_N_points(N=2, message='Click 2 points to select the range for maximum detection.', whatset=whatset)
-            boundpoints = [points[0].index, points[1].index]
+            maximumrange_points = self._measure_N_points(N=2, message='Click 2 points to select the range for maximum detection.', whatset=whatset)
+            boundpoints = [maximumrange_points[0].index, maximumrange_points[1].index]
             boundpoints.sort()
-            clicked_points += points
             try:
                 vector_x = plot.curves[whatset].x[boundpoints[0]:boundpoints[1]]
                 vector_y = plot.curves[whatset].y[boundpoints[0]:boundpoints[1]]
                 y = min(vector_y)
                 index = vector_y.index(y)
-                clicked_points += [self._clickize(vector_x, vector_y, index)]
+                maximum_point = [self._clickize(vector_x, vector_y, index)]
             except ValueError:
                 self.AppendToOutput('Chosen interval not valid. Try picking it again. Did you pick the same point as begin and end of the interval?')
                 return
         else:
-            points = self._measure_N_points(N=1, message='Click on the point to measure.', whatset=whatset)
-            y = points[0].graph_coords[1]
-            clicked_points += [points[0]]
+            maximum_point = self._measure_N_points(N=1, message='Click on the point to measure.', whatset=whatset)
+            y = maximum_point[0].graph_coords[1]
 
         boundaries = [self.basepoints[0].index, self.basepoints[1].index]
         boundaries.sort()
@@ -140,21 +214,62 @@ class generalvclampCommands:
         avg = np.mean(to_average)
         forcebase = abs(y - avg)
 
-        if show_points:
-            curve = plot.curves[whatset]
-            for point in clicked_points:
-                points = deepcopy(curve)
-                points.x = point.graph_coords[0]
-                points.y = point.graph_coords[1]
+        curve = plot.curves[whatset]
+        if self.basepoints and baseline_show:
+            #add the baseline points to the plot
+            baseline = lib.curve.Curve()
+            baseline.color = baseline_color
+            if baseline_show_in_legend:
+                baseline.label = 'baseline'
+            else:
+                baseline.label = '_nolegend_'
+            baseline.size = baseline_size
+            baseline.style = 'scatter'
+            baseline.units.x = curve.units.x
+            baseline.units.y = curve.units.y
+            for point in self.basepoints:
+                baseline.x += [point.graph_coords[0]]
+                baseline.y += [point.graph_coords[1]]
+            plot.curves.append(baseline)
 
-                points.color = color
-                points.size = size
-                points.style = 'scatter'
-                plot.curves.append(points)
+        if maximumrange_points and maximumrange_show:
+            #add the range points to the plot
+            maximumrange = lib.curve.Curve()
+            maximumrange.color = maximumrange_color
+            if maximumrange_show_in_legend:
+                maximumrange.label = 'maximumrange'
+            else:
+                maximumrange.label = '_nolegend_'
+            maximumrange.size = maximumrange_size
+            maximumrange.style = 'scatter'
+            maximumrange.units.x = curve.units.x
+            maximumrange.units.y = curve.units.y
+            for point in maximumrange_points:
+                maximumrange.x += [point.graph_coords[0]]
+                maximumrange.y += [point.graph_coords[1]]
+            plot.curves.append(maximumrange)
+
+        if maximum_show:
+            #add the maximum to the plot
+            maximum = lib.curve.Curve()
+            maximum.color = maximum_color
+            if maximum_show_in_legend:
+                maximum.label = 'maximum'
+            else:
+                maximum.label = '_nolegend_'
+            maximum.size = maximum_size
+            maximum.style = 'scatter'
+            maximum.units.x = curve.units.x
+            maximum.units.y = curve.units.y
+            maximum.x = [maximum_point[0].graph_coords[0]]
+            maximum.y = [maximum_point[0].graph_coords[1]]
+            plot.curves.append(maximum)
 
         self.UpdatePlot(plot)
-        #TODO: pretty format
-        self.AppendToOutput(str(forcebase * (10 ** 12)) + ' pN')
+
+        unit_str = plot.curves[whatset].units.y
+        output_str = lib.prettyformat.pretty_format(forcebase, unit_str, decimals, 10 ** multiplier)
+        self.AppendToOutput(''.join(['Force: ', output_str]))
 
     def plotmanip_multiplier(self, plot, current, customvalue=False):
         '''
@@ -257,14 +372,17 @@ class generalvclampCommands:
         Copyright 2008 by Marco Brucale, Massimo Sandal
         '''
 
+        decimals = self.GetIntFromConfig('generalvclamp', 'slope', 'decimals')
         fitspan = self.GetIntFromConfig('generalvclamp', 'slope', 'fitspan')
         point_color = self.GetColorFromConfig('generalvclamp', 'slope', 'point_color')
         point_show = self.GetBoolFromConfig('generalvclamp', 'slope', 'point_show')
+        point_show_in_legend = self.GetBoolFromConfig('generalvclamp', 'slope', 'point_show_in_legend')
         point_size = self.GetIntFromConfig('generalvclamp', 'slope', 'point_size')
         slope_color = self.GetColorFromConfig('generalvclamp', 'slope', 'slope_color')
         slope_linewidth = self.GetIntFromConfig('generalvclamp', 'slope', 'slope_linewidth')
         slope_show = self.GetBoolFromConfig('generalvclamp', 'slope', 'slope_show')
-        whatset_str = self.GetStringFromConfig('generalvclamp', 'forcebase', 'whatset')
+        slope_show_in_legend = self.GetBoolFromConfig('generalvclamp', 'slope', 'slope_show_in_legend')
+        whatset_str = self.GetStringFromConfig('generalvclamp', 'slope', 'whatset')
         whatset = 'retraction'
         if whatset_str == 'extension':
             whatset = lh.EXTENSION
@@ -275,30 +393,24 @@ class generalvclampCommands:
         #TODO: add an option 'mode' with options 'chunk' and 'point'
         if fitspan == 0:
             # Gets the Xs of two clicked points as indexes on the curve curve vector
-            clickedpoints = []
+            clicked_points = []
             points = self._measure_N_points(N=2, message='Click 2 points to select the chunk.', whatset=whatset)
-            clickedpoints = [points[0].index, points[1].index]
-            clickedpoints.sort()
+            clicked_points = [points[0].index, points[1].index]
+            clicked_points.sort()
         else:
-            clickedpoints = []
+            clicked_points = []
             points = self._measure_N_points(N=1, message='Click on the leftmost point of the chunk (i.e.usually the peak).', whatset=whatset)
-            clickedpoints = [points[0].index - fitspan, points[0].index]
+            clicked_points = [points[0].index - fitspan, points[0].index]
 
         # Calls the function linefit_between
         parameters = [0, 0, [], []]
         try:
-            parameters = self.linefit_between(clickedpoints[0], clickedpoints[1], whatset=whatset)
+            parameters = self.linefit_between(clicked_points[0], clicked_points[1], whatset=whatset)
         except:
             self.AppendToOutput('Cannot fit. Did you click the same point twice?')
             return
 
-        # Outputs the relevant slope parameter
-        #TODO: pretty format with units
-        self.AppendToOutput(''.join(['Slope: ', str(parameters[0])]))
-
-        #TODO: add option to keep previous slope
         plot = self.GetDisplayedPlotCorrected()
-
         # Makes a vector with the fitted parameters and sends it to the GUI
         xtoplot=parameters[2]
         ytoplot=[]
@@ -312,31 +424,44 @@ class generalvclampCommands:
             clickvector_x.append(item.graph_coords[0])
             clickvector_y.append(item.graph_coords[1])
 
+        if point_show:
+            #add the clicked point to the plot
+            point = lib.curve.Curve()
+            point.color = point_color
+            if point_show_in_legend:
+                point.label = 'clicked point'
+            else:
+                point.label = '_nolegend_'
+            point.size = point_size
+            point.style = 'scatter'
+            point.x = clickvector_x
+            point.y = clickvector_y
+            plot.curves.append(point)
+
         if slope_show:
             #add the slope to the plot
             slope = lib.curve.Curve()
             slope.color = slope_color
-            slope.label = 'slope'
+            if slope_show_in_legend:
+                slope.label = 'slope'
+            else:
+                slope.label = '_nolegend_'
             slope.linewidth = slope_linewidth
             slope.style = 'plot'
+            slope.units.x = plot.curves[whatset].units.x
+            slope.units.y = plot.curves[whatset].units.y
             slope.x = xtoplot
             slope.y = ytoplot
             plot.curves.append(slope)
 
-        if point_show:
-            #add the clicked points to the plot
-            points = lib.curve.Curve()
-            points.color = point_color
-            points.label = 'points'
-            points.size = point_size
-            points.style = 'scatter'
-            points.x = clickvector_x
-            points.y = clickvector_y
-            plot.curves.append(points)
-
         self.UpdatePlot(plot)
 
-    def linefit_between(self, index1, index2, whatset=1):
+        # Outputs the relevant slope parameter
+        unit_str = plot.curves[whatset].units.x + '/' + plot.curves[whatset].units.y
+        output_str = lib.prettyformat.pretty_format(parameters[0], unit_str, decimals, 1)
+        self.AppendToOutput(''.join(['Slope: ', output_str]))
+
+    def linefit_between(self, index1, index2, whatset=lh.RETRACTION):
         '''
         Creates two vectors (xtofit, ytofit) slicing out from the
         curve return trace a portion delimited by the two indeces
