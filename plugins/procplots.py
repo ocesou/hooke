@@ -261,7 +261,7 @@ class procplotsCommands:
             whatset = [lh.EXTENSION, lh.RETRACTION]
 
         if select:
-            points = self._measure_N_points(N=2, message='Please select a region by clicking on the start and the end point.', whatset=1)
+            points = self._measure_N_points(N=2, message='Please select a region by clicking on the start and the end point.', whatset=lh.RETRACTION)
             boundaries = [points[0].index, points[1].index]
             boundaries.sort()
         else:

@@ -8,7 +8,7 @@ Force spectroscopy files filtering of flat files.
 Plugin dependencies:
 procplots.py (plot processing plugin)
 
-Copyright ???? by ?
+Copyright 2008 Massimo Sandal, Fabrizio Benedetti
 with modifications by Dr. Rolf Schmidt (Concordia University, Canada)
 
 This program is released under the GNU General Public License version 2.
@@ -254,7 +254,14 @@ class flatfiltsCommands:
             file_index += 1
             try:
                 current_file.identify(self.drivers)
-                plot = self.ApplyPlotmanipulators(current_file.plot, current_file)
+                if apply_plotmanipulators == 'all':
+                    plot = self.ApplyPlotmanipulators(current_file.plot, current_file)
+                if apply_plotmanipulators == 'flatten':
+                    plotmanipulator = self.GetPlotmanipulator('flatten')
+                    plot = plotmanipulator.method(current_file.plot, current_file)
+                if apply_plotmanipulators == 'none':
+                    plot = copy.deepcopy(current_file.plot)
+
                 peak_location, peak_size = self.has_peaks(plot)
                 number_of_peaks = len(peak_location)
                 if number_of_peaks != 1:

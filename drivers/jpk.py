@@ -5,7 +5,7 @@ jpk.py
 
 Driver for jpk files.
 
-Copyright ??? by Massimo Sandal?
+Copyright Copyright 2008 by Massimo Sandal (University of Bologna, Italy)
 with modifications by Dr. Rolf Schmidt (Concordia University, Canada)
 
 This program is released under the GNU General Public License version 2.

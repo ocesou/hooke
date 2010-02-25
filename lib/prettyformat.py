@@ -9,6 +9,11 @@ Version 1.0.1
 History
 2009 07 16: added negative number support
             added decimal-formatted output
+2010 02 25: renamed variables to a more pythonic style
+            added whitespace stripping option to prettyformat()
+            added get_multiplier()
+            added get_exponent()
+            updated examples
 
 Copyright 2009 by Dr. Rolf Schmidt (Concordia University, Canada)
 
@@ -18,40 +23,74 @@ This program is released under the GNU General Public License version 2.
 import math
 from numpy import isnan
 
-def pretty_format(fValue, sUnit='', iDecimals=-1, iMultiplier=1, bLeadingSpaces=False):
-    if fValue == 0:
+def pretty_format(value, unit='', decimals=-1, multiplier=0, leading_spaces=False):
+    if value == 0:
         return '0'
-    if isnan(fValue):
+    if isnan(value):
         return 'NaN'
 
-    iLeadingSpaces = 0
-    if bLeadingSpaces:
-        iLeadingSpaces = 5
-    if iMultiplier == 1:
-        iMultiplier=get_multiplier(fValue)
-    sUnitString = ''
-    if sUnit != '':
-        sUnitString = ' ' + get_prefix(iMultiplier) + sUnit
-    if iDecimals >= 0:
-        formatString = '% ' + repr(iLeadingSpaces + iDecimals) + '.' + repr(iDecimals) + 'f'
-        return formatString % (fValue / iMultiplier) + sUnitString
+    output_str = ''
+    leading_spaces_int = 0
+    if leading_spaces:
+        leading_spaces_int = 5
+    if multiplier == 0:
+        multiplier=get_multiplier(value)
+    unit_str = ''
+    if unit != '':
+        unit_str = ' ' + get_prefix(multiplier) + unit
+    if decimals >= 0:
+        format_str = '% ' + repr(leading_spaces_int + decimals) + '.' + repr(decimals) + 'f'
+        output_str = format_str % (value / multiplier) + unit_str
     else:
-        return str(fValue / iMultiplier) + sUnitString
-    return str(fValue / iMultiplier) + ' ' + get_prefix(fValue / iMultiplier) + sUnit
+        output_str = str(value / multiplier) + unit_str
 
-def get_multiplier(fValue):
-    return pow(10, get_power(fValue))
+    if decimals < 0:
+        output_str = str(value / multiplier) + ' ' + get_prefix(value / multiplier) + unit
 
-def get_power(fValue):
-    if fValue != 0 and not isnan(fValue):
-        #get the log10 from fValue (make sure the value is not negative)
-        dHelp = math.floor(math.log10(math.fabs(fValue)))
+    if leading_spaces_int == 0:
+        output_str = output_str.lstrip()
+
+    return output_str
+
+def get_multiplier(value):
+    return pow(10, get_power(value))
+
+def get_power(value):
+    if value != 0 and not isnan(value):
+        #get the log10 from value (make sure the value is not negative)
+        value_temp = math.floor(math.log10(math.fabs(value)))
         #reduce the log10 to a multiple of 3 and return it
-        return dHelp-(dHelp % 3)
+        return value_temp - (value_temp % 3)
     else:
         return 0
 
-def get_prefix(fValue):
+def get_exponent(prefix):
+    #set up a dictionary to find the exponent
+    exponent = {
+        'Y': 24,
+        'Z': 21,
+        'E': 18,
+        'P': 15,
+        'T': 12,
+        'G': 9,
+        'M': 6,
+        'k': 3,
+        '': 0,
+        'm': -3,
+        u'\u00B5': -6,
+        'n': -9,
+        'p': -12,
+        'f': -15,
+        'a': -18,
+        'z': -21,
+        'y': -24,
+    }
+    if exponent.has_key(prefix):
+        return exponent[prefix]
+    else:
+        return 1
+
+def get_prefix(value):
     #set up a dictionary to find the prefix
     prefix = {
         24: lambda: 'Y',
@@ -72,56 +111,30 @@ def get_prefix(fValue):
         -21: lambda: 'z',
         -24: lambda: 'y',
     }
-    if fValue != 0 and not isnan(fValue):
-        #get the log10 from fValue
-        dHelp = math.floor(math.log10(math.fabs(fValue)))
+    if value != 0 and not isnan(value):
+        #get the log10 from value
+        value_temp = math.floor(math.log10(math.fabs(value)))
     else:
-        dHelp = 0
+        value_temp = 0
     #reduce the log10 to a multiple of 3 and create the return string
-    return prefix.get(dHelp - (dHelp % 3))()
+    return prefix.get(value_temp - (value_temp % 3))()
 
 '''
-dTestValue=-2.4115665714484597e-008
-print 'Value: '+str(dTestValue)+')'
+test_value=-2.4115665714484597e-008
+print 'Value: '+str(test_value)+')'
 print 'pretty_format example (value, unit)'
-print pretty_format(dTestValue, 'N')
+print pretty_format(test_value, 'N')
 print'-----------------------'
 print 'pretty_format example (value, unit, decimals)'
-print pretty_format(dTestValue, 'N', 3)
+print pretty_format(test_value, 'N', 3)
 print'-----------------------'
 print 'pretty_format example (value, unit, decimals, multiplier)'
-print pretty_format(dTestValue, 'N', 5, 0.000001)
+print pretty_format(test_value, 'N', 5, 0.000001)
 print'-----------------------'
 print 'pretty_format example (value, unit, decimals, multiplier, leading spaces)'
 print pretty_format(0.0166276297705, 'N', 3, 0.001, True)
 print pretty_format(0.00750520813323, 'N', 3, 0.001, True)
 print pretty_format(0.0136453282825, 'N', 3, 0.001, True)
-'''
-'''
-#example use autoFormatValue
-dTestValue=0.00000000567
-print 'autoFormatValue example ('+str(dTestValue)+')'
-print autoFormatValue(dTestValue, 'N')
-#outputs 5.67 nN
-'''
-'''
-#example use of decimalFormatValue(fValue, iDecimals, sUnit):
-dTestValue=-2.4115665714484597e-008
-iDecimals=3
-print 'decimalFormatValue example ('+str(dTestValue)+')'
-print decimalFormatValue(dTestValue, iDecimals, 'N')
-#outputs -24.116 nN
-#change iDecimals to see the effect
-'''
-'''
-#example use formatValue
-dTestValue=0.000000000567
-print 'formatValue example ('+str(dTestValue)+')'
-#find the (common) multiplier
-iMultiplier=get_multiplier(dTestValue)
-#use the multiplier and a unit to format the value
-print formatValue(dTestValue, iMultiplier, 'N')
-#outputs 567.0 pN
 '''
 '''
 #to output a scale:
@@ -130,15 +143,15 @@ print formatValue(dTestValue, iMultiplier, 'N')
 #as values can span several orders of magnitude, you have to decide what units to use
 
 #tuple of values:
-scaleValues=0.000000000985, 0.000000001000, 0.000000001015
+scale_values=0.000000000985, 0.000000001000, 0.000000001015
 #use this element (change to 1 or 2 to see the effect on the scale and label)
-iIndex=0
-#get the multiplier from the value at iIndex
-iMultiplier=get_multiplier(scaleValues[iIndex])
+index=0
+#get the multiplier from the value at index
+multiplier=get_multiplier(scale_values[index])
 print '\nScale example'
-iDecimals=3
+decimals=3
 #print the scale
-for aValue in scaleValues: print decimalFormat(aValue/iMultiplier, iDecimals),
-#print the scale label using the value at iIndex
-print '\n'+get_prefix(scaleValues[iIndex])+'N'
+for aValue in scale_values: print decimalFormat(aValue/multiplier, decimals),
+#print the scale label using the value at index
+print '\n'+get_prefix(scale_values[index])+'N'
 '''
