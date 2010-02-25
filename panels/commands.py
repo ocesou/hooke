@@ -50,7 +50,10 @@ class Commands(wx.Panel):
             command_str = config['command']['command']
             module_str = config['command']['plugin']
 
-            for plugin in plugins:
+            #sort the plugins into alphabetical order
+            plugins_list = [key for key, value in plugins.iteritems()]
+            plugins_list.sort()
+            for plugin in plugins_list:
                 filename = ''.join([plugin, '.ini'])
                 path = lh.get_file_path(filename, ['plugins'])
                 config = ConfigObj()
