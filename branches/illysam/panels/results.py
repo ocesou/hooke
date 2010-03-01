@@ -39,7 +39,7 @@ class Results(wx.Panel):
         #Returns the width of a string in pixels
         #Unfortunately, it does not work terribly well (although it should).
         #Thus, we have to add a bit afterwards.
-        #Annoys the heck out of me (me being Rolf).
+        #Annoys the heck out of me (illysam).
         font = self.results_list.GetFont()
         dc = wx.WindowDC(self.results_list)
         dc.SetFont(font)

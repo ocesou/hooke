@@ -92,6 +92,8 @@ class autopeakCommands:
                     outside of which the peak is automatically discarded (in nm)
         auto_min_p: Minimum persistence length (if using WLC) or Kuhn length (if using FJC)
                     outside of which the peak is automatically discarded (in nm)
+        delta_force: defines the force window in points to locate the peak minimum (default: 10)
+                     do not change unless you know what you are doing
         '''
 
         #default variables
@@ -102,11 +104,16 @@ class autopeakCommands:
         auto_right_baseline = self.GetFloatFromConfig('autopeak', 'auto_right_baseline')
         baseline_clicks = self.GetStringFromConfig('autopeak', 'baseline_clicks')
         color = self.GetColorFromConfig('autopeak', 'color')
+        delta_force = self.GetIntFromConfig('autopeak', 'delta_force')
         fit_function = self.GetStringFromConfig('autopeak', 'fit_function')
         fit_points = self.GetIntFromConfig('autopeak', 'auto_fit_points')
         noauto = self.GetBoolFromConfig('autopeak', 'noauto')
+        #persistence_length has to be given in nm
         persistence_length = self.GetFloatFromConfig('autopeak', 'persistence_length')
         #rebase: redefine the baseline
+        plot_linewidth = self.GetIntFromConfig('autopeak', 'plot_linewidth')
+        plot_size = self.GetIntFromConfig('autopeak', 'plot_size')
+        plot_style = self.GetStringFromConfig('autopeak', 'plot_style')
         rebase = self.GetBoolFromConfig('autopeak', 'rebase')
         reclick = self.GetBoolFromConfig('autopeak', 'reclick')
         slope_span = self.GetIntFromConfig('autopeak', 'auto_slope_span')
@@ -115,16 +122,13 @@ class autopeakCommands:
         if not usepl:
             pl_value = None
         else:
-            pl_value = persistence_length / 10 ** 9
+            pl_value = persistence_length
         usepoints = self.GetBoolFromConfig('autopeak', 'usepoints')
         whatset_str = self.GetStringFromConfig('autopeak', 'whatset')
         if whatset_str == 'extension':
             whatset = lh.EXTENSION
         if whatset_str == 'retraction':
             whatset = lh.RETRACTION
-
-        #TODO: should this be variable?
-        delta_force = 10
 
         #setup header column labels for results
         if fit_function == 'wlc':
@@ -162,10 +166,10 @@ class autopeakCommands:
 
         #--Contact point arguments
         if reclick:
-            contact_point, contact_point_index = self.pickup_contact_point(filename=filename)
+            contact_point, contact_point_index = lh.pickup_contact_point(filename=filename)
         elif noauto:
             if self.wlccontact_index is None or self.wlccurrent != filename:
-                contact_point, contact_point_index = self.pickup_contact_point(filename=filename)
+                contact_point, contact_point_index = lh.pickup_contact_point(filename=filename)
             else:
                 contact_point = self.wlccontact_point
                 contact_point_index = self.wlccontact_index
@@ -191,13 +195,13 @@ class autopeakCommands:
         if rebase or (self.basecurrent != filename) or self.basepoints is None:
             if baseline_clicks == 'automatic':
                 self.basepoints = []
-                base_index_0 = peak_location[-1] + self.fit_interval_nm(peak_location[-1], retraction.x, auto_right_baseline, False)
+                base_index_0 = peak_location[-1] + lh.fit_interval_nm(peak_location[-1], retraction.x, auto_right_baseline, False)
                 self.basepoints.append(self._clickize(retraction.x, retraction.y, base_index_0))
-                base_index_1 = self.basepoints[0].index + self.fit_interval_nm(self.basepoints[0].index, retraction.x, auto_left_baseline, False)
+                base_index_1 = self.basepoints[0].index + lh.fit_interval_nm(self.basepoints[0].index, retraction.x, auto_left_baseline, False)
                 self.basepoints.append(self._clickize(retraction.x, retraction.y, base_index_1))
             if baseline_clicks == '1 point':
                 self.basepoints=self._measure_N_points(N=1, message='Click on 1 point to select the baseline.', whatset=whatset)
-                base_index_1 = self.basepoints[0].index + self.fit_interval_nm(self.basepoints[0].index, retraction.x, auto_left_baseline, False)
+                base_index_1 = self.basepoints[0].index + lh.fit_interval_nm(self.basepoints[0].index, retraction.x, auto_left_baseline, False)
                 self.basepoints.append(self._clickize(retraction.x, retraction.y, base_index_1))
             if baseline_clicks == '2 points':
                 self.basepoints=self._measure_N_points(N=2, message='Click on 2 points to select the baseline.', whatset=whatset)
@@ -212,7 +216,7 @@ class autopeakCommands:
             #WLC FITTING
             #define fit interval
             if not usepoints:
-                fit_points = self.fit_interval_nm(peak, retraction.x, auto_fit_nm, True)
+                fit_points = lh.fit_interval_nm(peak, retraction.x, auto_fit_nm, True)
             peak_point = self._clickize(retraction.x, retraction.y, peak)
             other_fit_point=self._clickize(retraction.x, retraction.y, peak - fit_points)
 
@@ -279,6 +283,9 @@ class autopeakCommands:
             if len(fit_result.result) > 0:
                 fit_result.color = color
                 fit_result.label = fit_function + '_' + str(index)
+                fit_result.linewidth = plot_linewidth
+                fit_result.size = plot_size
+                fit_result.style = plot_style
                 fit_result.title = retraction.title
                 fit_result.units.x = retraction.units.x
                 fit_result.units.y = retraction.units.y

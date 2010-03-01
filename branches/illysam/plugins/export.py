@@ -31,7 +31,6 @@ class exportCommands(object):
         '''
         Exports all fitting results (if available) in a columnar ASCII format.
         '''
-
         ext = self.GetStringFromConfig('export', 'fits', 'ext')
         folder = self.GetStringFromConfig('export', 'fits', 'folder')
         prefix = self.GetStringFromConfig('export', 'fits', 'prefix')
@@ -111,6 +110,33 @@ class exportCommands(object):
             output_file.write('\n'.join(output))
             output_file.close
 
+    def do_notes(self):
+        '''
+        Exports the note for all the files in a playlist.
+        '''
+        filename = self.GetStringFromConfig('export', 'notes', 'filename')
+        folder = self.GetStringFromConfig('export', 'notes', 'folder')
+        prefix = self.GetStringFromConfig('export', 'notes', 'prefix')
+        use_playlist_filename = self.GetBoolFromConfig('export', 'notes', 'use_playlist_filename')
+        
+        playlist = self.GetActivePlaylist()
+        output_str = ''
+        for current_file in playlist.files:
+            output_str = ''.join([output_str, current_file.filename, '  |  ', current_file.note, '\n'])
+        if output_str:
+            output_str = ''.join(['Notes taken at ', time.asctime(), '\n', playlist.filename, '\n', output_str])
+            if use_playlist_filename:
+                path, filename = os.path.split(playlist.filename)
+                filename = lh.remove_extension(filename)
+            filename = ''.join([prefix, filename, '.txt'])
+            filename = os.path.join(folder, filename)
+            output_file = open(filename, 'w')
+            output_file.write(output_str)
+            output_file.close
+        else:
+            dialog = wx.MessageDialog(None, 'No notes found, file not saved.', 'Info', wx.OK)
+            dialog.ShowModal()
+
     def do_overlay(self):
         '''
         Exports all retraction files in a playlist with the same scale.
@@ -161,7 +187,7 @@ class exportCommands(object):
             for row_index, row in enumerate(new_x):
                 output_str += ''.join([str(new_x[row_index]), ', ', str(new_y[row_index]), '\n'])
 
-            if output_str != '':
+            if output_str:
                 filename = ''.join([filename_prefix, current_file.name])
                 filename = current_file.filename.replace(current_file.name, filename)
                 output_file = open(filename, 'w')
@@ -203,15 +229,15 @@ class exportCommands(object):
                             line_str = current_file.plot.results[key].get_result_as_string(index)
                             line_str = ''.join([line_str, separator, current_file.filename])
                             output_str = ''.join([output_str, line_str, '\n'])
-        if output_str != '':
+        if output_str:
             output_str = ''.join(['Analysis started ', time.asctime(), '\n', output_str])
 
             if append and os.path.isfile(filename):
-		output_file = open(filename,'a')
-	    else:
-		output_file = open(filename, 'w')
-            output_file.write(output_str)
-            output_file.close
+                output_file = open(filename,'a')
+            else:
+                output_file = open(filename, 'w')
+                output_file.write(output_str)
+                output_file.close
         else:
             dialog = wx.MessageDialog(None, 'No results found, file not saved.', 'Info', wx.OK)
             dialog.ShowModal()

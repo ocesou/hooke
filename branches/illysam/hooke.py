@@ -17,8 +17,9 @@ from configobj import ConfigObj
 import copy
 import os.path
 import platform
+import shutil
 import time
-#import wx
+
 import wx.html
 import wx.lib.agw.aui as aui
 import wx.lib.evtmgr as evtmgr
@@ -40,11 +41,14 @@ except ImportError: # if it's not there locally, try the wxPython lib.
 lh.hookeDir = os.path.abspath(os.path.dirname(__file__))
 from config.config import config
 import drivers
+import lib.clickedpoint
+import lib.curve
 import lib.delta
 import lib.playlist
 import lib.plotmanipulator
 import lib.prettyformat
 import panels.commands
+import panels.note
 import panels.perspectives
 import panels.playlist
 import panels.plot
@@ -62,9 +66,6 @@ __codename__ = lh.HOOKE_VERSION[1]
 __releasedate__ = lh.HOOKE_VERSION[2]
 __release_name__ = lh.HOOKE_VERSION[1]
 
-#TODO: add general preferences to Hooke
-#this might be useful
-#ID_Config = wx.NewId()
 ID_About = wx.NewId()
 ID_Next = wx.NewId()
 ID_Previous = wx.NewId()
@@ -72,6 +73,7 @@ ID_Previous = wx.NewId()
 ID_ViewAssistant = wx.NewId()
 ID_ViewCommands = wx.NewId()
 ID_ViewFolders = wx.NewId()
+ID_ViewNote = wx.NewId()
 ID_ViewOutput = wx.NewId()
 ID_ViewPlaylists = wx.NewId()
 ID_ViewProperties = wx.NewId()
@@ -90,8 +92,21 @@ class Hooke(wx.App):
         self.SetAppName('Hooke')
         self.SetVendorName('')
 
-        windowPosition = (config['main']['left'], config['main']['top'])
-        windowSize = (config['main']['width'], config['main']['height'])
+        window_height = config['main']['height']
+        window_left= config['main']['left']
+        window_top = config['main']['top']
+        window_width = config['main']['width']
+
+        #sometimes, the ini file gets confused and sets 'left'
+        #and 'top' to large negative numbers
+        #let's catch and fix this
+        #keep small negative numbers, the user might want those
+        if window_left < -window_width:
+            window_left = 0
+        if window_top < -window_height:
+            window_top = 0
+        window_position = (window_left, window_top)
+        window_size = (window_width, window_height)
 
         #setup the splashscreen
         if config['splashscreen']['show']:
@@ -132,7 +147,7 @@ class Hooke(wx.App):
         def make_command_class(*bases):
             #create metaclass with plugins and plotmanipulators
             return type(HookeFrame)("HookeFramePlugged", bases + (HookeFrame,), {})
-        frame = make_command_class(*plugin_objects)(parent=None, id=wx.ID_ANY, title='Hooke', pos=windowPosition, size=windowSize)
+        frame = make_command_class(*plugin_objects)(parent=None, id=wx.ID_ANY, title='Hooke', pos=window_position, size=window_size)
         frame.Show(True)
         self.SetTopWindow(frame)
 
@@ -187,14 +202,15 @@ class HookeFrame(wx.Frame):
         self.panelFolders = self.CreatePanelFolders()
         self.panelPlaylists = self.CreatePanelPlaylists()
         self.panelProperties = self.CreatePanelProperties()
+        self.panelNote = self.CreatePanelNote()
         self.panelOutput = self.CreatePanelOutput()
         self.panelResults = self.CreatePanelResults()
         self.plotNotebook = self.CreateNotebook()
-        #self.textCtrlCommandLine=self.CreateCommandLine()
 
         # add panes
         self._mgr.AddPane(self.panelFolders, aui.AuiPaneInfo().Name('Folders').Caption('Folders').Left().CloseButton(True).MaximizeButton(False))
         self._mgr.AddPane(self.panelPlaylists, aui.AuiPaneInfo().Name('Playlists').Caption('Playlists').Left().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelNote, aui.AuiPaneInfo().Name('Note').Caption('Note').Left().CloseButton(True).MaximizeButton(False))
         self._mgr.AddPane(self.plotNotebook, aui.AuiPaneInfo().Name('Plots').CenterPane().PaneBorder(False))
         self._mgr.AddPane(self.panelCommands, aui.AuiPaneInfo().Name('Commands').Caption('Settings and commands').Right().CloseButton(True).MaximizeButton(False))
         self._mgr.AddPane(self.panelProperties, aui.AuiPaneInfo().Name('Properties').Caption('Properties').Right().CloseButton(True).MaximizeButton(False))
@@ -245,6 +261,8 @@ class HookeFrame(wx.Frame):
         plugin_config = ConfigObj(ini_path)
         #self.config.merge(plugin_config)
         self.configs['core'] = plugin_config
+        #existing_commands contains: {command: plugin}
+        existing_commands = {}
         #make sure we execute _plug_init() for every command line plugin we import
         for plugin in self.config['plugins']:
             if self.config['plugins'][plugin]:
@@ -265,9 +283,18 @@ class HookeFrame(wx.Frame):
                         #add to plugins
                         commands = eval('dir(module.' + plugin+ '.' + plugin + 'Commands)')
                         #keep only commands (ie names that start with 'do_')
-                        #TODO: check for existing commands and warn the user!
                         commands = [command for command in commands if command.startswith('do_')]
                         if commands:
+                            for command in commands:
+                                if existing_commands.has_key(command):
+                                    message_str = 'Adding "' + command + '" in plugin "' + plugin + '".\n\n'
+                                    message_str += '"' + command + '" already exists in "' + str(existing_commands[command]) + '".\n\n'
+                                    message_str += 'Only "' + command + '" in "' + str(existing_commands[command]) + '" will work.\n\n'
+                                    message_str += 'Please rename one of the commands in the source code and restart Hooke or disable one of the plugins.'
+                                    dialog = wx.MessageDialog(self, message_str, 'Warning', wx.OK|wx.ICON_WARNING|wx.CENTER)
+                                    dialog.ShowModal()
+                                    dialog.Destroy()
+                                existing_commands[command] = plugin
                             self.plugins[plugin] = commands
                         try:
                             #initialize the plugin
@@ -276,11 +303,12 @@ class HookeFrame(wx.Frame):
                             pass
                     except ImportError:
                         pass
-        #initialize the commands tree
+        #add commands from hooke.py i.e. 'core' commands
         commands = dir(HookeFrame)
         commands = [command for command in commands if command.startswith('do_')]
         if commands:
             self.plugins['core'] = commands
+        #initialize the commands tree
         self.panelCommands.Initialize(self.plugins)
         for command in dir(self):
             if command.startswith('plotmanip_'):
@@ -288,7 +316,6 @@ class HookeFrame(wx.Frame):
 
         #load default list, if possible
         self.do_loadlist(self.config['core']['list'])
-        #self.do_loadlist()
 
     def _BindEvents(self):
         #TODO: figure out if we can use the eventManager for menu ranges
@@ -324,6 +351,7 @@ class HookeFrame(wx.Frame):
         evtmgr.eventManager.Register(self.OnExecute, wx.EVT_BUTTON, self.panelCommands.ExecuteButton)
         evtmgr.eventManager.Register(self.OnTreeCtrlCommandsSelectionChanged, wx.EVT_TREE_SEL_CHANGED, self.panelCommands.CommandsTree)
         evtmgr.eventManager.Register(self.OnTreeCtrlItemActivated, wx.EVT_TREE_ITEM_ACTIVATED, self.panelCommands.CommandsTree)
+        evtmgr.eventManager.Register(self.OnUpdateNote, wx.EVT_BUTTON, self.panelNote.UpdateButton)
         #property editor
         self.panelProperties.pg.Bind(wxpg.EVT_PG_CHANGED, self.OnPropGridChanged)
         #results panel
@@ -373,6 +401,8 @@ class HookeFrame(wx.Frame):
                     self.MenuBar.FindItemById(ID_ViewPlaylists).Check(pane.window.IsShown())
                 if pane.name == 'Commands':
                     self.MenuBar.FindItemById(ID_ViewCommands).Check(pane.window.IsShown())
+                if pane.name == 'Note':
+                    self.MenuBar.FindItemById(ID_ViewNote).Check(pane.window.IsShown())
                 if pane.name == 'Properties':
                     self.MenuBar.FindItemById(ID_ViewProperties).Check(pane.window.IsShown())
                 if pane.name == 'Output':
@@ -397,6 +427,8 @@ class HookeFrame(wx.Frame):
         #commands tree
         evtmgr.eventManager.DeregisterListener(self.OnExecute)
         evtmgr.eventManager.DeregisterListener(self.OnTreeCtrlCommandsSelectionChanged)
+        evtmgr.eventManager.DeregisterListener(self.OnTreeCtrlItemActivated)
+        evtmgr.eventManager.DeregisterListener(self.OnUpdateNote)
 
     def AddPlaylist(self, playlist=None, name='Untitled'):
         if playlist and playlist.count > 0:
@@ -421,10 +453,11 @@ class HookeFrame(wx.Frame):
             playlist_root = self.panelPlaylists.PlaylistsTree.AppendItem(tree_root, playlist.name, 0)
             #add all files to the Playlist tree
 #            files = {}
+            hide_curve_extension = self.GetBoolFromConfig('core', 'preferences', 'hide_curve_extension')
             for index, file_to_add in enumerate(playlist.files):
-                #TODO: optionally remove the extension from the name of the curve
-                #item_text, extension = os.path.splitext(curve.name)
-                #curve_ID = self.panelPlaylists.PlaylistsTree.AppendItem(playlist_root, item_text, 1)
+                #optionally remove the extension from the name of the curve
+                if hide_curve_extension:
+                    file_to_add.name = lh.remove_extension(file_to_add.name)
                 file_ID = self.panelPlaylists.PlaylistsTree.AppendItem(playlist_root, file_to_add.name, 1)
                 if index == playlist.index:
                     self.panelPlaylists.PlaylistsTree.SelectItem(file_ID)
@@ -438,6 +471,7 @@ class HookeFrame(wx.Frame):
             #self.playlists[playlist.name] = [playlist, figure]
             self.panelPlaylists.PlaylistsTree.Expand(playlist_root)
             self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+            self.UpdateNote()
             self.UpdatePlot()
 
     def AppendToOutput(self, text):
@@ -485,6 +519,9 @@ class HookeFrame(wx.Frame):
         folder = self.config['core']['workdir']
         return wx.GenericDirCtrl(self, -1, dir=folder, size=(200, 250), style=wx.DIRCTRL_SHOW_FILTERS, filter=filters, defaultFilter=index)
 
+    def CreatePanelNote(self):
+        return panels.note.Note(self)
+
     def CreatePanelOutput(self):
         return wx.TextCtrl(self, -1, '', wx.Point(0, 0), wx.Size(150, 90), wx.NO_BORDER|wx.TE_MULTILINE)
 
@@ -531,8 +568,8 @@ class HookeFrame(wx.Frame):
         view_menu.AppendCheckItem(ID_ViewAssistant, 'Assistant\tF9')
         view_menu.AppendCheckItem(ID_ViewResults, 'Results\tF10')
         view_menu.AppendCheckItem(ID_ViewOutput, 'Output\tF11')
+        view_menu.AppendCheckItem(ID_ViewNote, 'Note\tF12')
         #perspectives
-#        perspectives_menu = self.CreatePerspectivesMenu()
         perspectives_menu = wx.Menu()
 
         #help
@@ -540,7 +577,6 @@ class HookeFrame(wx.Frame):
         help_menu.Append(wx.ID_ABOUT, 'About Hooke')
         #put it all together
         menu_bar.Append(file_menu, 'File')
-#        menu_bar.Append(edit_menu, 'Edit')
         menu_bar.Append(view_menu, 'View')
         menu_bar.Append(perspectives_menu, "Perspectives")
         self.UpdatePerspectivesMenu()
@@ -834,6 +870,7 @@ class HookeFrame(wx.Frame):
             if playlist.count > 1:
                 playlist.next()
                 self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+                self.UpdateNote()
                 self.UpdatePlot()
 
     def OnNotebookPageClose(self, event):
@@ -866,6 +903,7 @@ class HookeFrame(wx.Frame):
                     playlist = self.GetActivePlaylist()
                     playlist.index = index
                     self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+                    self.UpdateNote()
                     self.UpdatePlot()
             #if you uncomment the following line, the tree will collapse/expand as well
             #event.Skip()
@@ -909,6 +947,7 @@ class HookeFrame(wx.Frame):
         if playlist.count > 1:
             playlist.previous()
             self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+            self.UpdateNote()
             self.UpdatePlot()
 
     def OnPropGridChanged (self, event):
@@ -927,29 +966,8 @@ class HookeFrame(wx.Frame):
     def OnRestorePerspective(self, event):
         name = self.MenuBar.FindItemById(event.GetId()).GetLabel()
         self._RestorePerspective(name)
-#        self._mgr.LoadPerspective(self._perspectives[name])
-#        self.config['perspectives']['active'] = name
-#        self._mgr.Update()
-#        all_panes = self._mgr.GetAllPanes()
-#        for pane in all_panes:
-#            if not pane.name.startswith('toolbar'):
-#                if pane.name == 'Assistant':
-#                    self.MenuBar.FindItemById(ID_ViewAssistant).Check(pane.window.IsShown())
-#                if pane.name == 'Folders':
-#                    self.MenuBar.FindItemById(ID_ViewFolders).Check(pane.window.IsShown())
-#                if pane.name == 'Playlists':
-#                    self.MenuBar.FindItemById(ID_ViewPlaylists).Check(pane.window.IsShown())
-#                if pane.name == 'Commands':
-#                    self.MenuBar.FindItemById(ID_ViewCommands).Check(pane.window.IsShown())
-#                if pane.name == 'Properties':
-#                    self.MenuBar.FindItemById(ID_ViewProperties).Check(pane.window.IsShown())
-#                if pane.name == 'Output':
-#                    self.MenuBar.FindItemById(ID_ViewOutput).Check(pane.window.IsShown())
-#                if pane.name == 'Results':
-#                    self.MenuBar.FindItemById(ID_ViewResults).Check(pane.window.IsShown())
 
     def OnResultsCheck(self, index, flag):
-        #TODO: fix for multiple results
         results = self.GetActivePlot().results
         if results.has_key(self.results_str):
             results[self.results_str].results[index].visible = flag
@@ -1060,6 +1078,13 @@ class HookeFrame(wx.Frame):
     def OnTreeCtrlItemActivated(self, event):
         self.OnExecute(event)
 
+    def OnUpdateNote(self, event):
+        '''
+        Saves the note to the active file.
+        '''
+        active_file = self.GetActiveFile()
+        active_file.note = self.panelNote.Editor.GetValue()
+
     def OnView(self, event):
         menu_id = event.GetId()
         menu_item = self.MenuBar.FindItemById(menu_id)
@@ -1075,9 +1100,9 @@ class HookeFrame(wx.Frame):
 
     def _clickize(self, xvector, yvector, index):
         '''
-        returns a ClickedPoint() object from an index and vectors of x, y coordinates
+        Returns a ClickedPoint() object from an index and vectors of x, y coordinates
         '''
-        point = lh.ClickedPoint()
+        point = lib.clickedpoint.ClickedPoint()
         point.index = index
         point.absolute_coords = xvector[index], yvector[index]
         point.find_graph_coords(xvector, yvector)
@@ -1085,7 +1110,7 @@ class HookeFrame(wx.Frame):
 
     def _delta(self, message='Click 2 points', whatset=lh.RETRACTION):
         '''
-        calculates the difference between two clicked points
+        Calculates the difference between two clicked points
         '''
         clicked_points = self._measure_N_points(N=2, message=message, whatset=whatset)
 
@@ -1107,7 +1132,7 @@ class HookeFrame(wx.Frame):
         General helper function for N-points measurements
         By default, measurements are done on the retraction
         '''
-        if message != '':
+        if message:
             dialog = wx.MessageDialog(None, message, 'Info', wx.OK)
             dialog.ShowModal()
 
@@ -1120,7 +1145,7 @@ class HookeFrame(wx.Frame):
 
         points = []
         for clicked_point in clicked_points:
-            point = lh.ClickedPoint()
+            point = lib.clickedpoint.ClickedPoint()
             point.absolute_coords = clicked_point[0], clicked_point[1]
             point.dest = 0
             #TODO: make this optional?
@@ -1131,6 +1156,29 @@ class HookeFrame(wx.Frame):
             points.append(point)
         return points
 
+    def do_copylog(self):
+        '''
+        Copies all files in the current playlist that have a note to the destination folder.
+        destination: select folder where you want the files to be copied
+        use_LVDT_folder: when checked, the files will be copied to a folder called 'LVDT' in the destination folder (for MFP-1D files only)
+        '''
+        playlist = self.GetActivePlaylist()
+        if playlist is not None:
+            destination = self.GetStringFromConfig('core', 'copylog', 'destination')
+            if not os.path.isdir(destination):
+                os.makedirs(destination)
+            for current_file in playlist.files:
+                if current_file.note:
+                    shutil.copy(current_file.filename, destination)
+                    if current_file.driver.filetype == 'mfp1d':
+                        filename = current_file.filename.replace('deflection', 'LVDT', 1)
+                        path, name = os.path.split(filename)
+                        filename = os.path.join(path, 'lvdt', name)
+                        use_LVDT_folder = self.GetBoolFromConfig('core', 'copylog', 'use_LVDT_folder')
+                        if use_LVDT_folder:
+                            destination = os.path.join(destination, 'LVDT')
+                        shutil.copy(filename, destination)
+
     def do_plotmanipulators(self):
         '''
         Please select the plotmanipulators you would like to use
@@ -1139,6 +1187,14 @@ class HookeFrame(wx.Frame):
         Click 'Execute' to apply your changes.
         '''
         self.UpdatePlot()
+
+    def do_preferences(self):
+        '''
+        Please set general preferences for Hooke here.
+        hide_curve_extension: hides the extension of the force curve files.
+                              not recommended for 'picoforce' files
+        '''
+        pass
 
     def do_test(self):
         '''
@@ -1162,9 +1218,21 @@ class HookeFrame(wx.Frame):
         self.AppendToOutput('NumPy version: ' + numpy_version)
         self.AppendToOutput('---')
         self.AppendToOutput('Platform: ' + str(platform.uname()))
-        #TODO: adapt to 'new' config
-        #self.AppendToOutput('---')
-        #self.AppendToOutput('Loaded plugins:', self.config['loaded_plugins'])
+        self.AppendToOutput('******************************')
+        self.AppendToOutput('Loaded plugins')
+        self.AppendToOutput('---')
+
+        #sort the plugins into alphabetical order
+        plugins_list = [key for key, value in self.plugins.iteritems()]
+        plugins_list.sort()
+        for plugin in plugins_list:
+            self.AppendToOutput(plugin)
+
+    def UpdateNote(self):
+        #update the note for the active file
+        active_file = self.GetActiveFile()
+        if active_file is not None:
+            self.panelNote.Editor.SetValue(active_file.note)
 
     def UpdatePerspectivesMenu(self):
         #add perspectives to menubar and _perspectives
@@ -1178,7 +1246,7 @@ class HookeFrame(wx.Frame):
                     perspectiveFile = open(filename, 'rU')
                     perspective = perspectiveFile.readline()
                     perspectiveFile.close()
-                    if perspective != '':
+                    if perspective:
                         name, extension = os.path.splitext(perspectiveFilename)
                         if extension == '.txt':
                             self._perspectives[name] = perspective
@@ -1219,42 +1287,46 @@ class HookeFrame(wx.Frame):
         if playlist is not None:
             if playlist.index >= 0:
                 self.statusbar.SetStatusText(playlist.get_status_string(), 0)
+                self.UpdateNote()
                 self.UpdatePlot()
 
     def UpdatePlot(self, plot=None):
 
         def add_to_plot(curve):
             if curve.visible and curve.x and curve.y:
+                #get the index of the subplot to use as destination
                 destination = (curve.destination.column - 1) * number_of_rows + curve.destination.row - 1
+                #set all parameters for the plot
                 axes_list[destination].set_title(curve.title)
-                axes_list[destination].set_xlabel(multiplier_x + curve.units.x)
-                axes_list[destination].set_ylabel(multiplier_y + curve.units.y)
+                axes_list[destination].set_xlabel(curve.multiplier.x + curve.units.x)
+                axes_list[destination].set_ylabel(curve.multiplier.y + curve.units.y)
+                #set the formatting details for the scale
+                formatter_x = lib.curve.PrefixFormatter(curve.decimals.x, curve.multiplier.x, use_zero)
+                formatter_y = lib.curve.PrefixFormatter(curve.decimals.y, curve.multiplier.y, use_zero)
+                axes_list[destination].xaxis.set_major_formatter(formatter_x)
+                axes_list[destination].yaxis.set_major_formatter(formatter_y)
                 if curve.style == 'plot':
                     axes_list[destination].plot(curve.x, curve.y, color=curve.color, label=curve.label, lw=curve.linewidth, zorder=1)
                 if curve.style == 'scatter':
                     axes_list[destination].scatter(curve.x, curve.y, color=curve.color, label=curve.label, s=curve.size, zorder=2)
-
-        def get_format_x(x, pos):
-            'The two args are the value and tick position'
-            multiplier = lib.prettyformat.get_exponent(multiplier_x)
-            decimals_str = '%.' + str(decimals_x) + 'f'
-            return decimals_str % (x/(10 ** multiplier))
-
-        def get_format_y(x, pos):
-            'The two args are the value and tick position'
-            multiplier = lib.prettyformat.get_exponent(multiplier_y)
-            decimals_str = '%.' + str(decimals_y) + 'f'
-            return decimals_str % (x/(10 ** multiplier))
-
-        decimals_x = self.GetIntFromConfig('plot', 'x_decimals')
-        decimals_y = self.GetIntFromConfig('plot', 'y_decimals')
-        multiplier_x = self.GetStringFromConfig('plot', 'x_multiplier')
-        multiplier_y = self.GetStringFromConfig('plot', 'y_multiplier')
+                #add the legend if necessary
+                if curve.legend:
+                    axes_list[destination].legend()
 
         if plot is None:
             active_file = self.GetActiveFile()
             if not active_file.driver:
+                #the first time we identify a file, the following need to be set
                 active_file.identify(self.drivers)
+                for curve in active_file.plot.curves:
+                    curve.decimals.x = self.GetIntFromConfig('core', 'preferences', 'x_decimals')
+                    curve.decimals.y = self.GetIntFromConfig('core', 'preferences', 'y_decimals')
+                    curve.legend = self.GetBoolFromConfig('core', 'preferences', 'legend')
+                    curve.multiplier.x = self.GetStringFromConfig('core', 'preferences', 'x_multiplier')
+                    curve.multiplier.y = self.GetStringFromConfig('core', 'preferences', 'y_multiplier')
+            if active_file.driver is None:
+                self.AppendToOutput('Invalid file: ' + active_file.filename)
+                return
             self.displayed_plot = copy.deepcopy(active_file.plot)
             #add raw curves to plot
             self.displayed_plot.raw_curves = copy.deepcopy(self.displayed_plot.curves)
@@ -1267,31 +1339,29 @@ class HookeFrame(wx.Frame):
             self.displayed_plot = copy.deepcopy(plot)
 
         figure = self.GetActiveFigure()
-
         figure.clear()
-        figure.suptitle(self.displayed_plot.title, fontsize=14)
-
+        #use '0' instead of e.g. '0.00' for scales
+        use_zero = self.GetBoolFromConfig('core', 'preferences', 'use_zero')
+        #optionally remove the extension from the title of the plot
+        hide_curve_extension = self.GetBoolFromConfig('core', 'preferences', 'hide_curve_extension')
+        if hide_curve_extension:
+            title = lh.remove_extension(self.displayed_plot.title)
+        else:
+            title = self.displayed_plot.title
+        figure.suptitle(title, fontsize=14)
+        #create the list of all axes necessary (rows and columns)
         axes_list =[]
-
         number_of_columns = max([curve.destination.column for curve in self.displayed_plot.curves])
         number_of_rows = max([curve.destination.row for curve in self.displayed_plot.curves])
-
         for index in range(number_of_rows * number_of_columns):
             axes_list.append(figure.add_subplot(number_of_rows, number_of_columns, index + 1))
-
-        for axes in axes_list:
-            formatter_x = FuncFormatter(get_format_x)
-            formatter_y = FuncFormatter(get_format_y)
-            axes.xaxis.set_major_formatter(formatter_x)
-            axes.yaxis.set_major_formatter(formatter_y)
-
+        #add all curves to the corresponding plots
         for curve in self.displayed_plot.curves:
             add_to_plot(curve)
 
         #make sure the titles of 'subplots' do not overlap with the axis labels of the 'main plot'
         figure.subplots_adjust(hspace=0.3)
 
-        #TODO: add multiple results support to fit in curve.results:
         #display results
         self.panelResults.ClearResults()
         if self.displayed_plot.results.has_key(self.results_str):
@@ -1300,11 +1370,7 @@ class HookeFrame(wx.Frame):
             self.panelResults.DisplayResults(self.displayed_plot.results[self.results_str])
         else:
             self.panelResults.ClearResults()
-
-        legend = self.GetBoolFromConfig('plot', 'legend')
-        for axes in axes_list:
-            if legend:
-                axes.legend()
+        #refresh the plot
         figure.canvas.draw()
 
 if __name__ == '__main__':
@@ -1320,5 +1386,3 @@ if __name__ == '__main__':
     app = Hooke(redirect=redirect)
 
     app.MainLoop()
-
-

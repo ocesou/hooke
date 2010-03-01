@@ -91,11 +91,19 @@ class Playlist(object):
             #rebuild a data structure from the xml attributes
             #the next two lines are here for backwards compatibility, newer playlist files use 'filename' instead of 'path'
             if element.hasAttribute('path'):
+                #path, name = os.path.split(element.getAttribute('path'))
+                #path = path.split(os.sep)
+                #filename = lib.libhooke.get_file_path(name, path)
                 filename = element.getAttribute('path')
             if element.hasAttribute('filename'):
+                #path, name = os.path.split(element.getAttribute('filename'))
+                #path = path.split(os.sep)
+                #filename = lib.libhooke.get_file_path(name, path)
                 filename = element.getAttribute('filename')
             if os.path.isfile(filename):
                 data_file = lib.file.File(filename)
+                if element.hasAttribute('note'):
+                    data_file.note = element.getAttribute('note')
                 self.files.append(data_file)
         self.count = len(self.files)
         if self.count > 0:

@@ -132,9 +132,6 @@ class flatfiltsCommands:
     def has_peaks(self, plot=None, plugin=None):
         '''
         Finds peak position in a force curve.
-        FIXME: should be moved to peakspot.py
-        #TODO: should this really be moved? this is obviously tied into flatfilts/convfilt
-        #flatfilts.py is where 'has_peaks' belongs
         '''
 
         if plugin is None:
@@ -284,7 +281,14 @@ class flatfiltsCommands:
                 current_file.peak_size = peak_size
                 features.append(file_index - 1)
 
-        #TODO: warn when flatten is not applied?
+        #Warn that no flattening had been done.
+        if not self.HasPlotmanipulator('plotmanip_flatten'):
+            self.AppendToOutput('Flatten manipulator was not found. Processing was done without flattening.')
+        else:
+            if not self.AppliesPlotmanipulator('flatten'):
+                self.AppendToOutput('Flatten manipulator was not applied.')
+                self.AppendToOutput('Try to enable the flatten plotmanipulator for better results.')
+
         if not features:
             self.AppendToOutput('Found nothing interesting. Check the playlist, could be a bug or criteria could be too stringent.')
         else:

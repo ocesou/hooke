@@ -17,7 +17,7 @@ class File(object):
 
     def __init__(self, filename=None, drivers=None):
         self.driver = None
-        self.notes = ''
+        self.note = ''
         self.plot = lib.plot.Plot()
         if filename is None:
             self.filename = None
