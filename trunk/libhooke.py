@@ -279,9 +279,9 @@ from the current ticks.
 		oom = numpy.floor(numpy.log10(mrange))
 	    else:
 		if locs[0] > locs[-1]: 
-		    val = locs[-1]
-		else: 
 		    val = locs[0]
+		else: 
+		    val = locs[-1]
 		if val == 0: 
 		    oom = 0
 		else: 
