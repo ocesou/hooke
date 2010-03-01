@@ -3,7 +3,7 @@
 '''
 mfp1dexport.py
 
-Driver for text-exported MFP 1D files.
+Driver for text-exported MFP-1D files.
 
 Copyright 2009 by Massimo Sandal
 with modifications by Dr. Rolf Schmidt (Concordia University, Canada)
@@ -23,7 +23,7 @@ class mfp1dexportDriver(lib.driver.Driver):
 
     def __init__(self, filename):
         '''
-        This is a driver to import Asylum Research MFP 1D data.
+        This is a driver to import Asylum Research MFP-1D data.
         Status: experimental
         '''
         self.filename = filename

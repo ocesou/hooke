@@ -36,7 +36,7 @@ def pretty_format(value, unit='', decimals=-1, multiplier=0, leading_spaces=Fals
     if multiplier == 0:
         multiplier=get_multiplier(value)
     unit_str = ''
-    if unit != '':
+    if unit:
         unit_str = ' ' + get_prefix(multiplier) + unit
     if decimals >= 0:
         format_str = '% ' + repr(leading_spaces_int + decimals) + '.' + repr(decimals) + 'f'

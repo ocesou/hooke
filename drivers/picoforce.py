@@ -507,23 +507,6 @@ class picoforceDriver(lib.driver.Driver):
         '''
         raise "Not implemented yet."
 
-    def detriggerize(self, forcext):
-        '''
-        Cuts away the trigger-induced s**t on the extension curve.
-        DEPRECATED
-        cutindex=2
-        startvalue=forcext[0]
-
-        for index in range(len(forcext)-1,2,-2):
-           if forcext[index]>startvalue:
-                cutindex=index
-           else:
-                break
-
-        return cutindex
-        '''
-        return 0
-
     def is_me(self):
         '''
         self-identification of file type magic

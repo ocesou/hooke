@@ -145,7 +145,7 @@ class PlotPanel(wx.Panel):
 
             #line.figure.canvas.draw()
         if self.display_coordinates:
-            coordinateString = ''.join([str(event.xdata), ' ', str(event.ydata)])
+            coordinateString = ''.join(['x: ', str(event.xdata), ' y: ', str(event.ydata)])
             #TODO: pretty format
             self.SetStatusText(coordinateString)
 

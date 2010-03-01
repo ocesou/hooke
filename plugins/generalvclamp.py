@@ -5,7 +5,8 @@ generalvclamp.py
 
 Plugin regarding general velocity clamp measurements
 
-Copyright 2008 by Massimo Sandal (University of Bologna, Italy)
+Copyright 2008 by Massimo Sandal, Fabrizio Benedetti, Marco Brucale, Bruno Samori (University of Bologna, Italy),
+and Alberto Gomez-Casado (University of Twente) 
 with modifications by Dr. Rolf Schmidt (Concordia University, Canada)
 
 This program is released under the GNU General Public License version 2.

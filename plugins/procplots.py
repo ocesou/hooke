@@ -20,6 +20,7 @@ from numpy import arange, diff, fft, median
 from scipy.signal import medfilt
 
 from lib.peakspot import conv_dx
+import lib.prettyformat
 
 class procplotsCommands:
 
@@ -69,7 +70,6 @@ class procplotsCommands:
 
         self.UpdatePlot(plot)
 
-
     def do_derivplot(self):
         '''
         Plots the discrete differentiation of the currently displayed force curve.
@@ -117,7 +117,6 @@ class procplotsCommands:
         -------
         Syntax: subtplot
         '''
-        #TODO: what is sub_filter supposed to do?
 
         #TODO: add option to keep previous subtplot
         plot = self.GetDisplayedPlotCorrected()
@@ -273,10 +272,17 @@ class procplotsCommands:
         for index in whatset:
             fft_curve = self.fft_plot(copy.deepcopy(plot.curves[index]), boundaries)
 
+            fft_curve.decimals.x = 3
+            fft_curve.decimals.y = 0
             fft_curve.destination.column = column
             fft_curve.destination.row = row
+            fft_curve.label = plot.curves[index].label
+            fft_curve.legend = True
+            fft_curve.multiplier.x = lib.prettyformat.get_prefix(max(fft_curve.x))
+            fft_curve.multiplier.y = lib.prettyformat.get_prefix(max(fft_curve.y))
+            #fft_curve.multiplier.y = ''
             fft_curve.title = 'FFT'
-            fft_curve.units.x = 'frequency'
+            fft_curve.units.x = 'Hz'
             fft_curve.units.y = 'power'
             plot.curves.append(fft_curve)
 

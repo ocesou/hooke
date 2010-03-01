@@ -24,6 +24,8 @@ import numpy as np
 import scipy.stats
 import scipy.odr
 
+import lib.clickedpoint
+
 class fitCommands(object):
     '''
     Do not use any of the following commands directly:
@@ -610,7 +612,7 @@ class fitCommands(object):
                 contact_point_index=self.wlccontact_index
         else:
             cindex=self.find_contact_point()
-            contact_point=lh.ClickedPoint()
+            contact_point = lib.clickedpoint.ClickedPoint()
             contact_point.absolute_coords=displayed_plot.vectors[1][0][cindex], displayed_plot.vectors[1][1][cindex]
             contact_point.find_graph_coords(displayed_plot.vectors[1][0], displayed_plot.vectors[1][1])
             contact_point.is_marker=True
@@ -796,7 +798,7 @@ class fitCommands(object):
         return xext,ysub,contact
 
         #now, exploit a ClickedPoint instance to calculate index...
-        dummy=lh.ClickedPoint()
+        dummy=lib.clickedpoint.ClickedPoint()
         dummy.absolute_coords=(x_intercept,y_intercept)
         dummy.find_graph_coords(xret2,yret)
 

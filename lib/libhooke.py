@@ -26,6 +26,12 @@ hookeDir=''
 EXTENSION = 0
 RETRACTION = 1
 
+def coth(z):
+    '''
+    Hyperbolic cotangent.
+    '''
+    return (numpy.exp(2 * z) + 1) / (numpy.exp(2 * z) - 1)
+
 def delete_empty_lines_from_xmlfile(filename):
     #the following 3 lines are needed to strip newlines.
     #Otherwise, since newlines are XML elements too, the parser would read them
@@ -35,56 +41,53 @@ def delete_empty_lines_from_xmlfile(filename):
     aFile=''.join(aFile)
     return aFile
 
+def fit_interval_nm(start_index, x_vect, nm, backwards):
+    '''
+    Calculates the number of points to fit, given a fit interval in nm
+    start_index: index of point
+    plot: plot to use
+    backwards: if true, finds a point backwards.
+    '''
+    c = 0
+    i = start_index
+    maxlen=len(x_vect)
+    while abs(x_vect[i] - x_vect[start_index]) * (10**9) < nm:
+        if i == 0 or i == maxlen-1: #we reached boundaries of vector!
+            return c
+        if backwards:
+            i -= 1
+        else:
+            i += 1
+        c += 1
+    return c
+
 def get_file_path(filename, folders = []):
     if os.path.dirname(filename) == '' or os.path.isabs(filename) == False:
         path = ''
         for folder in folders:
             path = os.path.join(path, folder)
         filename = os.path.join(hookeDir, path, filename)
-
     return filename
 
-def coth(z):
+def pickup_contact_point(filename=''):
     '''
-    hyperbolic cotangent
+    Picks up the contact point by left-clicking.
     '''
-    return (numpy.exp(2 * z) + 1) / (numpy.exp(2 * z) - 1)
+    contact_point = self._measure_N_points(N=1, message='Please click on the contact point.')[0]
+    contact_point_index = contact_point.index
+    self.wlccontact_point = contact_point
+    self.wlccontact_index = contact_point.index
+    self.wlccurrent = filename
+    return contact_point, contact_point_index
 
-class ClickedPoint(object):
+def remove_extension(filename):
     '''
-    this class defines what a clicked point on the curve plot is
+    Removes the extension from a filename.
     '''
-    def __init__(self):
-
-        self.is_marker = None #boolean ; decides if it is a marker
-        self.is_line_edge = None #boolean ; decides if it is the edge of a line (unused)
-        self.absolute_coords = (None, None) #(float,float) ; the absolute coordinates of the clicked point on the graph
-        self.graph_coords = (None, None) #(float,float) ; the coordinates of the plot that are nearest in X to the clicked point
-        self.index = None #integer ; the index of the clicked point with respect to the vector selected
-        self.dest = None #0 or 1 ; 0=top plot 1=bottom plot
-
-    def find_graph_coords(self, xvector, yvector):
-        '''
-        Given a clicked point on the plot, finds the nearest point in the dataset (in X) that
-        corresponds to the clicked point.
-        '''
-        dists = []
-        for index in scipy.arange(1, len(xvector), 1):
-            dists.append(((self.absolute_coords[0] - xvector[index]) ** 2)+((self.absolute_coords[1] - yvector[index]) ** 2))
-
-        self.index=dists.index(min(dists))
-        self.graph_coords=(xvector[self.index], yvector[self.index])
+    name, extension = os.path.splitext(filename)
+    return name
 
 #CSV-HELPING FUNCTIONS
-def transposed2(lists, defval=0):
-    '''
-    transposes a list of lists, i.e. from [[a,b,c],[x,y,z]] to [[a,x],[b,y],[c,z]] without losing
-    elements
-    (by Zoran Isailovski on the Python Cookbook online)
-    '''
-    if not lists: return []
-    return map(lambda *row: [elem or defval for elem in row], *lists)
-
 def csv_write_dictionary(f, data, sorting='COLUMNS'):
     '''
     Writes a CSV file from a dictionary, with keys as first column or row
@@ -105,3 +108,13 @@ def csv_write_dictionary(f, data, sorting='COLUMNS'):
 
     if sorting=='ROWS':
         print 'Not implemented!' #FIXME: implement it.
+
+def transposed2(lists, defval=0):
+    '''
+    transposes a list of lists, i.e. from [[a,b,c],[x,y,z]] to [[a,x],[b,y],[c,z]] without losing
+    elements
+    (by Zoran Isailovski on the Python Cookbook online)
+    '''
+    if not lists: return []
+    return map(lambda *row: [elem or defval for elem in row], *lists)
+
