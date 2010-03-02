@@ -203,8 +203,6 @@ class mfp1dDriver(lib.driver.Driver):
 
         extension.y, retraction.y = self._load_from_file(self.filename, extract_note=True)
         filename = self.filename.replace('deflection', 'LVDT', 1)
-        path, name = os.path.split(filename)
-        filename = os.path.join(path, 'lvdt', name)
         extension.x, retraction.x = self._load_from_file(filename, extract_note=False)
         return [[extension.x, extension.y], [retraction.x, retraction.y]]
 
@@ -216,11 +214,14 @@ class mfp1dDriver(lib.driver.Driver):
             return False
 
         name, extension = os.path.splitext(self.filename)
+        #the following only exist in MFP1D files, not MFP-3D
         #PullDist, PullDistSign, FastSamplingFrequency, SlowSamplingFrequency, FastDecimationFactor
         #SlowDecimationFactor, IsDualPull, InitRetDist, RelaxDist, SlowTrigger, RelativeTrigger,
         #EndOfNote
         if extension == '.ibw' and 'deflection' in name:
-            if 'EndOfNote' in self.lines:
+            #check if the corresponding LVDT file exists
+            filename = self.filename.replace('deflection', 'LVDT', 1)
+            if os.path.isfile(filename) and 'EndOfNote' in self.lines:
                 return True
             else:
                 return False

@@ -22,7 +22,7 @@ class Curve(object):
         self.label = ''
         self.legend = False
         self.linewidth = 1
-        self.multiplier = Multiplier()
+        self.prefix = Prefix()
         self.size = 0.5
         self.style = 'plot'
         self.title = ''
@@ -53,7 +53,7 @@ class Destination(object):
         self.row = 1
 
 
-class Multiplier(object):
+class Prefix(object):
 
     def __init__(self):
         self.x = 'n'
@@ -64,9 +64,9 @@ class PrefixFormatter(Formatter):
     '''
     Formatter (matplotlib) class that uses power prefixes.
     '''
-    def __init__(self, decimals=2, multiplier='n', use_zero=True):
+    def __init__(self, decimals=2, prefix='n', use_zero=True):
         self.decimals = decimals
-        self.multiplier = multiplier
+        self.prefix = prefix
         self.use_zero = use_zero
 
     def __call__(self, x, pos=None):
@@ -74,7 +74,7 @@ class PrefixFormatter(Formatter):
         if self.use_zero:
             if x == 0:
                 return '0'
-        multiplier = lib.prettyformat.get_exponent(self.multiplier)
+        multiplier = lib.prettyformat.get_exponent(self.prefix)
         decimals_str = '%.' + str(self.decimals) + 'f'
         return decimals_str % (x / (10 ** multiplier))
 

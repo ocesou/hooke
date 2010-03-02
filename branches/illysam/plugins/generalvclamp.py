@@ -6,7 +6,7 @@ generalvclamp.py
 Plugin regarding general velocity clamp measurements
 
 Copyright 2008 by Massimo Sandal, Fabrizio Benedetti, Marco Brucale, Bruno Samori (University of Bologna, Italy),
-and Alberto Gomez-Casado (University of Twente) 
+and Alberto Gomez-Casado (University of Twente)
 with modifications by Dr. Rolf Schmidt (Concordia University, Canada)
 
 This program is released under the GNU General Public License version 2.
@@ -46,8 +46,8 @@ class generalvclampCommands:
         '''
         color = self.GetColorFromConfig('generalvclamp', 'distance', 'color')
         decimals = self.GetIntFromConfig('generalvclamp', 'distance', 'decimals')
-        multiplier_str = self.GetStringFromConfig('generalvclamp', 'distance', 'multiplier')
-        multiplier = lib.prettyformat.get_exponent(multiplier_str)
+        prefix = self.GetStringFromConfig('generalvclamp', 'distance', 'prefix')
+        multiplier = 10 ** lib.prettyformat.get_exponent(prefix)
         show =  self.GetBoolFromConfig('generalvclamp', 'distance', 'show')
         show_in_legend = self.GetBoolFromConfig('generalvclamp', 'distance', 'show_in_legend')
         size = self.GetIntFromConfig('generalvclamp', 'distance', 'size')
@@ -86,7 +86,7 @@ class generalvclampCommands:
 
         self.UpdatePlot(plot)
 
-        output_str = lib.prettyformat.pretty_format(abs(delta.get_delta_x()), delta.units.x, decimals, 10 ** multiplier)
+        output_str = lib.prettyformat.pretty_format(abs(delta.get_delta_x()), delta.units.x, decimals, multiplier)
         self.AppendToOutput(''.join(['Distance: ', output_str]))
 
     def do_force(self):
@@ -99,8 +99,8 @@ class generalvclampCommands:
         '''
         color = self.GetColorFromConfig('generalvclamp', 'force', 'color')
         decimals = self.GetIntFromConfig('generalvclamp', 'force', 'decimals')
-        multiplier_str = self.GetStringFromConfig('generalvclamp', 'force', 'multiplier')
-        multiplier = lib.prettyformat.get_exponent(multiplier_str)
+        prefix = self.GetStringFromConfig('generalvclamp', 'force', 'prefix')
+        multiplier = 10 ** lib.prettyformat.get_exponent(prefix)
         show = self.GetBoolFromConfig('generalvclamp', 'force', 'show')
         show_in_legend = self.GetBoolFromConfig('generalvclamp', 'force', 'show_in_legend')
         size = self.GetIntFromConfig('generalvclamp', 'force', 'size')
@@ -139,7 +139,7 @@ class generalvclampCommands:
 
         self.UpdatePlot(plot)
 
-        output_str = lib.prettyformat.pretty_format(abs(delta.get_delta_y()), delta.units.y, decimals, 10 ** multiplier)
+        output_str = lib.prettyformat.pretty_format(abs(delta.get_delta_y()), delta.units.y, decimals, multiplier)
         self.AppendToOutput(''.join(['Force: ', output_str]))
 
     def do_forcebase(self):
@@ -171,8 +171,8 @@ class generalvclampCommands:
         maximumrange_show_in_legend = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'maximumrange_show_in_legend')
         maximumrange_size = self.GetIntFromConfig('generalvclamp', 'forcebase', 'maximumrange_size')
         maxpoint = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'max')
-        multiplier_str = self.GetStringFromConfig('generalvclamp', 'forcebase', 'multiplier')
-        multiplier = lib.prettyformat.get_exponent(multiplier_str)
+        prefix = self.GetStringFromConfig('generalvclamp', 'forcebase', 'prefix')
+        multiplier = 10 ** lib.prettyformat.get_exponent(prefix)
         rebase = self.GetBoolFromConfig('generalvclamp', 'forcebase', 'rebase')
         whatset_str = self.GetStringFromConfig('generalvclamp', 'forcebase', 'whatset')
         whatset = 'retraction'
@@ -269,7 +269,7 @@ class generalvclampCommands:
         self.UpdatePlot(plot)
 
         unit_str = plot.curves[whatset].units.y
-        output_str = lib.prettyformat.pretty_format(forcebase, unit_str, decimals, 10 ** multiplier)
+        output_str = lib.prettyformat.pretty_format(forcebase, unit_str, decimals, multiplier)
         self.AppendToOutput(''.join(['Force: ', output_str]))
 
     def plotmanip_multiplier(self, plot, current, customvalue=False):

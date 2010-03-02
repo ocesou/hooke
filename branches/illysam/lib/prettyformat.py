@@ -33,6 +33,7 @@ def pretty_format(value, unit='', decimals=-1, multiplier=0, leading_spaces=Fals
     leading_spaces_int = 0
     if leading_spaces:
         leading_spaces_int = 5
+    #automatic setting of multiplier
     if multiplier == 0:
         multiplier=get_multiplier(value)
     unit_str = ''
