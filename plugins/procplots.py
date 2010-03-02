@@ -278,9 +278,8 @@ class procplotsCommands:
             fft_curve.destination.row = row
             fft_curve.label = plot.curves[index].label
             fft_curve.legend = True
-            fft_curve.multiplier.x = lib.prettyformat.get_prefix(max(fft_curve.x))
-            fft_curve.multiplier.y = lib.prettyformat.get_prefix(max(fft_curve.y))
-            #fft_curve.multiplier.y = ''
+            fft_curve.prefix.x = lib.prettyformat.get_prefix(max(fft_curve.x))
+            fft_curve.prefix.y = lib.prettyformat.get_prefix(max(fft_curve.y))
             fft_curve.title = 'FFT'
             fft_curve.units.x = 'Hz'
             fft_curve.units.y = 'power'

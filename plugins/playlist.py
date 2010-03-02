@@ -30,22 +30,20 @@ class playlistCommands(object):
 
     def do_genlist(self, filemask='', folder=''):
         '''
-        GENLIST
         Generates a file playlist.
-        Note it doesn't *save* it: see savelist for this.
+        Note: genlist does not *save* the playlist, it only generates it. In order to save a playlist, use savelist.
 
-        If [input files] is a directory, it will use all files in the directory for playlist.
-        So:
-        genlist dir
-        genlist dir/
-        genlist dir/*.*
-
-        are all equivalent syntax.
-        ------------
-        Syntax: genlist [input files]
+        filemask: set the filemask to use. For example, the default value '*.*' will include all files found in the playlist.
+        folder: set the folder in which the data that you want to analyze resides
+        detect_mfp1d: automatically uses '*deflection*' as filemask
+                      MFP-1D files come in pairs (2009-10-20deflection4483.ibw and 2009-10-20LVDT4483.ibw). For the playlist to contain
+                      only file per experiment, only deflection files are included.
         '''
+        detect_mfp1d = self.GetBoolFromConfig('playlist', 'genlist', 'detect_mfp1d')
         if filemask == '':
             filemask = self.GetStringFromConfig('playlist', 'genlist', 'filemask')
+        if detect_mfp1d:
+            filemask = '*deflection*'
         if folder == '':
             folder = self.GetStringFromConfig('playlist', 'genlist', 'folder')
         if os.path.isdir(folder):

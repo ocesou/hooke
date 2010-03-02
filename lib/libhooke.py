@@ -69,17 +69,6 @@ def get_file_path(filename, folders = []):
         filename = os.path.join(hookeDir, path, filename)
     return filename
 
-def pickup_contact_point(filename=''):
-    '''
-    Picks up the contact point by left-clicking.
-    '''
-    contact_point = self._measure_N_points(N=1, message='Please click on the contact point.')[0]
-    contact_point_index = contact_point.index
-    self.wlccontact_point = contact_point
-    self.wlccontact_index = contact_point.index
-    self.wlccurrent = filename
-    return contact_point, contact_point_index
-
 def remove_extension(filename):
     '''
     Removes the extension from a filename.

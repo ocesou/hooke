@@ -166,10 +166,10 @@ class autopeakCommands:
 
         #--Contact point arguments
         if reclick:
-            contact_point, contact_point_index = lh.pickup_contact_point(filename=filename)
+            contact_point, contact_point_index = self.pickup_contact_point(filename=filename)
         elif noauto:
             if self.wlccontact_index is None or self.wlccurrent != filename:
-                contact_point, contact_point_index = lh.pickup_contact_point(filename=filename)
+                contact_point, contact_point_index = self.pickup_contact_point(filename=filename)
             else:
                 contact_point = self.wlccontact_point
                 contact_point_index = self.wlccontact_index
@@ -287,8 +287,7 @@ class autopeakCommands:
                 fit_result.size = plot_size
                 fit_result.style = plot_style
                 fit_result.title = retraction.title
-                fit_result.units.x = retraction.units.x
-                fit_result.units.y = retraction.units.y
+                fit_result.units = retraction.units
                 fit_result.visible = True
                 fit_result.x = xfit
                 fit_result.y = yfit
@@ -304,3 +303,15 @@ class autopeakCommands:
 
         #TODO:
         #self.do_note('autopeak')
+
+    def pickup_contact_point(self, filename=''):
+        '''
+        Picks up the contact point by left-clicking.
+        '''
+        contact_point = self._measure_N_points(N=1, message='Please click on the contact point.')[0]
+        contact_point_index = contact_point.index
+        self.wlccontact_point = contact_point
+        self.wlccontact_index = contact_point.index
+        self.wlccurrent = filename
+        return contact_point, contact_point_index
+

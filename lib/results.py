@@ -43,40 +43,6 @@ class Results(object):
             return prettyformat.pretty_format(value, '', decimals, multiplier, True)
         return str(value)
 
-    #def get_fit_result(self):
-        #if not(self.has_multipliers):
-            #self.set_multipliers()
-
-        #sResult = 'Contour length ['+prettyformat.get_prefix(self.multiplierContourLength) + 'm]' + self.separator
-        #sResult += prettyformat.pretty_format(self.contourLength[0], '', self.decimals, self.multiplierContourLength, True) + '\n'
-        #sResult += 'Persistence length ['+prettyformat.get_prefix(self.multiplierPersistenceLength) + 'm]' + self.separator
-        #sResult += prettyformat.pretty_format(self.persistenceLength[0], '', self.decimals, self.multiplierPersistenceLength, True) + '\n'
-        #sResult += 'Rupture force ['+prettyformat.get_prefix(self.multiplierRuptureForce) + 'N]' + self.separator
-        #sResult += prettyformat.pretty_format(self.ruptureForces[0], '', self.decimals, self.multiplierRuptureForce, True) + '\n'
-        #sResult += 'Slope ['+prettyformat.get_prefix(self.multiplierSlope) + 'N/m]' + self.separator
-        #sResult += prettyformat.pretty_format(self.slopes[0], '', self.decimals, self.multiplierSlope, True)+'\n'
-        #sResult += 'Sigma contour ['+prettyformat.get_prefix(self.multiplierContourLength) + 'm]' + self.separator
-        #sResult += prettyformat.pretty_format(self.contourLengthSigma[0], '', self.decimals, self.multiplierContourLength, True) + '\n'
-        #sResult += 'Sigma persistence ['+prettyformat.get_prefix(self.multiplierPersistenceLength) + 'm]' + self.separator
-        #sResult += prettyformat.pretty_format(self.persistenceLengthSigma[0], '', self.decimals, self.multiplierPersistenceLength, True)
-
-        #return sResult
-
-    #def get_fit_results(self, index):
-        #if index >= 0 and index < len(self.contourLength):
-            #if not(self.has_multipliers):
-                #self.set_multipliers()
-            #sLine = prettyformat.pretty_format(self.contourLength[index], '', self.decimals, self.multiplierContourLength, True) + self.separator
-            #sLine += prettyformat.pretty_format(self.persistenceLength[index], '', self.decimals, self.multiplierPersistenceLength, True) + self.separator
-            #sLine += prettyformat.pretty_format(self.ruptureForces[index], '', self.decimals, self.multiplierRuptureForce, True) + self.separator
-            #sLine += prettyformat.pretty_format(self.slopes[index], '', self.decimals, self.multiplierSlope, True) + self.separator
-            #sLine += prettyformat.pretty_format(self.contourLengthSigma[index], '', self.decimals, self.multiplierContourLength, True) + self.separator
-            #sLine += prettyformat.pretty_format(self.persistenceLengthSigma[index], '', self.decimals, self.multiplierPersistenceLength, True)
-
-            #return sLine
-        #else:
-            #return ''
-
     def has_results(self):
         return len(self.results) > 0
 

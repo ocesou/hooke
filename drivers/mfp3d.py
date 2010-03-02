@@ -223,7 +223,11 @@ class mfp3dDriver(lib.driver.Driver):
 
         name, extension = os.path.splitext(self.filename)
         if extension == '.ibw':
-            return True
+            for line in self.lines:
+                if line.startswith('ForceNote:'):
+                    return True
+            else:
+                return False
         else:
             return False
 

@@ -25,12 +25,17 @@ import wx.lib.agw.aui as aui
 import wx.lib.evtmgr as evtmgr
 import wx.propgrid as wxpg
 
+from matplotlib.ticker import FuncFormatter
+
+from configobj import __version__ as configobj_version
 from matplotlib import __version__ as mpl_version
 from numpy import __version__ as numpy_version
 from scipy import __version__ as scipy_version
 from sys import version as python_version
 from wx import __version__ as wx_version
-from matplotlib.ticker import FuncFormatter
+from wx.propgrid import PROPGRID_MAJOR
+from wx.propgrid import PROPGRID_MINOR
+from wx.propgrid import PROPGRID_RELEASE
 
 try:
     from agw import cubecolourdialog as CCD
@@ -55,8 +60,6 @@ import panels.plot
 import panels.propertyeditor
 import panels.results
 import plugins
-
-import lib.igor
 
 global __version__
 global __codename__
@@ -196,49 +199,6 @@ class HookeFrame(wx.Frame):
         # see the end up FrameManager::Update() for the test
         # code. For now, just hard code a frame minimum size
         self.SetMinSize(wx.Size(500, 500))
-        #create panels here
-        self.panelAssistant = self.CreatePanelAssistant()
-        self.panelCommands = self.CreatePanelCommands()
-        self.panelFolders = self.CreatePanelFolders()
-        self.panelPlaylists = self.CreatePanelPlaylists()
-        self.panelProperties = self.CreatePanelProperties()
-        self.panelNote = self.CreatePanelNote()
-        self.panelOutput = self.CreatePanelOutput()
-        self.panelResults = self.CreatePanelResults()
-        self.plotNotebook = self.CreateNotebook()
-
-        # add panes
-        self._mgr.AddPane(self.panelFolders, aui.AuiPaneInfo().Name('Folders').Caption('Folders').Left().CloseButton(True).MaximizeButton(False))
-        self._mgr.AddPane(self.panelPlaylists, aui.AuiPaneInfo().Name('Playlists').Caption('Playlists').Left().CloseButton(True).MaximizeButton(False))
-        self._mgr.AddPane(self.panelNote, aui.AuiPaneInfo().Name('Note').Caption('Note').Left().CloseButton(True).MaximizeButton(False))
-        self._mgr.AddPane(self.plotNotebook, aui.AuiPaneInfo().Name('Plots').CenterPane().PaneBorder(False))
-        self._mgr.AddPane(self.panelCommands, aui.AuiPaneInfo().Name('Commands').Caption('Settings and commands').Right().CloseButton(True).MaximizeButton(False))
-        self._mgr.AddPane(self.panelProperties, aui.AuiPaneInfo().Name('Properties').Caption('Properties').Right().CloseButton(True).MaximizeButton(False))
-        self._mgr.AddPane(self.panelAssistant, aui.AuiPaneInfo().Name('Assistant').Caption('Assistant').Right().CloseButton(True).MaximizeButton(False))
-        self._mgr.AddPane(self.panelOutput, aui.AuiPaneInfo().Name('Output').Caption('Output').Bottom().CloseButton(True).MaximizeButton(False))
-        self._mgr.AddPane(self.panelResults, aui.AuiPaneInfo().Name('Results').Caption('Results').Bottom().CloseButton(True).MaximizeButton(False))
-        #self._mgr.AddPane(self.textCtrlCommandLine, aui.AuiPaneInfo().Name('CommandLine').CaptionVisible(False).Fixed().Bottom().Layer(2).CloseButton(False).MaximizeButton(False))
-        #self._mgr.AddPane(panelBottom, aui.AuiPaneInfo().Name("panelCommandLine").Bottom().Position(1).CloseButton(False).MaximizeButton(False))
-
-        # add the toolbars to the manager
-        #self.toolbar=self.CreateToolBar()
-        self.toolbarNavigation=self.CreateToolBarNavigation()
-        #self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('toolbar').Caption('Toolbar').ToolbarPane().Top().Layer(1).Row(1).LeftDockable(False).RightDockable(False))
-        self._mgr.AddPane(self.toolbarNavigation, aui.AuiPaneInfo().Name('toolbarNavigation').Caption('Navigation').ToolbarPane().Top().Layer(1).Row(1).LeftDockable(False).RightDockable(False))
-        # "commit" all changes made to FrameManager
-        self._mgr.Update()
-        #create the menubar after the panes so that the default perspective
-        #is created with all panes open
-        self.CreateMenuBar()
-        self.statusbar = self.CreateStatusbar()
-        self._BindEvents()
-
-        name = self.config['perspectives']['active']
-        menu_item = self.GetPerspectiveMenuItem(name)
-        if menu_item is not None:
-            self.OnRestorePerspective(menu_item)
-            #TODO: config setting to remember playlists from last session
-        self.playlists = self.panelPlaylists.Playlists
         #define the list of active drivers
         self.drivers = []
         for driver in self.config['drivers']:
@@ -308,6 +268,49 @@ class HookeFrame(wx.Frame):
         commands = [command for command in commands if command.startswith('do_')]
         if commands:
             self.plugins['core'] = commands
+        #create panels here
+        self.panelAssistant = self.CreatePanelAssistant()
+        self.panelCommands = self.CreatePanelCommands()
+        self.panelFolders = self.CreatePanelFolders()
+        self.panelPlaylists = self.CreatePanelPlaylists()
+        self.panelProperties = self.CreatePanelProperties()
+        self.panelNote = self.CreatePanelNote()
+        self.panelOutput = self.CreatePanelOutput()
+        self.panelResults = self.CreatePanelResults()
+        self.plotNotebook = self.CreateNotebook()
+
+        # add panes
+        self._mgr.AddPane(self.panelFolders, aui.AuiPaneInfo().Name('Folders').Caption('Folders').Left().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelPlaylists, aui.AuiPaneInfo().Name('Playlists').Caption('Playlists').Left().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelNote, aui.AuiPaneInfo().Name('Note').Caption('Note').Left().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.plotNotebook, aui.AuiPaneInfo().Name('Plots').CenterPane().PaneBorder(False))
+        self._mgr.AddPane(self.panelCommands, aui.AuiPaneInfo().Name('Commands').Caption('Settings and commands').Right().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelProperties, aui.AuiPaneInfo().Name('Properties').Caption('Properties').Right().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelAssistant, aui.AuiPaneInfo().Name('Assistant').Caption('Assistant').Right().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelOutput, aui.AuiPaneInfo().Name('Output').Caption('Output').Bottom().CloseButton(True).MaximizeButton(False))
+        self._mgr.AddPane(self.panelResults, aui.AuiPaneInfo().Name('Results').Caption('Results').Bottom().CloseButton(True).MaximizeButton(False))
+        #self._mgr.AddPane(self.textCtrlCommandLine, aui.AuiPaneInfo().Name('CommandLine').CaptionVisible(False).Fixed().Bottom().Layer(2).CloseButton(False).MaximizeButton(False))
+        #self._mgr.AddPane(panelBottom, aui.AuiPaneInfo().Name("panelCommandLine").Bottom().Position(1).CloseButton(False).MaximizeButton(False))
+
+        # add the toolbars to the manager
+        #self.toolbar=self.CreateToolBar()
+        self.toolbarNavigation=self.CreateToolBarNavigation()
+        #self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('toolbar').Caption('Toolbar').ToolbarPane().Top().Layer(1).Row(1).LeftDockable(False).RightDockable(False))
+        self._mgr.AddPane(self.toolbarNavigation, aui.AuiPaneInfo().Name('toolbarNavigation').Caption('Navigation').ToolbarPane().Top().Layer(1).Row(1).LeftDockable(False).RightDockable(False))
+        # "commit" all changes made to FrameManager
+        self._mgr.Update()
+        #create the menubar after the panes so that the default perspective
+        #is created with all panes open
+        self.CreateMenuBar()
+        self.statusbar = self.CreateStatusbar()
+        self._BindEvents()
+
+        name = self.config['perspectives']['active']
+        menu_item = self.GetPerspectiveMenuItem(name)
+        if menu_item is not None:
+            self.OnRestorePerspective(menu_item)
+            #TODO: config setting to remember playlists from last session
+        self.playlists = self.panelPlaylists.Playlists
         #initialize the commands tree
         self.panelCommands.Initialize(self.plugins)
         for command in dir(self):
@@ -315,7 +318,7 @@ class HookeFrame(wx.Frame):
                 self.plotmanipulators.append(lib.plotmanipulator.Plotmanipulator(method=getattr(self, command), command=command))
 
         #load default list, if possible
-        self.do_loadlist(self.config['core']['list'])
+        self.do_loadlist(self.GetStringFromConfig('core', 'preferences', 'playlist'))
 
     def _BindEvents(self):
         #TODO: figure out if we can use the eventManager for menu ranges
@@ -516,7 +519,7 @@ class HookeFrame(wx.Frame):
         filters = self.config['folders']['filters']
         index = self.config['folders'].as_int('filterindex')
         #set initial directory
-        folder = self.config['core']['workdir']
+        folder = self.GetStringFromConfig('core', 'preferences', 'workdir')
         return wx.GenericDirCtrl(self, -1, dir=folder, size=(200, 250), style=wx.DIRCTRL_SHOW_FILTERS, filter=filters, defaultFilter=index)
 
     def CreatePanelNote(self):
@@ -1216,6 +1219,8 @@ class HookeFrame(wx.Frame):
         self.AppendToOutput('Matplotlib version: ' + mpl_version)
         self.AppendToOutput('SciPy version: ' + scipy_version)
         self.AppendToOutput('NumPy version: ' + numpy_version)
+        self.AppendToOutput('ConfigObj version: ' + configobj_version)
+        self.AppendToOutput('wxPropertyGrid version: ' + '.'.join([str(PROPGRID_MAJOR), str(PROPGRID_MINOR), str(PROPGRID_RELEASE)]))
         self.AppendToOutput('---')
         self.AppendToOutput('Platform: ' + str(platform.uname()))
         self.AppendToOutput('******************************')
@@ -1292,19 +1297,20 @@ class HookeFrame(wx.Frame):
 
     def UpdatePlot(self, plot=None):
 
-        def add_to_plot(curve):
+        def add_to_plot(curve, set_scale=True):
             if curve.visible and curve.x and curve.y:
                 #get the index of the subplot to use as destination
                 destination = (curve.destination.column - 1) * number_of_rows + curve.destination.row - 1
                 #set all parameters for the plot
                 axes_list[destination].set_title(curve.title)
-                axes_list[destination].set_xlabel(curve.multiplier.x + curve.units.x)
-                axes_list[destination].set_ylabel(curve.multiplier.y + curve.units.y)
-                #set the formatting details for the scale
-                formatter_x = lib.curve.PrefixFormatter(curve.decimals.x, curve.multiplier.x, use_zero)
-                formatter_y = lib.curve.PrefixFormatter(curve.decimals.y, curve.multiplier.y, use_zero)
-                axes_list[destination].xaxis.set_major_formatter(formatter_x)
-                axes_list[destination].yaxis.set_major_formatter(formatter_y)
+                if set_scale:
+                    axes_list[destination].set_xlabel(curve.prefix.x + curve.units.x)
+                    axes_list[destination].set_ylabel(curve.prefix.y + curve.units.y)
+                    #set the formatting details for the scale
+                    formatter_x = lib.curve.PrefixFormatter(curve.decimals.x, curve.prefix.x, use_zero)
+                    formatter_y = lib.curve.PrefixFormatter(curve.decimals.y, curve.prefix.y, use_zero)
+                    axes_list[destination].xaxis.set_major_formatter(formatter_x)
+                    axes_list[destination].yaxis.set_major_formatter(formatter_y)
                 if curve.style == 'plot':
                     axes_list[destination].plot(curve.x, curve.y, color=curve.color, label=curve.label, lw=curve.linewidth, zorder=1)
                 if curve.style == 'scatter':
@@ -1322,8 +1328,8 @@ class HookeFrame(wx.Frame):
                     curve.decimals.x = self.GetIntFromConfig('core', 'preferences', 'x_decimals')
                     curve.decimals.y = self.GetIntFromConfig('core', 'preferences', 'y_decimals')
                     curve.legend = self.GetBoolFromConfig('core', 'preferences', 'legend')
-                    curve.multiplier.x = self.GetStringFromConfig('core', 'preferences', 'x_multiplier')
-                    curve.multiplier.y = self.GetStringFromConfig('core', 'preferences', 'y_multiplier')
+                    curve.prefix.x = self.GetStringFromConfig('core', 'preferences', 'x_prefix')
+                    curve.prefix.y = self.GetStringFromConfig('core', 'preferences', 'y_prefix')
             if active_file.driver is None:
                 self.AppendToOutput('Invalid file: ' + active_file.filename)
                 return
@@ -1340,6 +1346,7 @@ class HookeFrame(wx.Frame):
 
         figure = self.GetActiveFigure()
         figure.clear()
+
         #use '0' instead of e.g. '0.00' for scales
         use_zero = self.GetBoolFromConfig('core', 'preferences', 'use_zero')
         #optionally remove the extension from the title of the plot
@@ -1355,6 +1362,7 @@ class HookeFrame(wx.Frame):
         number_of_rows = max([curve.destination.row for curve in self.displayed_plot.curves])
         for index in range(number_of_rows * number_of_columns):
             axes_list.append(figure.add_subplot(number_of_rows, number_of_columns, index + 1))
+
         #add all curves to the corresponding plots
         for curve in self.displayed_plot.curves:
             add_to_plot(curve)
@@ -1366,7 +1374,7 @@ class HookeFrame(wx.Frame):
         self.panelResults.ClearResults()
         if self.displayed_plot.results.has_key(self.results_str):
             for curve in self.displayed_plot.results[self.results_str].results:
-                add_to_plot(curve)
+                add_to_plot(curve, set_scale=False)
             self.panelResults.DisplayResults(self.displayed_plot.results[self.results_str])
         else:
             self.panelResults.ClearResults()
