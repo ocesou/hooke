@@ -131,11 +131,11 @@ class autopeakCommands:
         #--Contact point arguments
         if 'reclick' in args.split():
             print 'Click contact point'
-            contact_point, contact_point_index = pickup_contact_point()
+            contact_point, contact_point_index = self.pickup_contact_point()
         elif 'noauto' in args.split():
             if self.wlccontact_index==None or self.wlccurrent != self.current.path:
                 print 'Click contact point'
-                contact_point , contact_point_index = pickup_contact_point()
+                contact_point , contact_point_index = self.pickup_contact_point()
             else:
                 contact_point=self.wlccontact_point
                 contact_point_index=self.wlccontact_index

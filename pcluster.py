@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from mdp import pca
 from libhooke import WX_GOOD, ClickedPoint
@@ -76,30 +77,6 @@ class pclusterCommands:
         f.write('; Peak number  ;  1 peak Length (nm) ; 1 peak Force (pN) ;  2 peak Length (nm) ; 2 peak Force (pN) ;  3 peak Length (nm) ; 3 peak Force (pN) ;  4 peak Length (nm) ; 4 peak Force (pN) ;  5 peak Length (nm) ; 5 peak Force (pN) ;  6 peak Length (nm) ; 6 peak Force (pN) ;  7 peak Length (nm) ; 7 peak Force (pN) ;  8 peak Length (nm) ; 8 peak Force (pN)\n')
         f.close()
         
-        # ------ FUNCTION ------
-        def fit_interval_nm(start_index,plot,nm,backwards):
-            '''
-            Calculates the number of points to fit, given a fit interval in nm
-            start_index: index of point
-            plot: plot to use
-            backwards: if true, finds a point backwards.
-            '''
-            whatset=1 #FIXME: should be decidable
-            x_vect=plot.vectors[1][0]
-            
-            c=0
-            i=start_index
-            start=x_vect[start_index]
-            maxlen=len(x_vect)
-            while abs(x_vect[i]-x_vect[start_index])*(10**9) < nm:
-                if i==0 or i==maxlen-1: #we reached boundaries of vector!
-                    return c
-                if backwards:
-                    i-=1
-                else:
-                    i+=1
-                c+=1
-            return c
 
         def plot_informations(itplot,pl_value):
             '''
@@ -118,9 +95,9 @@ class pclusterCommands:
             cindex=self.find_contact_point(itplot[0]) #Automatically find contact point <158, libhooke.ClickedPoint>
             contact_point=self._clickize(itplot[0].vectors[1][0], itplot[0].vectors[1][1], cindex)
             self.basepoints=[]
-            base_index_0=peak_location[-1]+fit_interval_nm(peak_location[-1], itplot[0], self.config['auto_right_baseline'],False)
+            base_index_0=peak_location[-1]+self.fit_interval_nm(peak_location[-1], itplot[0], self.config['auto_right_baseline'],False)
             self.basepoints.append(self._clickize(itplot[0].vectors[1][0],itplot[0].vectors[1][1],base_index_0))
-            base_index_1=self.basepoints[0].index+fit_interval_nm(self.basepoints[0].index, itplot[0], self.config['auto_left_baseline'],False)
+            base_index_1=self.basepoints[0].index+self.fit_interval_nm(self.basepoints[0].index, itplot[0], self.config['auto_left_baseline'],False)
             self.basepoints.append(self._clickize(itplot[0].vectors[1][0],itplot[0].vectors[1][1],base_index_1))
             self.basecurrent=self.current.path
             boundaries=[self.basepoints[0].index, self.basepoints[1].index]
