@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 '''
 FIT
@@ -49,8 +50,6 @@ class fitCommands:
         '''
     
         #STEP 1: Prepare the vectors to apply the fit.
-        
-        
         if pl_value is not None:
             pl_value=pl_value/(10**9)
         

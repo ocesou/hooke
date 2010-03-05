@@ -688,12 +688,15 @@ class MainWindow(wx.Frame):
             '''
         if dest==None:
             dest=self.current_plot_dest
-
-        plot=None
-        for aplot in self.plots:
-            if aplot.destination == dest:
-                plot=aplot
-        return plot
+        try:
+          plot=None
+          for aplot in self.plots:
+              if aplot.destination == dest:
+                  plot=aplot
+          return plot
+        except:
+           print "No curve available"
+           return None
 
     def _replot(self):
         '''
