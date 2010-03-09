@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 '''
 hooke_cli.py
@@ -680,7 +681,13 @@ Syntax: txt [filename] {plot to export}
                 whichplot=int(args[1])
             except:
                 pass
-            
+
+	try:
+            outofplot=self.plots[whichplot].vectors
+        except:
+            print "Plot index out of range."
+	    return 0
+
         columns=[]     
         for dataset in self.plots[whichplot].vectors:
             for i in range(0,len(dataset)): 
