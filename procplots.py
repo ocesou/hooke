@@ -180,10 +180,10 @@ class procplotsCommands:
      
         
 	
-	levelapp=float(np.median(plot.vectors[0][1]))
-	levelret=float(np.median(plot.vectors[1][1]))
+	#levelapp=float(np.median(plot.vectors[0][1]))
+	levelret=float(np.median(plot.vectors[1][1][-300:-1]))
 
-	level=(levelapp+levelret)/2	
+	level=levelret	
 
 	approach=[i-level for i in plot.vectors[0][1]]
 	retract=[i-level for i in plot.vectors[1][1]]

@@ -127,7 +127,13 @@ class reviewCommands:
 					
 	    c+=10
 
-	print 'Kept '+str(len(keep_list))+' curves from '+str(min(c+i+1,len(self.current_list)))
+	#FIXME I don't know why the print below gives errors sometimes
+	try:
+		print 'Kept '+str(len(keep_list))+' curves from '+str(min(c+i+1,len(self.current_list)))
+	except:
+		print 'Display error, never mind, we continue. Below the amount of kept and total curves:'
+		print str(len(keep_list))
+		print str(len(self.current_list))
 
 	allok=0  #flag to keep from losing all the work in a slight mistake
 	while allok==0:
