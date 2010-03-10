@@ -82,7 +82,8 @@ class reviewCommands:
 			print 'WARNING: maybe you want to finish!'
 			break
 		nextitem=curveset[i]
-		nextitem.identify(self.drivers)
+		if not nextitem.identify(self.drivers):
+			continue		
 		nextplot=self.plotmanip_correct(nextitem.curve.default_plots()[0],nextitem)
 		nextvect=nextplot.vectors
 		nextitem.curve.close_all()
