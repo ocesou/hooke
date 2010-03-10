@@ -19,7 +19,7 @@ Hooke requires:
   *  [http://matplotlib.sourceforge.net Matplotlib] =0.91.x and  [http://agni.phys.iit.edu/~kmcivor/wxmpl/ wxMPL] 1.2.9
   *  OR [http://matplotlib.sourceforge.net Matplotlib] >=0.98 and [http://agni.phys.iit.edu/~kmcivor/wxmpl/ wxMPL] >=1.3.1
 
-All libraries are open source, free of charge and available on the Internet.
+All libraries are open source, free of charge and available on the Internet. A bundle with a working combination of libraries can be found in the downloads section http://code.google.com/p/hooke/downloads/list
 The packages should be installed in the order in which they are mentioned above.
 
 *Note: It IS important to check the cross-compatibility of the versions of the above.* In particular of the numpy/scipy/matplotlib combo , and remember to install them for the right version of Python. For your help, you can find here a ListKnownWorkingLibraries with combinations of libraries tested and known to work.
@@ -48,7 +48,12 @@ It is advisable to put it in a folder where you have write access rights (es. yo
 A [http://www.python.org/community/sigs/current/distutils-sig/doc/ distutils] based installer is in the todo list.
 
 == Installation notes for Windows ==
-to do
+Download the required packages from their respective webs to get the latest version. Alternatively, you can get a bundle with all you need from our featured donwloads (http://code.google.com/p/hooke/downloads/list)
+Install the required libraries in the following order: python, wxpython, maptplotlib, numpy, scipy and finally configobj and wxpropgrid (for Hooke GUI) or wxmpl (for the command line version).
+
+In some systems numpy and scipy installers will complain about an invalid architecture option, in that case, you need to execute the installer from the command line `numpy-xxxx.exe /arch option` where option can be nosse, sse2, sse3. Safest (but worst performance) choice is nosse, although most computers manufactured after 2004 should support at least sse2.
+
+Note: release notes of numpy and scipy say to use `/arch=option` however we could only make it work without the "=" sign. 
 
 == Installation notes for Linux ==
 Ubuntu users can follow these instructions for installing Hooke (tested in Ubuntu 9.10 Karmic Koala)
