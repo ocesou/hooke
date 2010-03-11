@@ -253,30 +253,34 @@ class generalvclampCommands:
         if fitspan == 0:
             # Gets the Xs of two clicked points as indexes on the current curve vector
             print 'Click twice to delimit chunk'
-            clickedpoints=[]
             points=self._measure_N_points(N=2,whatset=1)
-            clickedpoints=[points[0].index,points[1].index]
-            clickedpoints.sort()
         else:
             print 'Click once on the leftmost point of the chunk (i.e.usually the peak)'
-            clickedpoints=[]
             points=self._measure_N_points(N=1,whatset=1)
-            clickedpoints=[points[0].index-fitspan,points[0].index]
-        
-        # Calls the function linefit_between
+            
+        slope=self._slope(points,fitspan)
+
+        # Outputs the relevant slope parameter
+        print 'Slope:'
+        print str(slope)
+        to_dump='slope '+self.current.path+' '+str(slope)
+        self.outlet.push(to_dump)
+
+    def _slope(self,points,fitspan):
+		# Calls the function linefit_between
         parameters=[0,0,[],[]]
+        try:
+            clickedpoints=[points[0].index,points[1].index]
+            clickedpoints.sort()
+        except:
+            clickedpoints=[points[0].index-fitspan,points[0].index]        
+
         try:
             parameters=self.linefit_between(clickedpoints[0],clickedpoints[1])
         except:
             print 'Cannot fit. Did you click twice the same point?'
             return
-          
-        # Outputs the relevant slope parameter
-        print 'Slope:'
-        print str(parameters[0])
-        to_dump='slope '+self.current.path+' '+str(parameters[0])
-        self.outlet.push(to_dump)
-                
+             
         # Makes a vector with the fitted parameters and sends it to the GUI
         xtoplot=parameters[2]
         ytoplot=[]
@@ -306,6 +310,9 @@ class generalvclampCommands:
         
         
         self._send_plot([lineplot])
+
+        return parameters[0]	
+
 
     def linefit_between(self,index1,index2,whatset=1):
         '''
