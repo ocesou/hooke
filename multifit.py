@@ -300,7 +300,7 @@ class multifitCommands:
                     f.close()
                 
                 print 'Saving...'
-                savecountr+=1
+                savecounter+=1
                 f=open(self.autofile,'a+')
                 f.write(self.current.path)
                 f.write(' ; '+str(1e9*wlcparams[0])+' ; '+str(wlcfit_nm[0])+' ; '+str(1e9*wlcparams[1])+' ; '+str(wlcfit_nm[1])+' ; '+str(1e9*fjcparams[0])+' ; '+str(fjcfit_nm[0])+' ; '+str(1e9*fjcparams[1])+' ; '+str(fjcfit_nm[1])+' ; '+str(1e12*force)+' ; '+ str(slope)+' ; '+str(lrate)+'\n')
