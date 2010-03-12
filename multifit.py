@@ -36,32 +36,36 @@ class multifitCommands:
         '''
         MULTIFIT
         (multifit.py)
-        Presents curves for manual analysis in a comfortable mouse-only fashion. Obtains
-        contour length, persistance length, rupture force and slope - loading rate.
+        Presents curves for manual analysis in a comfortable mouse-only fashion.
+        Obtains contour length, persistance length, rupture force and 
+        slope - loading rate.
         WLC is shown in red, FJC in blue.
         -------------
         Syntax:
-        multifit [pl=value] [kl=value] [t=value] [slopew=value] [basew=value] [justone]
+        multifit [pl=value] [kl=value] [t=value] [slopew=value] [basew=value]
+                [justone]
 
-		pl=[value] and kl=[value]: Use a fixed persistent length (WLC) or Kuhn length (FJC) for
-			the fit. If pl is not given, the fit will be a 2-variable fit. 
-			DO NOT put spaces between 'pl', '=' and the value.
-        The value must be in nanometers. 
-        
-        t=[value] : Use a user-defined temperature. The value must be in kelvins; 
-            by default it is 293 K.
-            DO NOT put spaces between 't', '=' and the value.
-        
-        slopew and basew : width in points for slope fitting (points to the right of clicked rupture) 
-            and base level fitting(points to the left of clicked top of rupture), default is 15.
-            DO NOT put spaces between 'slopew' or 'basew', '=' and the value.
-        
+        pl=[value] and kl=[value]: Use a fixed persistent length (WLC) or Kuhn
+                length (FJC) for the fit. If pl is not given, the fit will be 
+                a 2-variable fit. 
+                DO NOT put spaces between 'pl', '=' and the value.
+                The value must be in nanometers. 
+
+        t=[value] : Use a user-defined temperature. The value must be in 
+                kelvins; by default it is 293 K.
+                DO NOT put spaces between 't', '=' and the value.
+
+        slopew and basew : width in points for slope fitting (points to the
+                right of clicked rupture) and base level fitting (points to
+                the left of clicked top of rupture), default is 15.
+                DO NOT put spaces between 'slopew' or 'basew', '=' value.
+                
         justone : performs the fits over current curve instead of iterating
 
-        see fit command help for more information on the options and fit procedures.
-
-		NOTE: centerzero plot modifier should be activated (set centerzero 1).
-		'''
+        See fit command help for more information on the options and fit 
+        procedures.
+        NOTE: centerzero plot modifier should be activated (set centerzero 1).
+        '''
 
 		#NOTE duplicates a lot of code from do_fit in fit.py, a call to it could be used directly
 		#but it is easier to control the program flow bypassing it
