@@ -332,7 +332,7 @@ class ClickedPoint:
         '''
                    
         #FIXME: a general algorithm using min() is needed!
-        print '---DEPRECATED FIND_GRAPH_COORDS_OLD---'
+        #print '---DEPRECATED FIND_GRAPH_COORDS_OLD---'
         best_index=0
         best_dist=10**9 #should be more than enough given the scale
                 
