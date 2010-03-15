@@ -142,25 +142,22 @@ class multifitCommands:
                 self.do_plot(0)
             if not justone:
                 print '\nCurve '+str(curveindex+1)+' of '+str(len(self.current_list))       
-            print 'Click contact point or left end of the curve to skip'
-            #FIXME "left half" is a bit ad hoc, and "set correct 1" makes
-            #the 3/4s point not very reliable. 
-            #Anyway clicking the end should be safe
+            print 'Click contact point or left end (red area)of the curve to skip'
+            #hightlights an area dedicated to reject current curve
+            sizeret=len(self.plots[0].vectors[1][0])
+            noarea=self.plots[0].vectors[1][0][-sizeret/6:-1]                
+            noareaplot=copy.deepcopy(self._get_displayed_plot())
+            #noise dependent slight shift to improve visibility
+            noareaplot.add_set(noarea,np.ones_like(noarea)*5.0*np.std(self.plots[0].vectors[1][1][-sizeret/6:-1]))
+            noareaplot.styles+=['scatter']
+            noareaplot.colors+=["red"]
+            self._send_plot([noareaplot])
             contact_point=self._measure_N_points(N=1, whatset=1)[0]
             contact_point_index=contact_point.index
-
-            retract=self.plots[0].vectors[1][0]
-            
-            #some fixing for x data that is negative (depends on driver)
-            if min(retract)<0:
-                cppoint=contact_point.graph_coords[0]+abs(min(retract))
-                retract=retract+abs(min(retract))
-            else:
-                cppoint=contact_point.graph_coords[0]
-            threequarters=3*(max(retract)-min(retract))/4
-                
-  
-            if cppoint < threequarters:
+            noareaplot.remove_set(-1)
+            #remove set leaves some styles disturbing the next graph, fixed by doing do_plot
+            self.do_plot(0)
+            if contact_point_index>5.0/6.0*sizeret:
                 if justone:
                     break
                 curveindex+=1
@@ -321,9 +318,27 @@ class multifitCommands:
             
             
     def YNclick(self):
+        #shows something in the graph to indicate we expect YNclick
+        #FIXME is there an easy way to write in the graph?
+        askplot=self._get_displayed_plot()
+        center=np.min(askplot.vectors[1][0])+15e-9
+        scale=np.std(askplot.vectors[1][1][-50:-1])
+        xhline=[center-10e-9,center-5e-9,center+5e-9,center+10e-9]
+        ytopline=[15*scale,20*scale,20*scale,15*scale]
+        ybotline=[-15*scale,-20*scale,-20*scale,-15*scale]
+        yvline=np.arange(-25*scale,26*scale,scale/2)
+        xvline=np.ones_like(yvline)*center
+        xshow=np.concatenate((xvline,xhline,xhline))
+        yshow=np.concatenate((yvline,ytopline,ybotline))    
+        askplot.add_set(xshow,yshow)
+        askplot.styles+=['scatter']
+        askplot.colors+=["black"]
+        self._send_plot([askplot])
         print 'Click any point over y=0 for Yes, under it for No'
         point=self._measure_N_points(N=1,whatset=1)[0]
         value=point.absolute_coords[1]
+        askplot.remove_set(-1)
+        self._send_plot([askplot])
         if value<0:
             return False
         else:
