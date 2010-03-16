@@ -204,7 +204,7 @@ class mfp3dDriver(lhc.Driver):
             	if ':' in line:
             	    key, value = line.split(':', 1)
                     self.note[key] = value
-            self.retract_velocity = float(self.note['RetractVelocity'])
+            self.retract_velocity = float(self.note['Velocity'])
             self.spring_constant = float(self.note['SpringConstant'])
         else:
             assert False, "Fileversion is of type '%i', not supported" % dtype
