@@ -57,7 +57,9 @@ class multifitCommands:
 
         slopew and basew : width in points for slope fitting (points to the
                 right of clicked rupture) and base level fitting (points to
-                the left of clicked top of rupture), default is 15.
+                the left of clicked top of rupture).
+                If slopew is not provided, the routine will ask for a 5th
+                point to fit the slope.
                 DO NOT put spaces between 'slopew' or 'basew', '=' value.
                 
         justone : performs the fits over current curve instead of iterating
@@ -73,7 +75,7 @@ class multifitCommands:
         pl_value=None
         kl_value=None
         T=self.config['temperature']
-        slopew=15
+        slopew=None
         basew=15
         justone=False
         
@@ -171,6 +173,9 @@ class multifitCommands:
             wlcpoints=self._measure_N_points(N=2,whatset=1)
             print 'And one point of the top of the jump'
             toppoint=self._measure_N_points(N=1,whatset=1)
+            if slopew==None:
+                print 'Click a point to calculate slope'
+                slopepoint=self._measure_N_points(N=1,whatset=1)
 
             fitpoints=[contact_point]+wlcpoints
             #use the currently displayed plot for the fit
@@ -202,7 +207,10 @@ class multifitCommands:
             force=toplevel-ruptpoint.graph_coords[1]					
          
             #Measure the slope - loading rate
-            slope=self._slope([ruptpoint],slopew)
+            if slopew==None:
+                slope=self._slope([ruptpoint]+slopepoint,slopew)
+            else:
+                slope=self.slope([ruptpoint],slopew)
          
             #plot results (_slope already did)
             
