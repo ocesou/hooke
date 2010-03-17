@@ -304,9 +304,9 @@ class generalvclampCommands:
         else:
             lineplot.styles+=[None,'scatter']
         if lineplot.colors==[]:
-            lineplot.styles=[None,None,None,None]
+            lineplot.colors=[None,None,'black',None]
         else:
-            lineplot.colors+=[None,None]
+            lineplot.colors+=['black',None]
         
         
         self._send_plot([lineplot])
