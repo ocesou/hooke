@@ -43,7 +43,7 @@ class multifitCommands:
         -------------
         Syntax:
         multifit [pl=value] [kl=value] [t=value] [slopew=value] [basew=value]
-                [justone]
+                [slope2p] [justone]
 
         pl=[value] and kl=[value]: Use a fixed persistent length (WLC) or Kuhn
                 length (FJC) for the fit. If pl is not given, the fit will be 
@@ -61,6 +61,9 @@ class multifitCommands:
                 If slopew is not provided, the routine will ask for a 5th
                 point to fit the slope.
                 DO NOT put spaces between 'slopew' or 'basew', '=' value.
+        
+        slope2p : calculates the slope from the two clicked points, 
+                instead of fitting data between them        
                 
         justone : performs the fits over current curve instead of iterating
 
@@ -78,6 +81,7 @@ class multifitCommands:
         slopew=None
         basew=15
         justone=False
+        twops=False
         
         #FIXME spaces are not allowed between pl or t and value
         for arg in args.split():
@@ -102,6 +106,8 @@ class multifitCommands:
                 slopew=int(slopew_expression[1])
             if('justone' in arg):
                 justone=True
+            if('slope2p' in arg):
+                twops=True
 		
         counter=0
         savecounter=0
@@ -173,6 +179,7 @@ class multifitCommands:
             wlcpoints=self._measure_N_points(N=2,whatset=1)
             print 'And one point of the top of the jump'
             toppoint=self._measure_N_points(N=1,whatset=1)
+            slopepoint=ClickedPoint()
             if slopew==None:
                 print 'Click a point to calculate slope'
                 slopepoint=self._measure_N_points(N=1,whatset=1)
@@ -207,10 +214,24 @@ class multifitCommands:
             force=toplevel-ruptpoint.graph_coords[1]					
          
             #Measure the slope - loading rate
+            
             if slopew==None:
-                slope=self._slope([ruptpoint]+slopepoint,slopew)
+                if twops:
+                    xint=ruptpoint.graph_coords[0]-slopepoint[0].graph_coords[0]
+                    yint=ruptpoint.graph_coords[1]-slopepoint[0].graph_coords[1]
+                    slope=yint/xint
+                    slopeplot=self._get_displayed_plot(0) #get topmost displayed plot
+                    slopeplot.add_set([ruptpoint.graph_coords[0],slopepoint[0].graph_coords[0]],[ruptpoint.graph_coords[1],slopepoint[0].graph_coords[1]])
+                    if slopeplot.styles==[]:
+                        slopeplot.styles=[None,None,'scatter']
+                        slopeplot.colors=[None,None,'red']
+                    else:
+                        slopeplot.styles+=['scatter']
+                        slopeplot.colors+=['red']
+                else:    
+                    slope=self._slope([ruptpoint]+slopepoint,slopew)
             else:
-                slope=self.slope([ruptpoint],slopew)
+                slope=self._slope([ruptpoint],slopew)
          
             #plot results (_slope already did)
             
@@ -331,7 +352,8 @@ class multifitCommands:
         askplot=self._get_displayed_plot()
         center=np.min(askplot.vectors[1][0])+15e-9
         scale=np.std(askplot.vectors[1][1][-50:-1])
-        xhline=[center-10e-9,center-5e-9,center+5e-9,center+10e-9]
+        hscale=np.mean(np.diff(askplot.vectors[1][0][-10:-1]))
+        xhline=[center-20*hscale,center-10*hscale,center+10*hscale,center+20*hscale]
         ytopline=[15*scale,20*scale,20*scale,15*scale]
         ybotline=[-15*scale,-20*scale,-20*scale,-15*scale]
         yvline=np.arange(-25*scale,26*scale,scale/2)
