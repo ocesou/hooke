@@ -1,5 +1,7 @@
 #summary How to load Igor Pro data into Hooke
 
+*This method is not necessary any more, MFP3D files are now understood by Hooke*
+
 Users of Asylum AFM obtain their data files in .ibw format, currently not understood by Hooke. This method provides an alternative to [http://code.google.com/p/hooke/wiki/Mfp1dSupport MFP1DSupport] in case it is not working for you.
 
 = Requirements =
