@@ -159,8 +159,14 @@ Hooke automatically adjusts the position of the clicked point at the nearest poi
 
 The commands *force* and *distance* are present in the generalvclamp.py plugin.
 
-==Worm like chain fitting==
-You can measure by hand the parameters relative to a force peak using a worm-like chain fitting with the *wlc* command. The command by default automatically finds the contact point, asks for two points delimiting the portion to fit, and performs a two-variable fit, with contour length and persistence length as output, with relative errors. If desired, one can use the _noauto_ option to manually click the contact point, and/or the _pl=`[`number`]`_ options to impose a specific persistence length (in nanometers). Please see the help of the *wlc* command from the Hooke command line for details.
+==Worm like chain and freely jointed chain fitting==
+You can measure by hand the parameters relative to a force peak using a worm-like chain fitting with the *fit* command. The command by default automatically finds the contact point, asks for two points delimiting the portion to fit, and performs a two-variable fit, with contour length and persistence length as output, with relative errors. If desired, one can use the _noauto_ option to manually click the contact point, and/or the _pl=`[`number`]`_ options to impose a specific persistence or kuhn length (in nanometers). You can choose which model to use with `set fit_function wlc` or `set fit_function fjc`.Please see the help of the *fit* command from the Hooke command line for details.
+
+==Iterative multiple curve fitting and measuring==
+You can cycle through all your current playlist obtaining WLC fit, FJC fit, rupture force and slope (~loading rate) information from each curve using *multifit* command. The collected data can be saved in a text file for further analysis in your favourite spreadsheet or statistical program. If you want to check first if your parameters are suitable you can execute `multifit justone` to do the measurements only over current curve. See the help of *multifit* for more options.
+
+==Fast curve reviewing and saving==
+When automatic routines are not good enough to filter your data, use *review* command to cycle through your playlist presenting ten curves in the same graph. You can then enter the numbers of the interesting curves and automatically save a copy of them into another directory.
 
 =Variables=
 You can set environment variables to inﬂuence the behaviour of Hooke. The command to use is *set*.
