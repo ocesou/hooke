@@ -22,7 +22,7 @@ We need full support for most force spectroscopy data files. Please help us by:
     Still _indirect_ support, requires Igor export scripts provided by Rolf Schmidt et al. available in the subversion reporsitory. See Mfp1dSupport for the details.
 
   * *MFP 3D* (needs testing!)
-    These files are now directly supported by the mfp3d driver.
+    These files are now directly supported by the mfp3d driver. Note that "flatten" manipulator usually distorts the curve, it is recommended to deactivate it `set flatten 0` 
     The old way of importing MFP3D data [http://code.google.com/p/hooke/wiki/HDF5 HDF5] is not recommended any more.
 
   * Simple *comma-separated values*
