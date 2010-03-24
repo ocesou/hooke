@@ -39,16 +39,17 @@ class multifitCommands:
         Presents curves for manual analysis in a comfortable mouse-only fashion.
         Obtains contour length, persistance length, rupture force and 
         slope - loading rate.
-        WLC is shown in red, FJC in blue.
+        WLC is shown in red, eFJC in blue.
         -------------
         Syntax:
         multifit [pl=value] [kl=value] [t=value] [slopew=value] [basew=value]
                 [slope2p] [justone]
 
         pl=[value] and kl=[value]: Use a fixed persistent length (WLC) or Kuhn
-                length (FJC) for the fit. If pl is not given, the fit will be 
+                length (eFJC) for the fit. If pl is not given, the fit will be 
                 a 2-variable fit. 
                 DO NOT put spaces between 'pl', '=' and the value.
+                eFJC fit works better with a fixed kl
                 The value must be in nanometers. 
 
         t=[value] : Use a user-defined temperature. The value must be in 
@@ -190,17 +191,17 @@ class multifitCommands:
 
             #use both fit functions
             try:
-                wlcparams, wlcyfit, wlcxfit, wlcfit_errors = self.wlc_fit(fitpoints, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
+                wlcparams, wlcyfit, wlcxfit, wlcfit_errors,wlc_qstd = self.wlc_fit(fitpoints, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],pl_value,T, return_errors=True )
                 wlcerror=False	
             except:
                 print 'WLC fit not possible'
                 wlcerror=True
 
             try:
-                fjcparams, fjcyfit, fjcxfit, fjcfit_errors = self.fjc_fit(fitpoints, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],kl_value,T, return_errors=True )
+                fjcparams, fjcyfit, fjcxfit, fjcfit_errors,fjc_qstd = self.efjc_fit(fitpoints, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1],kl_value,T, return_errors=True )
                 fjcerror=False
             except:
-                print 'FJC fit not possible'
+                print 'eFJC fit not possible'
                 fjcerror=True
                 
             #Measure rupture force
@@ -283,16 +284,21 @@ class multifitCommands:
             else:
                 wlcfit_errors=[0,0]
             
+            wlc_fitq=wlc_qstd/np.std(displayed_plot.vectors[1][1][-20:-1])
+            fjc_fitq=fjc_qstd/np.std(displayed_plot.vectors[1][1][-20:-1])
             
             print '\nRESULTS'
             print 'WLC contour : '+str(1e9*wlcparams[0])+u' \u00b1 '+str(wlcfit_nm[0])+' nm'
             print 'Per. length : '+str(1e9*wlcparams[1])+u' \u00b1 '+str(wlcfit_nm[1])+' nm'
+            print 'Quality :'+str(wlc_fitq)
             print '---'
-            print 'FJC contour : '+str(1e9*fjcparams[0])+u' \u00b1 '+str(fjcfit_nm[0])+' nm'
-            print 'Kuhn length : '+str(1e9*fjcparams[1])+u' \u00b1 '+str(fjcfit_nm[1])+' nm'    
+            print 'eFJC contour : '+str(1e9*fjcparams[0])+u' \u00b1 '+str(fjcfit_nm[0])+' nm'
+            print 'Kuhn length (e): '+str(1e9*fjcparams[1])+u' \u00b1 '+str(fjcfit_nm[1])+' nm' 
+            print 'Quality :'+str(fjc_fitq)   
             print '---'
             print 'Force : '+str(1e12*force)+' pN'
             print 'Slope : '+str(slope)+' N/m'
+
             try:
                 #FIXME all drivers should provide retract velocity, in SI or homogeneous units    
                 lrate=slope*self.current.curve.retract_velocity
@@ -319,21 +325,21 @@ class multifitCommands:
                         f=open(self.autofile,'a+')
                         f.write('Analysis started '+time.asctime()+'\n')
                         f.write('----------------------------------------\n')
-                        f.write(' File ; WLC Cont. length (nm) ; Sigma WLC cl;  Per. Length (nm) ; Sigma pl; FJC Cont. length (nm) ; Sigma FJC cl ; Kuhn length (nm); Sigma kl ; Force (pN) ; Slope (N/m) ; (untested) Loading rate (pN/s)\n')
+                        f.write(' File ; WLC Cont. length (nm) ; Sigma WLC cl;  Per. Length (nm) ; Sigma pl ; WLC-Q ; eFJC Cont. length (nm) ; Sigma eFJC cl ; Kuhn length (nm); Sigma kl ; FJC-Q ;Force (pN) ; Slope (N/m) ; (untested) Loading rate (pN/s)\n')
                         f.close()
         
                 if not os.path.exists(self.autofile):
                     f=open(self.autofile,'a+')
                     f.write('Analysis started '+time.asctime()+'\n')
                     f.write('----------------------------------------\n')
-                    f.write(' File ; WLC Cont. length (nm) ; Sigma WLC cl;  Per. Length (nm) ; Sigma pl; FJC Cont. length (nm) ; Sigma FJC cl ; Kuhn length (nm); Sigma kl ; Force (pN) ; Slope (N/m) ; (untested) Loading rate (pN/s)\n')
+                    f.write(' File ; WLC Cont. length (nm) ; Sigma WLC cl;  Per. Length (nm) ; Sigma pl; WLC-Q ;eFJC Cont. length (nm) ; Sigma eFJC cl ; Kuhn length (nm); Sigma kl ; FJC-Q ;Force (pN) ; Slope (N/m) ; (untested) Loading rate (pN/s)\n')
                     f.close()
                 
                 print 'Saving...'
                 savecounter+=1
                 f=open(self.autofile,'a+')
                 f.write(self.current.path)
-                f.write(' ; '+str(1e9*wlcparams[0])+' ; '+str(wlcfit_nm[0])+' ; '+str(1e9*wlcparams[1])+' ; '+str(wlcfit_nm[1])+' ; '+str(1e9*fjcparams[0])+' ; '+str(fjcfit_nm[0])+' ; '+str(1e9*fjcparams[1])+' ; '+str(fjcfit_nm[1])+' ; '+str(1e12*force)+' ; '+ str(slope)+' ; '+str(lrate)+'\n')
+                f.write(' ; '+str(1e9*wlcparams[0])+' ; '+str(wlcfit_nm[0])+' ; '+str(1e9*wlcparams[1])+' ; '+str(wlcfit_nm[1])+' ; '+ str(wlc_fitq)+' ; '+str(1e9*fjcparams[0])+' ; '+str(fjcfit_nm[0])+' ; '+str(1e9*fjcparams[1])+' ; '+str(fjcfit_nm[1])+' ; '+str(fjc_fitq)+' ; '+str(1e12*force)+' ; '+ str(slope)+' ; '+str(lrate)+'\n')
                 f.close()
             else:
                 print '\nWould you like to try again on this same curve?'
