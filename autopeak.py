@@ -99,6 +99,7 @@ class autopeakCommands:
         sigma_p_lengths=[]
         forces=[]
         slopes=[]
+        qstds=[]
         
         #pick up plot
         displayed_plot=self._get_displayed_plot(0)
@@ -186,9 +187,9 @@ class autopeakCommands:
             
             if self.config['fit_function']=='wlc':
                 
-                params, yfit, xfit, fit_errors = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T, return_errors=True)
+                params, yfit, xfit, fit_errors, qstd = self.wlc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T, return_errors=True)
             elif self.config['fit_function']=='fjc':
-                params, yfit, xfit, fit_errors = self.fjc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T, return_errors=True)
+                params, yfit, xfit, fit_errors, qstd = self.fjc_fit(points, displayed_plot.vectors[1][0], displayed_plot.vectors[1][1], pl_value, T, return_errors=True)
             else:
                 print 'Unknown fit function'
                 print 'Please set fit_function as wlc or fjc'
@@ -211,7 +212,8 @@ class autopeakCommands:
                 sigma_p_lengths.append(0)
                 sigma_c_lengths.append(fit_errors[0]*(1.0e+9))
                 forces.append(abs(y-avg)*(1.0e+12))
-                slopes.append(slope)     
+                slopes.append(slope)
+                qstds.append(qstd)     
                 #Add WLC fit lines to plot
                 fitplot.add_set(xfit,yfit)
                 if len(fitplot.styles)==0:
@@ -229,7 +231,8 @@ class autopeakCommands:
                     sigma_c_lengths.append(fit_errors[0]*(1.0e+9))
                     sigma_p_lengths.append(fit_errors[1]*(1.0e+9))
                     forces.append(abs(y-avg)*(1.0e+12))
-                    slopes.append(slope)     
+                    slopes.append(slope)
+                    qstds.append(qstd)     
                     
                     #Add WLC fit lines to plot
                     fitplot.add_set(xfit,yfit)
