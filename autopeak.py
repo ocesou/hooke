@@ -256,12 +256,12 @@ class autopeakCommands:
         
         print 'Using fit function: ',self.config['fit_function']
         print 'Measurements for all peaks detected:'
-        print 'contour (nm)', c_lengths
-        print 'sigma contour (nm)',sigma_c_lengths
-        print 'p (nm)',p_lengths
-        print 'sigma p (nm)',sigma_p_lengths
-        print 'forces (pN)',forces
-        print 'slopes (N/m)',slopes
+        print 'contour (nm)', self.print_prec(c_lengths,1)
+        print 'sigma contour (nm)',self.print_prec(sigma_c_lengths,2)
+        print 'p (nm)',self.print_prec(p_lengths,3)
+        print 'sigma p (nm)',self.print_prec(sigma_p_lengths,3)
+        print 'forces (pN)',self.print_prec(forces,1)
+        print 'slopes (N/m)',self.print_prec(slopes,3)
         
         controller=False
         while controller==False:
@@ -300,12 +300,12 @@ class autopeakCommands:
         sigma_p_lengths=[item for item in sigma_p_lengths if item != None]    
         
         print 'Measurements for chosen peaks:'
-        print 'contour (nm)',c_lengths
-        print 'sigma contour (nm)',sigma_c_lengths
-        print 'p (nm)',p_lengths
-        print 'sigma p (nm)',sigma_p_lengths
-        print 'forces (pN)',forces
-        print 'slopes (N/m)',slopes
+        print 'contour (nm)', self.print_prec(c_lengths,1)
+        print 'sigma contour (nm)',self.print_prec(sigma_c_lengths,2)
+        print 'p (nm)',self.print_prec(p_lengths,3)
+        print 'sigma p (nm)',self.print_prec(sigma_p_lengths,3)
+        print 'forces (pN)',self.print_prec(forces,1)
+        print 'slopes (N/m)',self.print_prec(slopes,3)
         
         #Save file info
         if self.autofile=='':

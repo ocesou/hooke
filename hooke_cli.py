@@ -658,7 +658,9 @@ Columns are, in order:
 X1 , Y1 , X2 , Y2 , X3 , Y3 ...
 
 -------------
-Syntax: txt [filename] {plot to export}
+Syntax: txt [filename] {plot to export} or
+	txt [filename] all
+	all  : To save all the curves in different windows in a single file.
         '''
     def do_txt(self,args):
         
@@ -678,33 +680,57 @@ Syntax: txt [filename] {plot to export}
         else:
             filename=linp.checkalphainput(args[0],self.current.path+'.txt',[])
             try:
-                whichplot=int(args[1])
+		if args[1]=="all":
+		  whichplot="all"
+                else:
+                  whichplot=int(args[1])
             except:
                 pass
-
-	try:
-            outofplot=self.plots[whichplot].vectors
-        except:
-            print "Plot index out of range."
-	    return 0
-
-        columns=[]     
-        for dataset in self.plots[whichplot].vectors:
-            for i in range(0,len(dataset)): 
-                columns.append([])
-                for value in dataset[i]:
-                    columns[-1].append(str(value))                   
         
-        rows=transposed2(columns, 'nan')
-        rows=[' , '.join(item) for item in rows]
-        text='\n'.join(rows)
-        
-        txtfile=open(filename,'w+')
-        #Save units of measure in header
-        txtfile.write('X:'+self.plots[whichplot].units[0]+'\n')
-        txtfile.write('Y:'+self.plots[whichplot].units[1]+'\n')
-        txtfile.write(text)
-        txtfile.close()
+	if whichplot!="all":
+	    try:
+		outofplot=self.plots[whichplot].vectors
+	    except:
+		print "Plot index out of range."
+		return 0
+	    columns=[]     
+	    for dataset in self.plots[whichplot].vectors:
+		for i in range(0,len(dataset)): 
+		    columns.append([])
+		    for value in dataset[i]:
+			#columns[-1].append(str(value*(10**9)))                   
+			columns[-1].append(str(value))
+	    rows=transposed2(columns, 'nan')
+	    rows=[' , '.join(item) for item in rows]
+	    text='\n'.join(rows)
+	    
+	    txtfile=open(filename,'w+')
+	    #Save units of measure in header
+	    txtfile.write('X:'+self.plots[whichplot].units[0]+'\n')
+	    txtfile.write('Y:'+self.plots[whichplot].units[1]+'\n')
+	    txtfile.write(text)
+	    txtfile.close()
+
+        else:
+	  columns=[]
+          for wp in range(len(self.plots)):     
+	    for dataset in self.plots[wp].vectors:
+		for i in range(0,len(dataset)): 
+		    columns.append([])
+		    for value in dataset[i]:
+			#columns[-1].append(str(value*(10**9)))                   
+			columns[-1].append(str(value))
+	    rows=transposed2(columns, 'nan')
+	    rows=[' , '.join(item) for item in rows]
+	    text='\n'.join(rows)
+
+	    txtfile=open(filename,'w+')
+	    #Save units of measure in header
+            for i in range(len(self.plots)):
+	      txtfile.write('X:'+self.plots[i].units[0]+'\n')
+	      txtfile.write('Y:'+self.plots[i].units[1]+'\n')
+	    txtfile.write(text)
+	    txtfile.close()
         
     
     #LOGGING, REPORTING, NOTETAKING

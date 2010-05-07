@@ -12,6 +12,17 @@ import time
 
 class curvetoolsCommands:
 
+      def print_prec(self, arr, prec):
+         try:
+           nparr=np.array(arr)
+           np.set_printoptions(precision=prec)
+	   #we remove the parentesis if the array is longer that 1
+	   if len(nparr)>1:
+  	     strvals=str(nparr)[1:-1]
+           return strvals
+         except:
+           return "Error in the array."
+
       def fit_interval_nm(self,start_index,plot,nm,backwards):
 	  '''
 	  Calculates the number of points to fit, given a fit interval in nm
