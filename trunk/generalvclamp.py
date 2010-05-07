@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 '''
 generalvclamp.py
@@ -44,7 +44,7 @@ class generalvclampCommands:
             return
         else:
             dx,unitx,dy,unity=self._delta(set=1)
-            print str(dx*(10**9))+' nm'
+            print "%.1f nm" %(dx*(10**9))
             to_dump='distance '+self.current.path+' '+str(dx*(10**9))+' nm'
             self.outlet.push(to_dump)
 
@@ -61,7 +61,7 @@ class generalvclampCommands:
             print 'This command makes no sense for a force clamp experiment.'
             return
         dx,unitx,dy,unity=self._delta(set=1)
-        print str(dy*(10**12))+' pN'
+        print " %.1f pN"%(dy*(10**12))
         to_dump='force '+self.current.path+' '+str(dy*(10**12))+' pN'
         self.outlet.push(to_dump)
         
@@ -118,7 +118,7 @@ class generalvclampCommands:
         
         avg=np.mean(to_average)
         forcebase=abs(y-avg)
-        print str(forcebase*(10**12))+' pN'
+        print "%.1f pN"%(forcebase*(10**12))
         to_dump='forcebase '+self.current.path+' '+str(forcebase*(10**12))+' pN'
         self.outlet.push(to_dump)
 
