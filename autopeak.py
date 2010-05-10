@@ -29,7 +29,7 @@ class autopeakCommands:
         Requires flatten plotmanipulator , fit.py plugin , flatfilts.py plugin with convfilt
         
         Syntax:
-        autopeak [rebase] [pl=value] [t=value] [noauto] [reclick]
+        autopeak [rebase] [pl=value] [manual=value] [t=value] [noauto] [reclick]
         
         rebase : Re-asks baseline interval
         
@@ -38,7 +38,10 @@ class autopeakCommands:
                      fit. DO NOT put spaces between 'pl', '=' and the value.
                      The value must be in meters. 
                      Scientific notation like 0.35e-9 is fine.
-        
+
+        manual=[value]:  Allow to choose the peaks to analyze. It need, as a value, the number
+                         of the peaks to analyze.
+
         t=[value] : Use a user-defined temperature. The value must be in
                     kelvins; by default it is 293 K.
                     DO NOT put spaces between 't', '=' and the value.
@@ -100,7 +103,8 @@ class autopeakCommands:
         forces=[]
         slopes=[]
         qstds=[]
-        
+        manualpoints=0
+
         #pick up plot
         displayed_plot=self._get_displayed_plot(0)
         
@@ -126,9 +130,13 @@ class autopeakCommands:
                 pl_expression=arg.split('=')
                 pl_value=float(pl_expression[1]) #actual value
             #look for a T argument. FIXME: spaces are not allowed between 'pl' and value
-            if ('t=' in arg[0:2]) or ('T=' in arg[0:2]):
+            if ('t=' in arg[0:3]) or ('T=' in arg[0:3]):
                 t_expression=arg.split('=')
-                T=float(t_expression[1])                   
+                T=float(t_expression[1])
+            if ('manual=' in arg):
+		print "Manual selection of the interesting peaks."
+		manualpoints_expression=arg.split('=')
+		manualpoints=int(manualpoints_expression[1])
         #--Contact point arguments
         if 'reclick' in args.split():
             print 'Click contact point'
@@ -147,7 +155,14 @@ class autopeakCommands:
         #--END COMMAND LINE PARSING--
         
         
-        peak_location, peak_size = self.find_current_peaks(noflatten)
+
+        if not manualpoints:
+           peak_location, peak_size = self.find_current_peaks(noflatten)
+	else:
+	   peak_location=[]
+           for i in range(manualpoints):
+	      print "Select manually the peaks:"
+	      peak_location.append(  (self._measure_N_points(N=1, whatset=1)[0]).index  )
         
         if len(peak_location) == 0:
             print 'No peaks to fit.'
