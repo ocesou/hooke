@@ -719,21 +719,21 @@ class fitCommands:
         
         #FIXME: print "Kuhn length" for FJC
         print 'Fit function:',self.config['fit_function']
-        print 'Contour length: ',params[0]*(1.0e+9),' nm'
-        to_dump='contour '+self.current.path+' '+str(params[0]*(1.0e+9))+' nm'
+        print 'Contour length: %.2f nm' %(params[0]*(1.0e+9))
+        to_dump='contour '+self.current.path+' %.2f nm'%(params[0]*(1.0e+9))
         self.outlet.push(to_dump)
         if len(params)==2: #if we did choose 2-value fit
-            print name_of_charlength+': ',params[1]*(1.0e+9),' nm'
-            to_dump='persistent '+self.current.path+' '+str(params[1]*(1.0e+9))+' nm'
+            print name_of_charlength+': %.2f nm' %(params[1]*(1.0e+9))
+            to_dump='persistent '+self.current.path+' %.2f nm' %(params[1]*(1.0e+9))
             self.outlet.push(to_dump)
         
         if fit_errors:
             fit_nm=[i*(10**9) for i in fit_errors]
-            print 'Standard deviation (contour length)', fit_nm[0]
+            print 'Standard deviation (contour length) %.2f' %fit_nm[0]
             if len(fit_nm)>1:
-                print 'Standard deviation ('+name_of_charlength+')', fit_nm[1]
+                print 'Standard deviation ('+name_of_charlength+') %.2f' %fit_nm[1]
         
-        print 'Fit quality: '+str(qstd/np.std(displayed_plot.vectors[1][1][-20:-1]))
+        print 'Fit quality: %.3f ' %(qstd/np.std(displayed_plot.vectors[1][1][-20:-1]))
             
             
         #add the clicked points in the final PlotObject
