@@ -40,7 +40,7 @@ class autopeakCommands:
                      Scientific notation like 0.35e-9 is fine.
 
         manual=[value]:  Allow to choose the peaks to analyze. It need, as a value, the number
-                         of the peaks to analyze.
+                         of the peaks to analyze. NOTE: It have to be used with the manual selection of the baseline.
 
         t=[value] : Use a user-defined temperature. The value must be in
                     kelvins; by default it is 293 K.
