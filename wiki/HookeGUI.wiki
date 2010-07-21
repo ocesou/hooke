@@ -5,7 +5,7 @@
 Hooke(GUI) is a GUI-only version of Hooke. The fact that all commands can be chosen from the GUI and do not need to be typed into the command line, provides a different user experience. This might be beneficial for some users.
 
 == Installation ==
-Please follow the installation guidelines [HowToInstall here]. You don't need to install wxMPL to run Hooke(GUI). However, you need to install [http://www.voidspace.org.uk/python/configobj.html ConfigObj] and [http://wxpropgrid.sourceforge.net/cgi-bin/index wxPropertyGrid]. Follow the installation instructions on the respective websites.
+Download the latest SVN version and check the "illysam" branch is there ; to install that please follow the installation guidelines [HowToInstall here]. You don't need to install wxMPL to run Hooke(GUI). However, you need to install [http://www.voidspace.org.uk/python/configobj.html ConfigObj] and [http://wxpropgrid.sourceforge.net/cgi-bin/index wxPropertyGrid]. Follow the installation instructions on the respective websites.
 Unfortunately, there seem to be some issues with wxPropertyGrid on Linux, Mac OS X and other nix systems.
 
 Hooke(GUI) has been developed and tested with this combination of libraries on Windows (XP, Vista, 7):
