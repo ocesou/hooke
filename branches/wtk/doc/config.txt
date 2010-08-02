@@ -1,0 +1,45 @@
+*****************
+Configuring Hooke
+*****************
+
+Hooke initializes a number of variables by reading configuration
+files.
+
+Syntax
+------
+
+Hooke uses Python's configparser_ library to read the config files.
+The format is similar to MS Windows' INI (initialization) format::
+
+    [My Section]
+    foo = bar
+    baz = 5
+
+.. _configparser: http://docs.python.org/library/configparser.html
+
+Examples
+--------
+
+Run::
+
+    $ hooke --example-config-file
+
+To print a well commented example config file to stdout.
+
+
+Finding configuration files
+---------------------------
+
+The default search path follows the `Filesystem Hierarchy Standard`_,
+and so will probably need adjustment for non-\*nix systems.  The
+default path list is
+
+* :file:`/usr/share/hooke/hooke.cfg`
+* :file:`/etc/hooke/hooke.cfg`
+* :file:`~/.hooke.cfg`
+* :file:`./.hooke.cfg`
+
+but alternatives can be specified from the command line launching
+Hooke.
+
+.. _Filesystem Hierarchy Standard: http://www.pathname.com/fhs/

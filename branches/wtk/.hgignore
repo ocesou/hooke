@@ -1,0 +1,11 @@
+syntax: glob
+
+*.pyc
+doc/build/
+doc/hooke/
+build/
+
+.hooke.cfg
+doc/.sconsign.dblite
+doc/img/gui_flow/gui_flow.svg
+hooke/license.py

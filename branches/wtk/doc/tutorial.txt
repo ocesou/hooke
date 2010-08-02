@@ -1,0 +1,286 @@
+********
+Tutorial
+********
+
+`A short video showing Hooke in action`_! (courtesy of Fabrizio
+Benedetti, EPFL, Lausanne)
+
+.. _A short video showing Hooke in action:
+  https://documents.epfl.ch/users/f/fb/fbenedet/www/hooke_short_demostration.ogv
+
+.. toctree::
+   :maxdepth: 2
+
+   gui
+
+Introduction
+============
+
+This tutorial will focus on the command-line interface as the most
+powerful, and leave the :doc:`gui` interface to another document.
+
+.. _command-line: `Command-line interface`_
+
+Installation
+============
+
+See :doc:`install` for details on downloading and installing Hooke.
+
+
+Command-line interface
+======================
+
+Running the hooke shell
+-----------------------
+
+Hooke has a set of commands that depend on the loaded
+:class:`hooke.plugin.Plugin`\s.  To access these commands, you'll need
+to run the Hooke shell.::
+
+    $ hooke
+
+If you are running hooke from the source directory (see
+:doc:`install`), the equivalent command is::
+
+    $ python bin/hooke
+
+You may need to give the full path for Python on Windows systems, and
+also check that the current working directory (`.`) is in your
+`PYTHONPATH`.  See :manpage:`python(1)` for details.
+
+As Hooke launches, you should see something like the following in your
+terminal::
+
+    Hooke version 0.8.0 Seinei
+
+    COPYRIGHT
+    ----
+    hooke>
+
+The final line, ``hooke>``, is the Hooke prompt.  It allows you to
+enter commands to interact with the interpreter.
+
+Help
+----
+
+All commands have help text explaining their purpose and usage.  The
+text is stored in the code itself, and therefore more likely to be up
+to date than this tutorial.  You can get a list of commands and topics
+with::
+
+    hooke> help
+
+Or see specific help on ``TOPIC`` with::
+
+    hooke> help TOPIC
+
+for example::
+
+    hooke> help load_playlist
+
+will give help on the ``load_playlist`` command.
+
+Leaving Hooke
+-------------
+
+When you're done with an interactive Hooke session, you can close the
+session with ``exit`` or its aliases ``quit`` and ``EOF`` (``EOF`` is
+the end of the stdin stream, which is Ctrl-d in many shells).
+
+Creating a playlist
+-------------------
+
+To start analyzing your curves, you first have to build a playlist. The
+playlist is just an index of the force curve files you want to
+analyze. Imagine it as a music playlist (that’s why it is called a
+playlist), but with data files instead of audio files.
+
+Suppose you have 100 PicoForce curve files in your curves directory,
+starting from :file:`mycurve.000` and ending in :file:`mycurve.100`
+and you want to analyze them all.
+
+You then can ``cd`` (change directory) to the directory::
+
+    hooke> cd --path c:\curves
+
+Type ``pwd`` (print working directory) to check the directory is correct.::
+
+    hooke> pwd
+    c:\curves
+
+You can list the files in the directory using ``ls`` or ``dir``
+(they’re synonyms).::
+
+    hooke> ls
+    mycurve.000
+    mycurve.001
+    ...
+
+Now you are ready to generate the playlist. The command to use is
+``glob_curves_to_playlist``.::
+
+    hooke> glob_curves_to_playlist mycurve.*
+
+You can also be more specific with wildcards.  For example
+
+    hooke> glob_curve_to_playlist mycurve.05*
+
+will take only curves from :file:`mycurve.050` to :file:`mycurve.059`.
+
+Note that by using ``glob_curve_to_playlist`` you just generate the
+playlist in the local session. To save your playlist to a file for
+future reuse, type::
+
+    hooke> save_playlist --output mylist
+
+In this example, the list will be saved in the file
+:file:`mylist.hkp`.  Hooke will add the extension ``.hkp`` (Hooke
+playlist) to the playlist if you forget to.  The ``.hkp`` file is an
+XML file you can read and edit with any text editor (i.e. Wordpad), if
+needed.  If you want to load it, simply issue ``load_playlist
+mylist.hkp`` or ``load_playlist mylist``, Hooke will add ``.hkp`` if
+necessary.
+
+If, generating the playlist, you are including by chance a non-force
+curve file that Hooke cannot open, Hooke will print an error and
+continue on.
+
+Navigating the playlist
+-----------------------
+
+Now you can navigate through your playlist using the commands
+``next_curve`` and ``previous_curve``. You don’t need to type
+``next_curve`` every time to run along a list of curves.  You can
+navigate through the command history by using the up and down arrows,
+or auto-complete partial commands with TAB.  From the last curve of
+your playlist, ``next_curve`` will wrap around to the first curve.
+Analogously, issuing ``previous_curve`` at the first curve will jump
+to the last.
+
+You can also jump to a given curve::
+
+    hooke> jump_to_curve 14
+
+will jump to the 14th curve in the playlist.  TODO: jump_to_curve
+<PATH>, where the path can be either an absolute path or a path
+relative to the directory holding the playlist file.
+
+Taking notes
+------------
+
+You can take notes about the curves you are looking at.  Just type
+``add_note`` followed by the text you want to append to that curve.
+Hooke will save the text in your current playlist and in an external
+log file (TODO: no external file yet.  Is this important?).  The
+output will look like this::
+
+    Notes taken at Sun Sep 17 20:42:07 2006
+    /home/cyclopia/work/tris/20060620a.041 | This is a note
+    /home/cyclopia/work/tris/20060620a.207 | This is another note
+    /home/cyclopia/work/tris/20060620a.286 | This is a third one
+
+The log file name can be configured (:doc:`config`), but it defaults
+to :file:`hooke.log`.
+
+Usually curves you annotated are useful later.  You can create a
+playlist for only annotated curves with
+
+    hooke> note_filter_playlist --name c:\curves\nice.hkp
+
+will create sub-playlist :file:`c:\curves\nice.hkp`.  Make sure that
+the target directory (here :file:`c:\curves\`) already exists before
+doing that.
+
+If you change your mind about a note, you can remove it with
+``clear_note``.
+
+Exporting curves
+----------------
+
+You can export Hooke curves as images and as text columns. To export
+as images or text, use the ``export_block`` command.  Supported
+formats are PNG (Portable Network Graphic, raster) and EPS
+(Encapsulated Postscript, vector).  The export format is determined by
+the filename extension, so ``export_block foo.png``, ``export_block
+foo.eps``, and ``export_block foo.txt`` will save PNG, EPS, and
+TAB-delimited text files respectively.
+
+TODO: multiple cycles?  Solution: blank lines for "breaks", add option
+to extract specific sections using Python's slice notation.
+
+If you don't want the entire block, try the ``cut`` command.
+
+Interacting with the plot
+-------------------------
+
+(no plots in command line mode...)
+
+Measuring distances and forces
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can easily zoom in the plot by dragging a rectangle on it with the
+left mouse button.  To zoom out, click the right mouse
+button. Sometimes by zooming in and out too much, you can lose the
+picture (this is probably a small bug in Matplotlib).  Just type
+``plot`` at the command line and the curve will be refreshed.
+
+You can measure distances and forces directly in the plot. Just issue
+the command ``distance``.  You will be asked to click two points.
+When you click a point, a blue dot should appear.  When you click the
+second point, the distances (in nanometers and piconewtons) will
+appear on the command line.  You can use ``delta`` if you prefer,
+which gives meaningful values for every kind of graph (not only force
+curves). If you want to know the coordinates of a single point, use
+``point``.
+
+Hooke automatically adjusts the position of the clicked point to the
+nearest point in the graph, so you will be always measuring distances
+and forces between points in the graph.
+
+The commands ``force`` and ``distance`` are present in the
+``generalvclamp`` plugin.
+
+Worm like chain and freely jointed chain fitting
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can measure by hand the parameters relative to a force peak using
+a worm-like chain fitting with the ``fit`` command.  The command by
+default automatically finds the contact point, asks for two points
+delimiting the portion to fit, and performs a two-variable fit, with
+contour length, persistence length, and their relative errors as
+output.  If desired, one can use the ``noauto`` option to manually
+click the contact point, and/or the ``pl=NUMBER`` options to impose a
+specific persistence or Kuhn length (in nanometers). You can choose
+which model to use with ``set fit_function wlc`` or ``set fit_function
+fjc``.  See the help of the ``fit`` command from the Hooke command
+line for details.
+
+Multiple curve fitting and measuring
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can cycle through all your current playlist obtaining WLC fit, FJC
+fit, rupture force and slope (loading rate) information from each
+curve using the ``multifit`` command.  The collected data can be saved
+in a text file for further analysis in your favourite spreadsheet or
+statistical program.  If you want to check your parameters on the
+current curve before fitting all the files in your playlist, use
+``multifit justone``.  See the ``multifit`` help for more options.
+
+Fast curve reviewing and saving
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When automatic routines are not good enough to filter your data, use
+``review`` command to cycle through your playlist presenting ten
+curves in the same graph.  You can then enter the numbers of the
+interesting curves and automatically save a copy of them into another
+directory.
+
+Configuring Hooke
+-----------------
+
+You can set environment variables to inﬂuence the behaviour of
+Hooke. The command to use is ``set_config``.
+
+You can alter permanently the behaviour of Hooke by setting these
+variables in a Hooke configuration file.  See :doc:`config` for
+details.

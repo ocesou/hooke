@@ -1,0 +1,1 @@
+genrst = 'python generate-hooke-txt.py && xsltproc img/gui_flow/graph.xsl img/gui_flow/gui_flow.xml > img/gui_flow/gui_flow.svg'

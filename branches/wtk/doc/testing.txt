@@ -1,0 +1,25 @@
+*******
+Testing
+*******
+
+Hooke's test framework is build using doctest_, unittest_, and nose_.
+``nosetests`` (from the nose_ package) scans through the source tree,
+searching out the various tests and running them.  If you aren't
+familiar with nose_, there is excellent documentation on its home
+page.  We use nose_ because its auto-discovery allows us to avoid
+collecting all of our assorted tests into
+:class:`unittest.TestSuite`\s and running them by hand.
+
+To run the test suite from the Hooke installation directory, just use::
+
+    nosetests --with-doctest --doctest-tests
+
+.. _doctest: http://docs.python.org/library/doctest.html
+.. _unittest: http://docs.python.org/library/unittest.html
+.. _nose: http://somethingaboutorange.com/mrl/projects/nose/0.11.3/
+
+
+Adding tests to modules
+-----------------------
+
+Just go crazy with doctests and unittests; nose_ will find them.

@@ -1,0 +1,11 @@
+30 curves of octomeric-I27 using a modified Veeco Multimode.
+
+Contributed by W. Trevor King.
+
+Note that the bulk of the cantilever calibration data has been left
+out of calibrate_cantilever/20100504/ to save space.  We retain only
+the summary output file 20100504134510_calib_analysis_text.
+
+In a production environment, other days' experiments and calibration
+data goes into other YYYYMMDD-stamped subdirectories of unfold/ and
+calibrate_cantilever/, so we retain that directory structure here.
