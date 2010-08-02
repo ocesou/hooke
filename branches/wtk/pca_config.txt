@@ -1,0 +1,33 @@
+1,3,6,7,8,9x15,10,11
+0.000000
+1,2,3,4,5,6,7,8,9,10,11
+debug=false
+------------------------------------------
+#1 colonne della prima pca
+#2 limite filtro della densità (x es: "0.000008"; "0" per calcolo automatico.. 3,242311147)
+#3 colonne della secona pca (non usato)
+#4 attiva modalità debug (stampa anche immagini/coordinate di pca/density)
+------------------------------------------
+str(peak_number)+     # non considerato
+str(delta_mean)+      # 0
+str(delta_median)+    # 1 -
+str(force_mean)+      # 2
+str(force_median)+    # 3 -
+str(first_peak_cl)+   # 4 -
+str(last_peak_cl)+    # 5 -
+str(max_force)+       # 6
+str(min_force)+       # 7
+str(max_delta)+       # 8
+str(min_delta)+       # 9
+str(delta_stdev)+     # 10
+str(forces_stdev)+    # 11
+str(peaks_diff)+      # 12
+------------------------------------------
+Lancio di pCluster e pca:
+ - cd 20080917_4s4wt_10mMtris_all
+ - genlist *.*
+ - setconv blindwindow 50
+ - pcluster pl=0.35
+------------------------------------------
+Lancio della sola pca
+ - pca 20080922_gb1x8_tris/pCluster_20090627_1328/coordinate_20080922_gb1x8_tris_blind50.txt
