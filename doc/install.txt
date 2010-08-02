@@ -1,0 +1,81 @@
+****************
+Installing Hooke
+****************
+
+Dependencies
+============
+
+Hooke is routinely run successfully on Windows and Linux based
+systems. It is possible to run it happily on Mac OS X (though install
+can be a bit trickier). Technically, Hooke should run wherever the
+Python_ programming language is installed.
+
+You'll need the following Python modules:
+
+* Numpy_
+* Scipy_
+* Matplotlib_ (for generating plots)
+* wxPython_ (for the GUI)
+
+.. _Numpy: http://numpy.scipy.org/
+.. _Scipy: http://www.scipy.org/
+.. _Python: http://www.python.org/
+.. _Matplotlib: http://matplotlib.sourceforge.net/
+.. _wxPython: http://www.wxpython.org/
+
+Getting the source
+==================
+
+Hooke_ is available as an Subversion_ repository::
+
+    $ svn checkout http://hooke.googlecode.com/svn/trunk/ hooke
+
+There is also a `GUI fork`_ (Rolf Schmidt)::
+
+    $ svn checkout http://hooke.googlecode.com/svn/branches/illysam/ hooke
+
+And a `fork`_ versioned in Mercurial_ (W. Trevor King)::
+
+    $ hg clone http://www.physics.drexel.edu/~wking/code/hg/hooke/ hooke
+
+There are also periodic bundled releases.  See the homepage for each
+fork for details.  For example, get the most recent snapshot of
+Trevor's fork in zip form with::
+
+     $ wget -O hooke.zip http://www.physics.drexel.edu/~wking/code/hg/hgwebdir.cgi/hooke/archive/tip.zip
+     $ unzip hooke.zip
+
+.. _Hooke: http://code.google.com/p/hooke/
+.. _GUI fork: http://code.google.com/p/hooke/wiki/HookeGUI
+.. _fork: http://www.physics.drexel.edu/~wking/code/hg/hgwebdir.cgi/hooke/
+.. _Subversion: http://subversion.tigris.org/
+.. _Mercurial: http://mercurial.selenic.com/
+
+
+Installation
+============
+
+Run::
+
+    $ python setup.py install
+
+to install Hooke.  Run::
+
+    $ python setup.py install --help
+
+to see a list of installation options you may want to configure.
+
+Running Hooke from the source directory
+=======================================
+
+If you like, you can avoid installation by running Hooke directly from
+it's source directory::
+
+     $ wget -o hooke.zip http://www.physics.drexel.edu/~wking/code/git/git.php?p=hooke.git&dl=zip&h=HEAD
+     $ unzip hooke.zip
+     $ cd hooke
+     $ python bin/hooke
+
+You may need to give the full path for Python on Windows systems, and
+also check that the current working directory (`.`) is in your
+`PYTHONPATH`.  See :manpage:`python(1)` for details.

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet href="graph.xsl" type="text/xsl" alternate="no"?>
+<ex:graph xmlns:ex="http://www.example.com/graph">
+  <ex:config text-color="stroke:none;fill:rgb(44,44,44);"
+	     node-color="stroke:rgb(44,44,44);fill:white;"
+	     arc-color="stroke:rgb(44,44,44);fill:rgb(44,44,44);"
+	     node-radius="35" arc-offset="5"
+	     viewBox="0 0 586 86"/>
+  <ex:node name="panels" cx="43" cy="43" label="Panels"/>
+  <ex:node name="frame" cx="293" cy="43" label="Frame"/>
+  <ex:node name="engine" cx="543" cy="43" label="Engine"/>
+  <ex:arc from="panels" to="frame" label="callbacks" rotate="90"/>
+  <ex:arc from="frame" to="panels" label="panel methods"/>
+  <ex:arc from="frame" to="engine" label="execute_command()"/>
+  <ex:arc from="engine" to="frame" label="response processors"/>
+</ex:graph>

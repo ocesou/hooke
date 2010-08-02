@@ -1,0 +1,25 @@
+Environment
+Time:	20100504144231
+
+Piezo parameters
+Z piezo sensitivity (nm/Vp):	6.79
+Z piezo gain (Vp/Vo):	20
+X piezo sensitivity (nm/Vp):	34.0
+X piezo gain (Vp/Vo):	20
+X piezo position (nm):	1065.94033722
+
+Approach parameters
+Setpoint (V):	1.63942931258
+Bind pos (nm):	366
+
+Binding parameters
+Bind time (s):	3
+
+Unfolding parameters
+Distance (nm):	400
+Step size (nm):	0.05
+Points per step:	1
+Unfold rate (nm/s):	154.852736536
+Sample rate (Hz):	3097.05473072
+
+Data fields:	Z_piezo_out Deflection_in Z_piezo_in

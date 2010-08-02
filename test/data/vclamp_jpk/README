@@ -1,0 +1,17 @@
+2 curves using a JPK ForceRobot.
+
+Posted to
+  http://code.google.com/p/hooke/issues/detail?id=22
+by albedomanu on Oct 16, 2009.
+
+default.cal is albedomanu's piezo calibration file
+  /etc/opt/jpkspm-config-3.3.1/instruments/JPK00343/calibrations/default.cal
+The path is stored in the force curve zip file in
+  segments/*/segment-header.properties
+as the value for
+  channel.<CHANNEL-NAME>.conversion-set.conversion.<CONVERSION-NAME>.file
+  channel.height.conversion-set.conversion.calibrated.file
+but can be overridden by an attrubute in the XML playlist,
+  <CHANNEL-NAME>_<SOURCE-CONVERSION-NAME>_to_<CONVERSION-NAME>_calibration_file
+  height_nominal_to_calibrated_calibration_file="default.cal"
+Relative paths are rooted in the same directory as the curve file.

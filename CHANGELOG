@@ -21,7 +21,7 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
 (2008-04-16)
     PLUGINS:
     generalvclamp.py:
-        fixed autopeak header 
+        fixed autopeak header
         fixed autopeak slope (now unwanted slope values are discarded)
 
 0.8.2
@@ -40,7 +40,7 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
         fixed DeprecationWarning in flatten
     flatfilts.py
         convfilt now working
-        
+
 
 0.8.0:
 (2008-04-04)
@@ -196,7 +196,7 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
     hooke_cli.py:
         fixed error handling in notelog
         smarter handling of directory names in genlist
-        unexpected error handling in do_plot() 
+        unexpected error handling in do_plot()
     hooke.py:
         implemented GetDisplayedPlot event and handlers
     PLUGINS:
@@ -302,14 +302,14 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
     libhooke.py:
         fixed bug that prevented flatfilt to work
         (maybe) fixed memory leak in flatfilt
-    
+
 0.4.0 "Hanzei":
 (2007-02-08)
     general code updating and rewriting due to double plot/force clamp supports
     hooke.py:
         initial dummy menu sketch
     hooke.py, hooke_cli.py:
-        first general support in code for double plot: 
+        first general support in code for double plot:
         - derivplot now in separate plot
         - implemented show and close commands
         - all functions should be double plot-aware
@@ -348,7 +348,7 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
 0.2.1 :
     hooke.py , libhooke.py:
         fixed 'wlc noauto' bug (0012) preventing correct contact point to be used
-0.2.0 : 
+0.2.0 :
     hooke_cli.py:
         implemented getlist (alias of genlist)
         implemented contact (to plot the contact point)
@@ -364,12 +364,12 @@ FROM 0.8.4 ONWARD, DETAILED CHANGELOGS ARE AVAILABLE ON THE HOOKE SUBVERSION REP
     libhooke.py:
         new contact point algorithm (new algorithm)
         wlc fit now uses a fancier domain (from contact point to a bit more than last point); initial chunk preparation section moved from hooke.py
-    
+
 
 OLDER CHANGELOGS:
 
 hooke.py:
-0.1.1   : 
+0.1.1   :
     From now on, all changelog is stored in hooke.py
     hooke_cli.py:
         corrected bug 0010 (addtolist bug), alerts when hitting start/end of playlist
@@ -383,7 +383,7 @@ hooke_cli.py:
 0.1.1 : from now on, all changelog is in hooke.py
 2006_09_15_devel: implemented wlc; 0.1.0 milestone.
 2006_08_28_devel: refactoring of plot interaction
-2006_07_23_devel: implemented note; implemented flatfilt; implemented notelog; exit now warns if playlist/notes 
+2006_07_23_devel: implemented note; implemented flatfilt; implemented notelog; exit now warns if playlist/notes
                   have not been saved.
 2006_07_18_devel: implemented subtplot; bug 0007 ("cd" crashing) fixed
 2006_06_16_devel: moved math helper functions in libhooke.py

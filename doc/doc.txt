@@ -1,0 +1,30 @@
+****************************
+Producing this documentation
+****************************
+
+This documentation is written in reStructuredText_, and produced using
+Sphinx_ and the numpydoc_ extension.  The documentation source should
+be fairly readable without processing, but to compile the
+documentation, change to the `doc/` directory and run::
+
+    $ scons
+
+For which you'll need to install Sphinx, numpydoc, and SCons_::
+
+    $ easy_install Sphinx
+    $ easy_install numpydoc
+
+.. _Sphinx: http://sphinx.pocoo.org/
+.. _numpydoc: http://pypi.python.org/pypi/numpydoc
+.. _SCons: http://www.scons.org/
+
+See the reStructuredText quick reference and the `NumPy/SciPy
+documentation guide`_ for an introduction to the documentation
+syntax.  See the `Sphinx markup documentation`_ for a discussion
+of Sphinx's reStructuredText extensions.
+
+.. _reStructuredText:
+  http://docutils.sourceforge.net/docs/user/rst/quickref.html
+.. _NumPy/SciPy documentation guide:
+  http://projects.scipy.org/numpy/wiki/CodingStyleGuidelines
+.. _Sphinx markup documentation: http://sphinx.pocoo.org/markup.html

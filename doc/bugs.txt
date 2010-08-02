@@ -1,0 +1,15 @@
+Troubleshooting
+===============
+
+If you have troubles in using Hooke:
+
+1. Search the `issue tracker`_.
+2. Look at the `trouble shooting wiki page`_.
+3. Search the `discussion group`_.
+4. Ask a question in the discussion group.
+5. File a bug on the issue tracker.
+
+.. _issue tracker: http://code.google.com/p/hooke/issues/list
+.. _trouble shooting wiki page:
+   http://code.google.com/p/hooke/wiki/TroubleShooting
+.. _discussion group: http://groups.google.com/group/hookesoftware

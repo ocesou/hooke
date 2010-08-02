@@ -1,0 +1,59 @@
+What is it?
+===========
+
+It is a software for the (semiautomatic) analysis and filtering of
+force curves. Force curves are the output of an analytical technique
+called force spectroscopy. A force spectroscopy experiment usually
+requires the analysis of thousands of force curves at a time. As of
+today, there is no standard, free software for the analysis of force
+curves. Hooke aims to solve that.
+
+
+What it does?
+=============
+
+  * View, annotate, measure force curves
+  * Worm-like chain and freely-jointed chain fit of force peaks
+  * Automatic convolution-based filtering of empty curves
+  * Automatic fit and measurement of multiple force peaks
+  * Handles force-clamp force experiments (experimental)
+  * It is extensible by users by mean of plugins and drivers
+
+See the Google Code website for more details
+  http://code.google.com/p/hooke/
+
+
+How do you make it work?
+========================
+
+See the doc/USAGE file distributed with hooke.
+
+
+Is this published in some peer-reviewed journal?
+================================================
+
+Sandal M, Benedetti F, Brucale M, Gomez-Casado A, Samorì B.
+"Hooke: an open software platform for force spectroscopy."
+Bioinformatics, 2009 25(11):1428-1430.
+doi:10.1093/bioinformatics/btp180
+
+Please cite Hooke if you use it.
+
+
+Troubleshooting
+===============
+
+If you have troubles in using it, before throwing it in the trash:
+  1) try look at the TroubleShooting page or in the discussion group
+  2) ask a question in the discussion group!
+http://groups.google.com/group/hookesoftware
+
+
+Disclaimer
+==========
+
+Remember that Hooke is still experimental software! It has been mostly
+done to fit the needs of its authors, and there is no guarantee it
+will do what you need. However, you can write us/help us improve it so
+that it does. We aim to make of Hooke a little, universal tool that
+can help your research.

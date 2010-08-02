@@ -1,0 +1,165 @@
+*******
+Hacking
+*******
+
+.. toctree::
+   :maxdepth: 2
+
+   testing
+
+Dependencies
+============
+
+To clean up the internals, were going to go crazy on the
+object-oriented front, and try to keep the core functionality free of
+any dependencies other than the `Python Standard Library`_ and Numpy_
+/ Scipy_.
+
+.. _Python Standard Library: http://docs.python.org/library/
+.. _Numpy: http://numpy.scipy.org/
+.. _Scipy: http://www.scipy.org/
+
+To make a responsive user interface in parallel with data processing
+and possible GUIs, we'll use Python's multiprocessing_ module.  This
+module is new in Python 2.6, but 2.6 usage is becoming fairly
+widespread.  Certainly more widespread than any alternative queue
+module that I know of.  Since we're leveraging the power of the
+standard library, we use configparser_ for the config files.
+
+.. _multiprocessing: http://docs.python.org/dev/library/multiprocessing.html
+.. _configparser: http://docs.python.org/library/configparser.html
+
+On the testing side, the need to stick to the standard library relaxes
+(developers can install extra packages), so we can use nose_.  See
+the :doc:`testing` section for more information.
+
+.. _nose: http://somethingaboutorange.com/mrl/projects/nose/0.11.3/
+
+
+Principles
+==========
+
+Hooke aims to be easily modified and extended by new recruits.  To
+make this easier, we try to abide by several programming practices.
+
+* `DRY`_ (Don't Repeat Yourself), also phrased as "Every piece of
+  knowledge must have a single, unambiguous, authoritative
+  representation within a system."
+* `LoD`_ (Law of Demeter): Don't reach through layers, e.g. `a.b.c.d()`.
+
+.. _DRY: http://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+.. _LoD: http://en.wikipedia.org/wiki/Law_of_Demeter
+
+
+Architecture
+============
+
+Hooke's main entry point is :class:`~hooke.hooke.Hooke`.
+:class:`~hooke.hooke.Hooke` reads in the configuration files and loads
+Plugins_ and Drivers_.  Then it forks off a
+:class:`~hooke.engine.CommandEngine` instance to execute Commands_,
+and a :class:`~hooke.ui.UserInterface` instance to connect the
+:class:`~hooke.engine.CommandEngine` with the user.  The
+:class:`~hooke.engine.CommandEngine` runs in a subprocess, which
+allows command execution to occur in parallel with
+:class:`~hooke.ui.UserInterface` interaction.  The two processes
+communicate via two :class:`multiprocessing.Queue`\s.
+
+There are a number of special classes availiable to structure queue
+communications.  See :mod:`~hooke.interaction` and
+:class:`~hooke.command.CommandExit` for details.
+
+Plugins
+-------
+
+:class:`~hooke.plugin.Plugin`\s contain bundles of Commands_,
+representing the various operations a user can carry out through the
+Hooke interface.
+
+:class:`~hooke.plugin.Plugin`\s can depend on other
+:class:`~hooke.plugin.Plugin`\s, so you shouldn't need to repeat code.
+One central :class:`~hooke.plugin.Plugin` can provide useful
+functionality to several dependent :class:`~hooke.plugin.Plugin`\s.
+
+There is a :class:`~hooke.plugin.Plugin` subtype
+:class:`~hooke.plugin.Builtin` which is just like a
+:class:`~hooke.plugin.Plugin`, but is considered fundamental enough to
+not be optional.  :class:`~hooke.plugin.Builtin`\s are always loaded.
+
+Commands
+~~~~~~~~
+
+:class:`~hooke.command.Command`\s specify user-actions in an
+interface-agnostic manner.  This makes writing
+:class:`~hooke.ui.UserInterface`\s easier, because you don't need to
+know anything about particular :class:`~hooke.plugin.Plugin`\s or
+:class:`~hooke.command.Command`\s, you just need to be able to explain
+the base classes for you user and then speak the language of
+:mod:`~hooke.interaction` and :class:`~hooke.command.CommandExit` with
+the :class:`~hooke.engine.CommandEngine` process.
+
+Drivers
+-------
+
+:class:`~hooke.driver.Driver`\s are responsible for reading assorted
+data files into Hooke's Data_ structure.
+
+Data
+----
+
+Experiments
+~~~~~~~~~~~
+
+Force spectroscopy experiments come in several major flavors.  Each
+flavor gets its own subclass of :class:`~hooke.experiment.Experiment`
+in :mod:`~hooke.experiment`.  For example, force clamp experiments are
+:class:`~hooke.experiment.ForceClamp`.  This gives Drivers_ a way to
+tag experimental data so Commands_ know what they are working with.
+
+Curves
+~~~~~~
+
+Experiments_ tags need a data-holding container to tag, and
+:class:`~hooke.curve.Curve`\s are that container.  Each
+:class:`~hooke.curve.Curve` can hole several blocks of
+:class:`~hooke.curve.Data` (for example approach and retract curves in
+a :class:`~hooke.experiment.VelocityClamp` experiment would be
+seperate blocks).  :class:`~hooke.curve.Curve`\s also have an
+:attr:`~hooke.curve.Curve.info` attribute for persistently storing
+arbitrary data.
+
+Playlists
+~~~~~~~~~
+
+Normally you'll want to analyze multiple Curves_ in one session.
+:class:`~hooke.playlist.Playlist`\s provide a convenient container for
+Curves_, and the subclass :class:`~hooke.playlist.FilePlaylist` add
+persistant file backing (save, load, etc.).
+
+Utilities
+---------
+
+There are a number of general coding features we need for Hooke that
+are not provided by Python's standard library.  We factor those
+features out into :mod:`~hooke.util`.
+
+There are also a number of features who's standard library support
+changes with different versions of Python.  :mod:`~hooke.compat`
+provides a uniform interface to those tools so that Hooke will work
+with several Python versions.
+
+GUI
+---
+
+:mod:`hooke.ui.gui` contains enough code that you might want a word
+about its organization before diving into the code.  Information flows
+like this:
+
+.. image:: img/gui_flow/gui_flow.svg
+  
+With the following naming scheme in HookeFrame:
+
+  ===================  ==================
+  callbacks            ``_on_*``
+  response processors  ``_postprocess_*``
+  ===================  ==================

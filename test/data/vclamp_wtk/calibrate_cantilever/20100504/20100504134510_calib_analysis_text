@@ -1,0 +1,5 @@
+Variable (units)              : mean +/- std. dev. (relative error)
+Cantilever k (N/m)            : 0.0473635 +/- 0.00363046 (0.0766511)
+photoSensitivity**2 (V/nm)**2 : 0.000254094 +/- 1.66109e-05 (0.065373)
+T (K)                         : 298.15 +/- 5.68434e-14 (1.90654e-16)
+1/Vphoto**2 (1/V)**2          : 45282.6 +/- 1812.3 (0.040022)
