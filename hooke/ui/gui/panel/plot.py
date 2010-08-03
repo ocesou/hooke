@@ -102,7 +102,7 @@ class PlotPanel (Panel, wx.Panel):
         self.style = 'line'
         self._curve = None
         self._x_column = None
-        self._y_column = None
+        self._y_column = None  # TODO: _y_columns (allow multiple, simultaneous y axes (rescaled?))
         super(PlotPanel, self).__init__(
             name='plot', callbacks=callbacks, **kwargs)
         self._c = {}

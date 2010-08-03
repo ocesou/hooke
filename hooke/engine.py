@@ -20,7 +20,10 @@
 :class:`hooke.command.Command`\s.
 """
 
+import logging
+
 from .ui import CloseEngine, CommandMessage
+
 
 class CommandEngine (object):
     def run(self, hooke, ui_to_command_queue, command_to_ui_queue):
@@ -37,11 +40,16 @@ class CommandEngine (object):
         `command_to_ui_queue`, at which point the `CommandEngine` will
         be ready to receive the next :class:`hooke.ui.QueueMessage`.
         """
+        log = logging.getLogger('hooke')
         while True:
+            log.debug('engine waiting for command')
             msg = ui_to_command_queue.get()
             if isinstance(msg, CloseEngine):
                 command_to_ui_queue.put(hooke)
+                log.debug(
+                    'engine closing, placed hooke instance in return queue')
                 break
             assert isinstance(msg, CommandMessage), type(msg)
+            log.debug('engine running %s' % msg.command.name)
             msg.command.run(hooke, ui_to_command_queue, command_to_ui_queue,
                             **msg.arguments)

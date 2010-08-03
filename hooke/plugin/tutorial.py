@@ -21,531 +21,284 @@
 Hooke plugin, including description of main Hooke internals.
 """
 
-import numpy as np
+import logging
+import StringIO
 
-from .. import curve as lhc
+from numpy import arange
 
-'''
-SYNTAX OF DATA TYPE DECLARATION:
-    type = type of object
-    [ type ] = list containing objects of type
-    {typekey:typearg} = dictionary with keys of type typekey and args of type typearg
-    ( type ) = tuple containing objects of type
-'''
+from ..command import Command, Argument, Failure
+from ..config import Setting
+from ..interaction import PointRequest, PointResponse
+from ..util.si import ppSI, split_data_label
+from . import Plugin
+from .curve import CurveArgument
 
 
-class tutorialCommands(object):
-    '''
-    Here we define the class containing all the Hooke commands we want to define
-    in the plugin.
+class TutorialPlugin (Plugin):
+    """An example plugin explaining how to code plugins.
 
-    Notice the class name!!
-    The syntax is filenameCommands. That is, if your plugin is pluggy.py, your class
-    name is pluggyCommands.
+    Unlike previous versions of Hooke, the class name is no longer
+    important.  Plugins identify themselves to
+    :func:`hooke.util.pluggable.construct_graph` by being subclasses
+    of :class:`hooke.plugin.Plugin`.  However, for consistency we
+    suggest the following naming scheme, show here for the 'tutorial'
+    plugin:
 
-    Otherwise, the class will be ignored by Hooke.
-    '''
+    ===========  ==============
+    module file  tutorial.py
+    class name   TutorialPlugin
+    .name        'tutorial'
+    ===========  ==============
 
-    def _plug_init(self):
-        '''
-        This is the plugin initialization.
-        When Hooke starts and the plugin is loaded, this function is executed.
-        If there is something you need to do when Hooke starts, code it in this function.
-        '''
+    To ensure filename sanity,
+    :func:`hooke.util.pluggable.construct_graph` requires that
+    :attr:`name` does match the submodule name, but don't worry,
+    you'll get a clear exception message if you make a mistake.
+    """
+    def __init__(self):
+        """TutorialPlugin initialization code.
+
+        We call our base class' :meth:`__init__` and setup
+        :attr:`_commands`.
+        """
+        # This is the plugin initialization.  When Hooke starts and
+        # the plugin is loaded, this function is executed.  If there
+        # is something you need to do when Hooke starts, code it in
+        # this function.
         print 'I am the Tutorial plugin initialization!'
 
-        #Here we initialize a local configuration variable; see plotmanip_absvalue() for explanation.
-        self.config['tutorial_absvalue']=0
-        pass
-
-    def do_nothing(self,args):
-        '''
-        This is a boring but working example of an actual Hooke command.
-        A Hooke command is a function of the xxxxCommands class, which is ALWAYS defined
-        this way:
-
-        def do_nameofcommand(self,args)
-
-        *do_            is needed to make Hooke understand this function is a command
-        *nameofcommand  is how the command will be called in the Hooke command line.
-        *self           is, well, self
-        *args           is ALWAYS needed (otherwise Hooke will crash executing the command). We will see
-                        later what args is.
-
-        Note that if you now start Hooke with this plugin activated and you type in the Hooke command
-        line "help nothing" you will see this very text as output. So the help of a command is a
-        string comment below the function definition, like this one.
-
-        Commands usually return None.
-        '''
-        print 'I am a Hooke command. I do nothing.'
-
-    def do_printargs(self,args):
-        '''
-        This command prints the args you give to it.
-        args is always a string, that contains everything you write after the command.
-        So if you issue "mycommand blah blah 12345" args is "blah blah 12345".
-
-        Again, args is needed in the definition even if your command does not use it.
-        '''
-        print 'You gave me those args: '+args
-
-    def help_tutorial(self):
-        '''
-        This is a help function.
-        If you want a help function for something that is not a command, you can write a help
-        function like this. Calling "help tutorial" will execute this function.
-        '''
-        print 'You called help_tutorial()'
-
-    def do_environment(self,args):
-        '''
-        This plugin contains a panoramic of the Hooke command line environment variables,
-        and prints their current value.
-        '''
-
-        '''self.current_list
-        TYPE: [ curve.HookeCurve ], len=variable
-        contains the actual playlist of Hooke curve objects.
-        Each HookeCurve object represents a reference to a data file.
-        We will see later in detail how do they work.
-        '''
-        print 'current_list length:',len(self.current_list)
-        print 'current_list 0th:',self.current_list[0]
-
-        '''self.pointer
-        TYPE: int
-        contains the index of
-        the current curve in the playlist
-        '''
-        print 'pointer: ',self.pointer
-
-        '''self.current
-        TYPE: curve.HookeCurve
-        contains the current curve displayed.
-        We will see later how it works.
-        '''
-        print 'current:',self.current
-
-        '''self.plots
-        TYPE: [ curve.PlotObject ], len=1,2
-        contains the current default plots.
-        Each PlotObject contains all info needed to display
-        the plot: apart from the data vectors, the title, destination
-        etc.
-        Usually self.plots[0] is the default topmost plot, self.plots[1] is the
-        accessory bottom plot.
-        '''
-        print 'plots:',self.plots
-
-        '''self.config
-        TYPE: { string:anything }
-        contains the current Hooke configuration variables, in form of a dictionary.
-        '''
-        print 'config:',self.config
-
-        '''self.plotmanip
-        TYPE: [ function ]
-        Contains the ordered plot manipulation functions.
-        These functions are called to modify the default plot by default before it is plotted.
-        self.plots contains the plot passed through the plot manipulators.
-        We will see it better later.
-        *YOU SHOULD NEVER MODIFY THAT*
-        '''
-        print 'plotmanip: ',self.plotmanip
-
-        '''self.drivers
-        TYPE: [ class ]
-        Contains the plot reading drivers.
-        *YOU SHOULD NEVER MODIFY THAT*
-        '''
-        print 'drivers: ',self.drivers
-
-        '''self.frame
-        TYPE: wx.Frame
-        Contains the wx Frame of the GUI.
-        ***NEVER, EVER TOUCH THAT.***
-        '''
-        print 'frame: ',self.frame
-
-        '''self.list_of_events
-        TYPE: { string:wx.Event }
-        Contains the wx.Events to communicate with the GUI.
-        Usually not necessary to use it, unless you want
-        to create a GUI plugin.
-        '''
-        print 'list of events:',self.list_of_events
-
-        '''self.events_from_gui
-        TYPE: Queue.Queue
-        Contains the Queue where data from the GUI is put.
-        Usually not necessary to use it, unless you want
-        to create a GUI plugin.
-        '''
-        print 'events from gui:',self.events_from_gui
-
-        '''self.playlist_saved
-        TYPE: Int (0/1) ; Boolean
-        Flag that tells if the playlist has been saved or not.
-        '''
-        print 'playlist saved:',self.playlist_saved
-
-        '''self.playlist_name
-        TYPE: string
-        Name of current playlist
-        '''
-        print 'playlist name:',self.playlist_name
-
-        '''self.notes_saved
-        TYPE: Int (0/1) ; Boolean
-        Flag that tells if the playlist has been saved or not.
-        '''
-        print 'notes saved:',self.notes_saved
-
-
-    def do_myfirstplot(self,args):
-        '''
-        In this function, we see how to create a PlotObject and send it to the screen.
-        ***Read the code of PlotObject in curve.py before!***.
-        '''
-
-        #We generate some interesting data to plot for this example.
-        xdata1=np.arange(-5,5,0.1)
-        xdata2=np.arange(-5,5,0.1)
-        ydata1=[item**2 for item in xdata1]
-        ydata2=[item**3 for item in xdata2]
-
-        #Create the object.
-        #The PlotObject class lives in the curve library.
-        myplot=lhc.PlotObject()
-        '''
-        The *data* of the plot live in the .vectors list.
-
-        plot.vectors is a multidimensional array:
-        plot.vectors[0]=set1
-        plot.vectors[1]=set2
-        plot.vectors[2]=sett3
-        etc.
-
-        2 curves in a x,y plot are:
-        [[[x1],[y1]],[[x2],[y2]]]
-        for example:
-            x1          y1              x2         y2
-        [[[1,2,3,4],[10,20,30,40]],[[3,6,9,12],[30,60,90,120]]]
-        x1 = self.vectors[0][0]
-        y1 = self.vectors[0][1]
-        x2 = self.vectors[1][0]
-        y2 = self.vectors[1][1]
-        '''
-        #Pour 0-th dataset into myplot:
-        myplot.add_set(xdata1,ydata1)
-
-        #Pour 1-st dataset into myplot:
-        myplot.add_set(xdata2,ydata2)
-
-        #Add units to x and y axes
-        #units=[string, string]
-        myplot.units=['x axis','y axis']
-
-        #Where do we want the plot? 0=top, 1=bottom
-        myplot.destination=1
-
-        '''Send it to the GUI.
-        Note that you *have* to encapsulate it into a list, so you
-        have to send [myplot], not simply myplot.
-
-        You can also send more two plots at once
-        self.send_plot([plot1,plot2])
-        '''
-        self._send_plot([myplot])
-
-
-    def do_myfirstscatter(self,args):
-        '''
-        How to draw a scatter plot.
-        '''
-        #We generate some interesting data to plot for this example.
-        xdata1=np.arange(-5,5,1)
-        xdata2=np.arange(-5,5,1)
-        ydata1=[item**2 for item in xdata1]
-        ydata2=[item**3 for item in xdata2]
-
-        myplot=lhc.PlotObject()
-        myplot.add_set(xdata1,ydata1)
-        myplot.add_set(xdata2,ydata2)
-
-
-        #Add units to x and y axes
-        myplot.units=['x axis','y axis']
-
-        #Where do we want the plot? 0=top, 1=bottom
-        myplot.destination=1
-
-        '''None=standard line plot
-        'scatter'=scatter plot
-        By default, the styles attribute is an empty list. If you
-        want to define a scatter plot, you must define all other
-        plots as None or 'scatter', depending on what you want.
-
-        Here we define the second set to be plotted as scatter,
-        and the first to be plotted as line.
-
-        Here we define also the colors to be the default Matplotlib colors
-        '''
-        myplot.styles=[None,'scatter']
-        myplot.colors=[None,None]
-        self._send_plot([myplot])
-
-
-    def do_clickaround(self,args):
-        '''
-        Here we click two points on the curve and take some parameters from the points
-        we have clicked.
-        '''
-
-        '''
-        points = self._measure_N_points(N=Int, whatset=Int)
-        *N = number of points to measure(1...n)
-        *whatset = data set to measure (0,1...n)
-        *points = a list of ClickedPoint objects, one for each point requested
-        '''
-        points=self._measure_N_points(N=2,whatset=1)
-        print 'You clicked the following points.'
-
-        '''
-        These are the absolute coordinates of the
-        point clicked.
-        [float, float] = x,y
-        '''
-        print 'Absolute coordinates:'
-        print points[0].absolute_coords
-        print points[1].absolute_coords
-        print
-
-        '''
-        These are the coordinates of the points
-        clicked, remapped on the graph.
-        Hooke looks at the graph point which X
-        coordinate is next to the X coordinate of
-        the point measured, and uses that point
-        as the actual clicked point.
-        [float, float] = x,y
-        '''
-        print 'Coordinates on the graph:'
-        print points[0].graph_coords
-        print points[1].graph_coords
-        print
-
-        '''
-        These are the indexes of the clicked points
-        on the dataset vector.
-        '''
-        print 'Index of points on the graph:'
-        print points[0].index
-        print points[1].index
-
-
-    def help_thedifferentplots(self):
-        '''
-        The *three* different default plots you should be familiar with
-        in Hooke.
-
-        Each plot contains of course the respective data in their
-        vectors attribute, so here you learn also which data access for
-        each situation.
-        '''
-        print '''
-        1. THE RAW, CURRENT PLOTS
-
-        self.current
-        ---
-        Contains the current curve.HookeCurve container object.
-        A HookeCurve object defines only two default attributes:
-
-        * self.current.path = string
-        The path of the current displayed curve
-
-        * self.current.curve = curve.Driver
-        The curve object. This is not only generated by the driver,
-        this IS a driver instance in itself.
-        This means that in self.current.curve you can access the
-        specific driver APIs, if you know them.
-
-        And defines only one method:
-        * self.current.identify()
-        Fills in the self.current.curve object.
-        See in the cycling tutorial.
-
-        *****
-        The REAL curve data actually lives in:
-        ---
-        * self.current.curve.default_plots() = [ libhooke.PlotObject ]
-        Contains the raw PlotObject-s, as "spitted out" by the driver, without any
-        intervention.
-        This is as close to the raw data as Hooke gets.
-
-        One or two plots can be spit out; they are always enclosed in a list.
-        *****
-
-        Methods of self.current.curve are:
-        ---
-
-        * self.current.curve.is_me()
-        (Used by identify() only.)
-
-        * self.current.curve.close_all()
-        Closes all driver open files; see the cycling tutorial.
-        '''
-
-        print '''
-        2. THE PROCESSED, DEFAULT PLOT
-
-        The plot that is spitted out by the driver is *not* the usual default plot
-        that is displayed by calling "plot" at the Hooke prompt.
-
-        This is because the raw, driver-generated plot is usually *processed* by so called
-        *plot processing* functions. We will see in the tutorial how to define
-        them.
-
-        For example, in force spectroscopy force curves, raw data are automatically corrected
-        for deflection. Other data can be, say, filtered by default.
-
-        The default plots are accessible in
-        self.plots = [ libhooke.PlotObject ]
-
-        self.plots[0] is usually the topmost plot
-        self.plots[1] is usually the bottom plot (if present)
-        '''
-
-        print '''
-        3. THE PLOT DISPLAYED RIGHT NOW.
-
-        Sometimes the plots you are displaying *right now* is different from the previous
-        two. You may have a fit trace, you may have issued some command that spits out
-        a custom plot and you want to rework that, whatever.
-
-        You can obtain in any moment the plot currently displayed by Hooke by issuing
-
-        PlotObject = self._get_displayed_plot(dest)
-        * dest = Int (0/1)
-        dest=0 : top plot
-        dest=1 : bottom plot
-        '''
-
-
-    def do_cycling(self,args):
-        '''
-        Here we cycle through our playlist and print some info on the curves we find.
-        Cycling through the playlist needs a bit of care to avoid memory leaks and dangling
-        open files...
-
-        Look at the source code for more information.
-        '''
-
-        def things_when_cycling(item):
-            '''
-            We encapsulate here everything has to open the actual curve file.
-            By doing it all here, we avoid to do acrobacies when deleting objects etc.
-            in the main loop: we do the dirty stuff here.
-            '''
-
-            '''
-            identify()
-
-            This method looks for the correct driver in self.drivers to use;
-            and puts the curve content in the .curve attribute.
-            Basically, until identify() is called, the HookeCurve object
-            is just an empty shell. When identify() is called (usually by
-            the Hooke plot routine), the HookeCurve object is "filled" with
-            the actual curve.
-            '''
-
-            item.identify(self.drivers)
-
-            '''
-            After the identify(), item.curve contains the curve, and item.curve.default_plots() behaves exactly like
-            self.current.curve.default_plots() -but for the given item.
-            '''
-            itplot=item.curve.default_plots()
-
-            print 'length of X1 vector:',len(itplot[0].vectors[0][0]) #just to show something
-
-            '''
-            The following three lines are a magic spell you HAVE to do
-            before closing the function.
-            (Otherwise you will be plagued by unpredicatable, system-dependent bugs.)
-            '''
-            item.curve.close_all() #Avoid open files dangling
-            del item.curve #Avoid memory leaks
-            del item #Just be paranoid. Don't ask.
-
+        # This super() call similar to the old-style
+        #   Plugin.__init__
+        # but super() is more robust under multiple inheritance.
+        # See Guido's introduction:
+        #   http://www.python.org/download/releases/2.2.3/descrintro/#cooperation
+        # And the related PEPs:
+        #   http://www.python.org/dev/peps/pep-0253/
+        #   http://www.python.org/dev/peps/pep-3135/
+        super(TutorialPlugin, self).__init__(name='tutorial')
+
+        # We want :meth:`commands` to return a list of
+        # :class:`hooke.command.Command` instances.  Rather than
+        # instantiate the classes for each call to :meth:`commands`,
+        # we instantiate them in a list here, and rely on
+        # :meth:`hooke.plugin.Plugin.commands` to return copies of
+        # that list.
+        self._commands = [DoNothingCommand(self), HookeInfoCommand(self),
+                          PointInfoCommand(self),]
+
+    def dependencies(self):
+        """Return a list  of names of :class:`hooke.plugin.Plugin`\s we
+        require.
+
+        Some plugins use features from other plugins.  Hooke makes sure that
+        plugins are configured in topological order and that no plugin is
+        enabled if it is missing dependencies.
+        """
+        return ['vclamp']
+
+    def default_settings(self):
+        """Return a list of :class:`hooke.config.Setting`\s for any
+        configurable plugin settings.
+
+        The suggested section setting is::
+
+            Setting(section=self.setting_section, help=self.__doc__)
+
+        You only need to worry about this if your plugin has some
+        "magic numbers" that the user may want to tweak, but that
+        won't be changing on a per-command basis.
+
+        You should lead off the list of settings with the suggested
+        section setting mentioned above.
+        """
+        return [
+            # We disable help wrapping, since we've wrapped
+            # TutorialPlugin.__doc__ ourselves, and it's more than one
+            # paragraph (textwrap.fill, used in
+            # :meth:`hooke.config.Setting.write` only handles one
+            # paragraph at a time).
+            Setting(section=self.setting_section, help=self.__doc__,
+                    wrap=False),
+            Setting(section=self.setting_section, option='favorite color',
+                    value='orange', help='Your personal favorite color.'),
+            ]
+
+
+# Define common or complicated arguments
+
+# Often, several commands in a plugin will use similar arguments.  For
+# example, many curves in the 'playlist' plugin need a playlist to act
+# on.  Rather than repeating an argument definition in several times,
+# you can keep your code DRY (Don't Repeat Yourself) by defining the
+# argument at the module level and referencing it during each command
+# initialization.
+
+def color_callback(hooke, command, argument, value):
+    """If `argument` is `None`, default to the configured 'favorite color'.
+
+    :class:`hooke.command.Argument`\s may have static defaults, but
+    for dynamic defaults, they use callback functions (like this one).
+    """
+    if value != None:
+        return value
+    return command.plugin.config['favorite color']
+
+ColorArgument = Argument(
+    name='color', type='string', callback=color_callback,
+    help="Pick a color, any color.")
+# See :func:`hooke.ui.gui.panel.propertyeditor.prop_from_argument` for
+# a situation where :attr:`type` is important.
+
+
+class DoNothingCommand (Command):
+    """This is a boring but working example of an actual Hooke command.
+    
+    As for :class:`hooke.plugin.Plugin`\s, the class name is not
+    important, but :attr:`name` is.  :attr:`name` is used (possibly
+    with some adjustment) as the name for accessing the command in the
+    various :class:`hooke.ui.UserInterface`\s.  For example the
+    `'do nothing'` command can be run from the command line UI with::
+
+       hooke> do_nothing
+
+    Note that if you now start Hooke with the command's plugin
+    activated and you type in the Hooke command line "help do_nothing"
+    you will see this very text as output. That is because we set
+    :attr:`_help` to this class' docstring on initialization.
+    """
+    def __init__(self, plugin):
+        # See the comments in TutorialPlugin.__init__ for details
+        # about super() and the docstring of
+        # :class:`hooke.command.Command` for details on the __init__()
+        # arguments.
+        super(DoNothingCommand, self).__init__(
+            name='do nothing',
+            arguments=[ColorArgument],
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        """This is where the command-specific magic will happen.
+
+        If you haven't already, read the Architecture section of
+        :file:`doc/hacking.txt` (also available `online`_).  It
+        explains the engine/UI setup in more detail.
+
+        .. _online:
+          http://www.physics.drexel.edu/~wking/rsrch/hooke/hacking.html#architecture
+
+        The return value (if any) of this method is ignored.  You
+        should modify the :class:`hooke.hooke.Hooke` instance passed
+        in via `hooke` and/or return things via `outqueue`.  `inqueue`
+        is only important if your command requires mid-command user
+        interaction.
+
+        By the time this method is called, all the argument
+        preprocessing (callbacks, defaults, etc.) have already been
+        handled by :meth:`hooke.command.Command.run`.
+        """
+        # On initialization, :class:`hooke.hooke.Hooke` sets up a
+        # logger to use for Hooke-related messages.  Please use it
+        # instead of debugging 'print' calls, etc., as it is more
+        # configurable.
+        log = logging.getLogger('hooke')
+        log.debug('Watching %s paint dry' % params['color'])
+
+
+class HookeInfoCommand (Command):
+    """Get information about the :class:`hooke.hooke.Hooke` instance.
+    """
+    def __init__(self, plugin):
+        super(HookeInfoCommand, self).__init__(
+            name='hooke info',
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        outqueue.put('Hooke info:')
+        # hooke.config contains a :class:`hooke.config.HookeConfigParser`
+        # with the current hooke configuration settings.
+        config_file = StringIO.StringIO()
+        hooke.config.write(config_file)
+        outqueue.put('configuration:\n  %s'
+                     % '\n  '.join(config_file.getvalue().splitlines()))
+        # hooke.plugins contains :class:`hooke.plugin.Plugin`\s defining
+        # :class:`hooke.command.Command`\s.
+        outqueue.put('plugins: %s'
+                     % ', '.join([plugin.name for plugin in hooke.plugins]))
+        # hooke.drivers contains :class:`hooke.driver.Driver`\s for
+        # loading curves.
+        outqueue.put('drivers: %s'
+                     % ', '.join([driver.name for driver in hooke.drivers]))
+        # hooke.playlists contains a
+        # :class:`hooke.playlist.NoteIndexList` of
+        # :class:`hooke.playlist.Playlist`\s.  Each playlist may
+        # contain several :class:`hooke.curve.Curve`\s representing a
+        # grouped collection of data.
+        playlist = hooke.playlists.current()
+        if playlist == None:
             return
+        outqueue.put('current playlist: %s (%d of %d)'
+                     % (playlist.name,
+                        hooke.playlists.index(),
+                        len(hooke.playlists)))
+        curve = playlist.current()
+        if curve == None:
+            return
+        outqueue.put('current curve: %s (%d of %d)'
+                     % (curve.name,
+                        playlist.index(),
+                        len(playlist)))
 
 
-        c=0
-        for item in self.current_list:
-            print 'Looking at curve ',c,'of',len(self.current_list)
-            things_when_cycling(item)
-            c+=1
+class PointInfoCommand (Command):
+    """Get information about two user-selected points.
 
-        return
+    Ordinarily a command that knew it would need user selected points
+    would declare an appropriate argument (see, for example,
+    :class:`hooke.plugin.cut.CutCommand`).  However, here we find the
+    points via user-interaction to show how user interaction works.
+    """
+    def __init__(self, plugin):
+        super(PointInfoCommand, self).__init__(
+            name='point info',
+            arguments=[
+                CurveArgument,
+                Argument(name='block', type='int', default=0,
+                    help="""
+Data block that points are selected from.  For an approach/retract
+force curve, `0` selects the approaching curve and `1` selects the
+retracting curve.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
 
+    def _run(self, hooke, inqueue, outqueue, params):
+        data = params['curve'].data[params['block']]
+        while True:
+            # Ask the user to select a point.
+            outqueue.put(PointRequest(
+                    msg="Select a point",
+                    curve=params['curve'],
+                    block=params['block']))
 
+            # Get the user's response
+            result = inqueue.get()
+            if not isinstance(result, PointResponse):
+                inqueue.put(result)  # put the message back in the queue
+                raise Failure(
+                    'expected a PointResponse instance but got %s.'
+                    % type(result))
+            point = result.value
 
-    def plotmanip_absvalue(self, plot, current, customvalue=None):
-        '''
-        This function defines a PLOT MANIPULATOR.
-        A plot manipulator is a function that takes a plot in input, does something to the plot
-        and returns the modified plot in output.
-        The function, once plugged, gets automatically called everytime self.plots is updated
+            # Act on the response
+            if point == None:
+                break
+            values = []
+            for column_name in data.info['columns']:
+                name,unit = split_data_label(column_name)
+                column_index = data.info['columns'].index(column_name)
+                value = data[point,column_index]
+                si_value = ppSI(value, unit, decimals=2)
+                values.append('%s: %s' % (name, si_value))
 
-        For example, in force spectroscopy force curves, raw data are automatically corrected
-        for deflection. Other data can be, say, filtered by default.
-
-        To create and activate a plot manipulator you have to:
-            * Write a function (like this) which name starts with "plotmanip_" (just like commands
-              start with "do_")
-            * The function must support four arguments:
-              self : (as usual)
-              plot : a plot object
-              current : (usually not used, deprecated)
-              customvalue=None : a variable containing custom value(s) you need for your plot manipulators.
-            * The function must return a plot object.
-            * Add an entry in hooke.conf: if your function is "plotmanip_something" you will have
-              to add <something/> in the plotmanips section: example
-
-            <plotmanips>
-                <detriggerize/>
-                <correct/>
-                <median/>
-                <something/>
-            </plotmanips>
-
-            Important: Plot manipulators are *in pipe*: each plot manipulator output becomes the input of the next one.
-            The order in hooke.conf *is the order* in which plot manipulators are connected, so in the example above
-            we have:
-            self.current.curve.default_plots() --> detriggerize --> correct --> median --> something --> self.plots
-        '''
-
-        '''
-        Here we see what is in a configuration variable to enable/disable the plot manipulator as user will using
-        the Hooke "set" command.
-        Typing "set tutorial_absvalue 0" disables the plot manipulator; typing "set tutorial_absvalue 1" will enable it.
-        '''
-        if not self.config['tutorial_absvalue']:
-            return plot
-
-        #We do something to the plot, for demonstration's sake
-        #If we needed variables, we would have used customvalue.
-        plot.vectors[0][1]=[abs(i) for i in plot.vectors[0][1]]
-        plot.vectors[1][1]=[abs(i) for i in plot.vectors[1][1]]
-
-        #Return the plot object.
-        return plot
-
-
-#TODO IN TUTORIAL:
-#how to add lines to an existing plot!!
-#peaks
-#configuration files
-#gui plugins
+            outqueue.put('selected point %d: %s'
+                         % (point, ', '.join(values)))

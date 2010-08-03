@@ -26,7 +26,9 @@ See the Google Code website for more details
 How do you make it work?
 ========================
 
-See the doc/USAGE file distributed with hooke.
+See the doc/tutorial.txt file distributed with hooke, or the online
+docs:
+  http://www.physics.drexel.edu/~wking/rsrch/hooke/
 
 
 Is this published in some peer-reviewed journal?
@@ -44,9 +46,15 @@ Troubleshooting
 ===============
 
 If you have troubles in using it, before throwing it in the trash:
-  1) try look at the TroubleShooting page or in the discussion group
-  2) ask a question in the discussion group!
-http://groups.google.com/group/hookesoftware
+
+1. Search the issue tracker.
+     http://code.google.com/p/hooke/issues/list
+2. Look at the trouble shooting wiki page.
+     http://code.google.com/p/hooke/wiki/TroubleShooting
+3. Search the discussion group.
+     http://groups.google.com/group/hookesoftware
+4. Ask a question in the discussion group.
+5. File a bug on the issue tracker.
 
 
 Disclaimer
@@ -55,5 +63,5 @@ Disclaimer
 Remember that Hooke is still experimental software! It has been mostly
 done to fit the needs of its authors, and there is no guarantee it
 will do what you need. However, you can write us/help us improve it so
-that it does. We aim to make of Hooke a little, universal tool that
-can help your research.
+that it does. We aim to make of Hooke a robust tool that can help your
+research.

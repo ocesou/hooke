@@ -52,6 +52,14 @@ class NoteIndexList (list):
         """
         pass
 
+    def index(self, value=None, *args, **kwargs):
+        """Extend `list.index`, returning the current index if `value`
+        is `None`.
+        """
+        if value == None:
+            return self._index
+        return super(NoteIndexList, self).index(value, *args, **kwargs)
+
     def current(self):
         if len(self) == 0:
             return None
@@ -71,10 +79,20 @@ class NoteIndexList (list):
     def previous(self):
         self.jump(self._index - 1)
 
+    def items(self, reverse=False):
+        """Iterate through `self` calling `_setup_item` on each item
+        before yielding.
+        """
+        items = self
+        if reverse == True:
+            items = reversed(self)
+        for item in items:
+            self._setup_item(item)
+            yield item
+
     def filter(self, keeper_fn=lambda item:True, *args, **kwargs):
         c = copy.deepcopy(self)
-        for item in reversed(c):
-            c._setup_item(item)
+        for item in c.items(reverse=True):
             if keeper_fn(item, *args, **kwargs) != True:
                 c.remove(item)
         try: # attempt to maintain the same current item

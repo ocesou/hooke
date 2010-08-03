@@ -23,6 +23,7 @@ All of the science happens in here.
 """
 
 import ConfigParser as configparser
+import logging
 
 from ..config import Setting
 from ..util.pluggable import IsSubclass, construct_graph
@@ -47,7 +48,7 @@ PLUGIN_MODULES = [
 #    ('showconvoluted', True),
 #    ('superimpose', True),
 #    ('tccd', True),
-#    ('tutorial', True),
+    ('tutorial', True),
     ('vclamp', True),
     ]
 """List of plugin modules and whether they should be included by
@@ -78,7 +79,9 @@ class Plugin (object):
     """A pluggable collection of Hooke commands.
 
     Fulfills the same role for Hooke that a software package does for
-    an operating system.
+    an operating system: contains a chunk of related commands and
+    routines.  Command configuration also happens on the `Plugin`
+    level, with per-plugin sections in the configuration file.
     """
     def __init__(self, name):
         self.name = name
@@ -105,6 +108,7 @@ class Plugin (object):
         """
         return list(self._commands)
 
+
 class Builtin (Plugin):
     """A required collection of Hooke commands.
 
@@ -112,6 +116,7 @@ class Builtin (Plugin):
     (playlist handling, etc.).
     """
     pass
+
 
 # Plugin utility functions
 
@@ -125,6 +130,7 @@ def argument_to_setting(section_name, argument):
     """
     return Setting(section_name, option=argument.name, value=argument.default,
                    help=argument._help)
+
 
 # Construct plugin dependency graph and load plugin instances.
 
@@ -158,6 +164,7 @@ def default_settings():
     return settings
 
 def load_graph(graph, config, include_section):
+    enabled = {}
     items = []
     for node in graph:
         item = node.data
@@ -165,7 +172,16 @@ def load_graph(graph, config, include_section):
             include = config.getboolean(include_section, item.name)
         except configparser.NoOptionError:
             include = True # non-optional include (e.g. a Builtin)
+        enabled[item.name] = include
         if include == True:
+            for dependency in node:
+                if enabled.get(dependency.data.name, None) != True:
+                    log = logging.getLogger('hooke')
+                    log.warn(
+                     'could not setup plugin %s.  unsatisfied dependency on %s.'
+                     % (item.name, dependency.data.name))
+                    enabled[item.name] = False
+                    continue
             try:
                 item.config = dict(config.items(item.setting_section))
             except configparser.NoSectionError:
