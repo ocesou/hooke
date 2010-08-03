@@ -688,7 +688,6 @@ class HookeFrame (wx.Frame):
     def _on_update_note(self, _class, method, text):
         """Sets the note for the active curve.
         """
-        # TODO: note list interface in NotePanel.
         self.execute_command(
             command=self._command_by_name('set note'),
             args={'note':text})
@@ -728,8 +727,6 @@ class HookeFrame (wx.Frame):
 
     def _on_set_selected_curve(self, _class, method, playlist, curve):
         """Call the `jump to curve` command.
-
-        TODO: playlists plugin.
         """
         self._on_set_selected_playlist(_class, method, playlist)
         index = playlist.index(curve)

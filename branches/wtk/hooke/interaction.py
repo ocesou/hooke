@@ -124,7 +124,8 @@ class SelectionResponse (Response):
 class PointRequest (Request):
     def __init__(self, msg, curve, block=0, default=None):
         super(PointRequest, self).__init__('point', msg, default)
-        self.options = options
+        self.curve = curve
+        self.block = block
 
 class PointResponse (Response):
     def __init__(self, value):

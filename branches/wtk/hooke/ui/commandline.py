@@ -217,12 +217,17 @@ class DoCommand (CommandMethod):
         return msg.msg + d
 
     def _string_request_parser(self, msg, response):
+        response = response.strip()
+        if response == '':
+            return msg.default
         return response.strip()
 
     def _float_request_prompt(self, msg):
         return self._string_request_prompt(msg)
 
     def _float_request_parser(self, msg, resposne):
+        if response.strip() == '':
+            return msg.default
         return float(response)
 
     def _selection_request_prompt(self, msg):
@@ -234,9 +239,29 @@ class DoCommand (CommandMethod):
             prompt = '? '
         else:
             prompt = '? [%d] ' % msg.default
-        return '\n'.join([msg,options,prompt])
+        return '\n'.join([msg.msg,options,prompt])
     
     def _selection_request_parser(self, msg, response):
+        if response.strip() == '':
+            return msg.default
+        return int(response)
+
+    def _point_request_prompt(self, msg):
+        block = msg.curve.data[msg.block]
+        block_info = ('(curve: %s, block: %s, %d points)'
+                      % (msg.curve.name,
+                         block.info['name'],
+                         block.shape[0]))
+
+        if msg.default == None:
+            prompt = '? '
+        else:
+            prompt = '? [%d] ' % msg.default
+        return ' '.join([msg.msg,block_info,prompt])
+    
+    def _point_request_parser(self, msg, response):
+        if response.strip() == '':
+            return msg.default
         return int(response)
 
 

@@ -59,6 +59,7 @@ import logging.config
 import multiprocessing
 import optparse
 import os.path
+import Queue
 import unittest
 import StringIO
 import sys
@@ -156,9 +157,14 @@ class HookeRunner (object):
         return (ui_to_command, command_to_ui, command)
 
     def _cleanup_run(self, ui_to_command, command_to_ui, command):
+        log = logging.getLogger('hooke')
+        log.debug('cleanup sending CloseEngine')
         ui_to_command.put(ui.CloseEngine())
-        hooke = command_to_ui.get()
-        assert isinstance(hooke, Hooke)
+        hooke = None
+        while not isinstance(hooke, Hooke):
+            log.debug('cleanup waiting for Hooke instance from the engine.')
+            hooke = command_to_ui.get(block=True)
+            log.debug('cleanup got %s instance' % type(hooke))
         command.join()
         return hooke
 
