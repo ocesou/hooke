@@ -24,6 +24,7 @@
 import copy
 import hashlib
 import os.path
+import types
 import xml.dom.minidom
 
 from . import curve as curve
@@ -231,6 +232,9 @@ class FilePlaylist (Playlist):
         root.setAttribute('version', self.version) # store playlist version
         root.setAttribute('index', str(self._index))
         for key,value in self.info.items(): # save info variables
+            if (key in self._ignored_keys
+                or not isinstance(value, types.StringTypes)):
+                continue
             root.setAttribute(self._clean_key(key), str(value))
         for curve in self: # save curves and their attributes
             curve_element = doc.createElement('curve')
@@ -244,7 +248,8 @@ class FilePlaylist (Playlist):
                             os.path.expanduser(self.path))))
             curve_element.setAttribute('path', path)
             for key,value in curve.info.items():
-                if key in self._ignored_keys:
+                if (key in self._ignored_keys
+                    or not isinstance(value, types.StringTypes)):
                     continue
                 curve_element.setAttribute(self._clean_key(key), str(value))
         string = doc.toprettyxml(encoding='utf-8')

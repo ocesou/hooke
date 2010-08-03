@@ -34,7 +34,7 @@ def _write_data(writer, data, isAttrib=False):
     "Writes datachars to writer."
     if isAttrib:
         data = data.replace("\r", "&#xD;").replace("\n", "&#xA;")
-        data = data.replace("\t", "&#x9;")
+        data = data.replace("\t", "&#x9;").replace('"', "&quot;")
     writer.write(data)
 xml.dom.minidom._write_data = _write_data
 

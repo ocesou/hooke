@@ -771,8 +771,8 @@ automatically.
         test()
         sys.exit(0)
 
-    #update_authors(dry_run=options.dry_run, verbose=options.verbose)
-    #update_files(files=args, dry_run=options.dry_run, verbose=options.verbose)
+    update_authors(dry_run=options.dry_run, verbose=options.verbose)
+    update_files(files=args, dry_run=options.dry_run, verbose=options.verbose)
     if options.pyfile != None:
         update_pyfile(path=options.pyfile,
                       dry_run=options.dry_run, verbose=options.verbose)

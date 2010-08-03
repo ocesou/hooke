@@ -302,9 +302,12 @@ class Tree (wx.TreeCtrl):
             self._on_set_selected_playlist(name)
 
     def _on_set_selected_playlist(self, name):
+        self.log.debug('playlist tree selecting playlist %s' % name)
         in_callback(self, self._playlists[name])
 
     def _on_set_selected_curve(self, playlist_name, name):
+        self.log.debug('playlist tree selecting curve %s in %s'
+                       % (name, playlist_name))
         playlist = self._playlists[playlist_name]
         curve = None
         for i,c in enumerate(playlist):
