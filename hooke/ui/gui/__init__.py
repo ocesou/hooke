@@ -416,7 +416,6 @@ class HookeFrame (wx.Frame):
         else:
             raise NotImplementedError()
         if 'note' in self._c:
-            print sorted(curve.info.keys())
             self._c['note'].set_text(curve.info['note'])
         if 'playlist' in self._c:
             self._c['playlist']._c['tree'].set_selected_curve(
@@ -712,16 +711,27 @@ class HookeFrame (wx.Frame):
         os.remove(curve.path)
 
     def _on_set_selected_playlist(self, _class, method, playlist):
-        """TODO: playlists plugin with `jump to playlist`.
+        """Call the `jump to playlist` command.
         """
-        pass
+        results = self.execute_command(
+            command=self._command_by_name('playlists'))
+        if not isinstance(results[-1], Success):
+            return
+        assert len(results) == 2, results
+        playlists = results[0]
+        matching = [p for p in playlists if p.name == playlist.name]
+        assert len(matching) == 1, matching
+        index = playlists.index(matching[0])
+        results = self.execute_command(
+            command=self._command_by_name('jump to playlist'),
+            args={'index':index})
 
     def _on_set_selected_curve(self, _class, method, playlist, curve):
         """Call the `jump to curve` command.
 
         TODO: playlists plugin.
         """
-        # TODO: jump to playlist, get playlist
+        self._on_set_selected_playlist(_class, method, playlist)
         index = playlist.index(curve)
         results = self.execute_command(
             command=self._command_by_name('jump to curve'),
