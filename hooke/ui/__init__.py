@@ -103,7 +103,7 @@ Hooke version %s
 
     def _playlist_status(self, playlist):
         if len(playlist) > 0:
-            return '%s (%s/%s)' % (playlist.name, playlist._index + 1,
+            return '%s (%s/%s)' % (playlist.name, playlist.index() + 1,
                                    len(playlist))
         return 'The playlist %s does not contain any valid force curve data.' \
             % self.name

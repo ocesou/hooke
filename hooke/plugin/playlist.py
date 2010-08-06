@@ -117,7 +117,7 @@ Index of target curve.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	params['playlist'].jump(int(params['index'])) # HACK, int() should be handled by ui
+	params['playlist'].jump(params['index'])
 
 class IndexCommand (Command):
     """Print the index of the current curve.
@@ -133,7 +133,7 @@ class IndexCommand (Command):
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	outqueue.put(params['playlist']._index)
+	outqueue.put(params['playlist'].index())
 
 class GetCommand (Command):
     """Return a :class:`hooke.playlist.Playlist`.
@@ -269,7 +269,7 @@ Index of target curve.
 
     def _run(self, hooke, inqueue, outqueue, params):
         params['playlist'].pop(params['index'])
-        params['playlist'].jump(params._index)
+        params['playlist'].jump(params.index())
 
 class FilterCommand (Command):
     """Create a subset playlist via a selection function.

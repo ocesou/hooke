@@ -72,7 +72,7 @@ Minimum number of peaks for curve acceptance.
                           ('max cut', 0.2),
                           ('min deviations', 9.0),
                           ('min points', 4),
-                          ('see double', 10e-9),
+                          ('see double', 10), # TODO: points vs. meters. 10e-9),
                           ]:
             argument = [a for a in self._arguments if a.name == key][0]
             argument.default = value

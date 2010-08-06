@@ -37,7 +37,6 @@ import numpy
 
 from .. import curve as curve
 from .. import experiment as experiment
-from ..config import Setting
 from . import Driver as Driver
 from .igorbinarywave import loadibw
 

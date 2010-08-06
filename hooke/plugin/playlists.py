@@ -71,7 +71,7 @@ Index of target curve.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	hooke.playlists.jump(int(params['index'])) # HACK, int() should be handled by ui
+	hooke.playlists.jump(params['index'])
 
 class IndexCommand (Command):
     """Print the index of the current playlist.
@@ -84,7 +84,7 @@ class IndexCommand (Command):
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	outqueue.put(hooke.playlists._index)
+	outqueue.put(hooke.playlists.index())
 
 class PlaylistListCommand (Command):
     """Get the playlists in `hooke.playlists`.

@@ -163,7 +163,7 @@ True if you want the column-naming header line.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        data = params['curve'].data[int(params['block'])] # HACK, int() should be handled by ui
+        data = params['curve'].data[params['block']]
 
         f = open(params['output'], 'w')
         if params['header'] == True:
@@ -172,11 +172,7 @@ True if you want the column-naming header line.
         f.close()
 
 class DifferenceCommand (Command):
-    """Calculate the derivative (actually, the discrete differentiation)
-    of a curve data block.
-
-    See :func:`hooke.util.calculus.derivative` for implementation
-    details.
+    """Calculate the difference between two blocks of data.
     """
     def __init__(self, plugin):
         super(DifferenceCommand, self).__init__(
@@ -213,7 +209,11 @@ Column of data block to differentiate.
         outqueue.put(out)
 
 class DerivativeCommand (Command):
-    """Calculate the difference between two blocks of data.
+    """Calculate the derivative (actually, the discrete differentiation)
+    of a curve data block.
+
+    See :func:`hooke.util.calculus.derivative` for implementation
+    details.
     """
     def __init__(self, plugin):
         super(DerivativeCommand, self).__init__(

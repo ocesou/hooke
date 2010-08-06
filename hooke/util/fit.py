@@ -21,6 +21,7 @@
 
 from numpy import arange, ndarray
 from scipy.optimize import leastsq
+import scipy.optimize
 
 
 class PoorFit (ValueError):
@@ -29,6 +30,10 @@ class PoorFit (ValueError):
 class ModelFitter (object):
     """A convenient wrapper around :func:`scipy.optimize.leastsq`.
 
+    TODO: look into :mod:`scipy.odr` as an alternative fitting
+    algorithm (minimizing the sum of squares of orthogonal distances,
+    vs. minimizing y distances).
+
     Parameters
     ----------
     d_data : array_like
@@ -36,6 +41,9 @@ class ModelFitter (object):
     info :
         Store any extra information useful inside your overridden
         methods.
+    rescale : boolean
+        Rescale parameters so the scale of each is 1.0.  Also rescale
+        the data so data.std() == 1.0.
 
     Examples
     --------
@@ -81,11 +89,15 @@ class ModelFitter (object):
     >>> m = LinearModel(data)
     >>> outqueue = Queue()
     >>> slope,offset = m.fit(outqueue=outqueue)
-    >>> info = outqueue.get()
+    >>> info = outqueue.get(block=False)
     >>> pprint(info)  # doctest: +ELLIPSIS, +REPORT_UDIFF
-    {'convergence flag': 2,
+    {'active fitted parameters': array([  6.999..., -32.889...]),
+     'active parameters': array([  6.999..., -32.889...]),
+     'active scale': [0.699..., 202.071...],
+     'convergence flag': 2,
      'covariance matrix': array([[  1.199...e-08,  -5.993...e-06],
            [ -5.993...e-06,   3.994...e-03]]),
+     'data scale factor': 1.0,
      'fitted parameters': array([  6.999..., -32.889...]),
      'info': {'fjac': array([[...]]),
               'fvec': array([...]),
@@ -94,6 +106,7 @@ class ModelFitter (object):
               'qtf': array([  2.851...e-07,   1.992...e-06])},
      'initial parameters': [6.992..., -33.0],
      'message': 'The relative error between two consecutive iterates is at most 0.000...',
+     'rescaled': False,
      'scale': [0.699..., 202.071...]}
 
     We round the outputs to protect the doctest against differences in
@@ -107,14 +120,29 @@ class ModelFitter (object):
 
     The offset is a bit off because, the range is not a multiple of
     :math:`2\pi`.
-    """
-    def __init__(self, data, info=None):
-        self.set_data(data, info)
 
-    def set_data(self, data, info=None):
+    We could also use rescaled parameters:
+
+    >>> m = LinearModel(data, rescale=True)
+    >>> outqueue = Queue()
+    >>> slope,offset = m.fit(outqueue=outqueue)
+    >>> print '%.3f' % slope
+    7.000
+    >>> print '%.3f' % offset
+    -32.890
+    """
+    def __init__(self, *args, **kwargs):
+        self.set_data(*args, **kwargs)
+
+    def set_data(self, data, info=None, rescale=False):
         self._data = data
         self._model_data = ndarray(shape=data.shape, dtype=data.dtype)
         self.info = info
+        self._rescale = rescale
+        if rescale == True:
+            self._data_scale_factor = data.std()
+        else:
+            self._data_scale_factor = 1.0
 
     def model(self, params):
         p = params  # convenient alias
@@ -128,7 +156,12 @@ class ModelFitter (object):
         return None
 
     def residual(self, params):
-        return self._data - self.model(params)
+        if self._rescale == True:
+            params = [p*s for p,s in zip(params, self._param_scale_factors)]
+        residual = self._data - self.model(params)
+        if self._rescale == True or False:
+            residual /= self._data_scale_factor
+        return residual
 
     def fit(self, initial_params=None, scale=None, outqueue=None, **kwargs):
         """
@@ -153,13 +186,35 @@ class ModelFitter (object):
         if scale == None:
             scale = self.guess_scale(initial_params, outqueue)
         assert min(scale) > 0, scale
+        if self._rescale == True:
+            self._param_scale_factors = scale
+            active_scale = [1.0 for s in scale]
+            active_params = [p/s for p,s in zip(initial_params,
+                                                self._param_scale_factors)]
+        else:
+            active_scale = scale
+            active_params = initial_params
         params,cov,info,mesg,ier = leastsq(
-            func=self.residual, x0=initial_params, full_output=True,
-            diag=scale, **kwargs)
+            func=self.residual, x0=active_params, full_output=True,
+            diag=active_scale, **kwargs)
+        if self._rescale == True:
+            active_params = params
+            if len(initial_params) == 1:  # params is a float
+                params = params * self._param_scale_factors[0]
+            else:
+                params = [p*s for p,s in zip(params,
+                                             self._param_scale_factors)]
+        else:
+            active_params = params
         if outqueue != None:
             outqueue.put({
+                    'rescaled': self._rescale,
                     'initial parameters': initial_params,
+                    'active parameters': active_params,
                     'scale': scale,
+                    'active scale': active_scale,
+                    'data scale factor': self._data_scale_factor,
+                    'active fitted parameters': active_params,
                     'fitted parameters': params,
                     'covariance matrix': cov,
                     'info': info,
@@ -167,3 +222,54 @@ class ModelFitter (object):
                     'convergence flag': ier,
                     })
         return params
+
+# Example ORD code from the old fit.py
+#        def dist(px,py,linex,liney):
+#            distancesx=scipy.array([(px-x)**2 for x in linex])
+#            minindex=numpy.argmin(distancesx)
+#            print px, linex[0], linex[-1]
+#            return (py-liney[minindex])**2
+#
+#
+#        def f_wlc(params,x,T=T):
+#            '''
+#            wlc function for ODR fitting
+#            '''
+#            lambd,pii=params
+#            Kb=(1.38065e-23)
+#            therm=Kb*T
+#            y=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
+#            return y
+#
+#        def f_wlc_plfix(params,x,pl_value=pl_value,T=T):
+#            '''
+#            wlc function for ODR fitting
+#            '''
+#            lambd=params
+#            pii=1/pl_value
+#            Kb=(1.38065e-23)
+#            therm=Kb*T
+#            y=(therm*pii/4.0) * (((1-(x*lambd))**-2) - 1 + (4*x*lambd))
+#            return y
+#
+#        #make the ODR fit
+#        realdata=scipy.odr.RealData(xchunk_corr_up,ychunk_corr_up)
+#        if pl_value:
+#            model=scipy.odr.Model(f_wlc_plfix)
+#            o = scipy.odr.ODR(realdata, model, p0_plfix)
+#        else:
+#            model=scipy.odr.Model(f_wlc)
+#            o = scipy.odr.ODR(realdata, model, p0)
+#
+#        o.set_job(fit_type=2)
+#        out=o.run()
+#        fit_out=[(1/i) for i in out.beta]
+#
+#        #Calculate fit errors from output standard deviations.
+#        #We must propagate the error because we fit the *inverse* parameters!
+#        #The error = (error of the inverse)*(value**2)
+#        fit_errors=[]
+#        for sd,value in zip(out.sd_beta, fit_out):
+#            err_real=sd*(value**2)
+#            fit_errors.append(err_real)
+

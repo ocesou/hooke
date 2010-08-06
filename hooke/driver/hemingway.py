@@ -24,7 +24,6 @@ import numpy
 
 from .. import curve as curve
 from .. import experiment as experiment
-from ..config import Setting
 from ..util.util import Closing as Closing
 from . import Driver as Driver
 

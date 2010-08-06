@@ -29,6 +29,7 @@ import shlex
 from ..command import CommandExit, Exit, Command, Argument, StoreValue
 from ..interaction import Request, BooleanRequest, ReloadUserInterfaceConfig
 from ..ui import UserInterface, CommandMessage
+from ..util.convert import from_string
 from ..util.encoding import get_input_encoding, get_output_encoding
 
 
@@ -53,8 +54,27 @@ class CommandLineParser (optparse.OptionParser):
                 continue # 'help' is a default OptionParser option
             if a.optional == True:
                 name = name_fn(a.name)
+                type = a.type
+                if type == 'bool':
+                    if a.default == True:
+                        self.add_option(
+                            '--disable-%s' % name, dest=name, default=Default,
+                            action='store_false')
+                        self.command_opts.append(a)
+                        continue
+                    elif a.default == False:
+                        self.add_option(
+                            '--enable-%s' % name, dest=name, default=Default,
+                            action='store_true')
+                        self.command_opts.append(a)
+                        continue
+                    else:
+                        type = 'string'
+                elif type not in ['string', 'int', 'long', 'choice', 'float',
+                                  'complex']:
+                    type = 'string'
                 self.add_option(
-                    '--%s' % name, dest=name, default=Default)
+                    '--%s' % name, dest=name, type=type, default=Default)
                 self.command_opts.append(a)
             else:
                 self.command_args.append(a)
@@ -102,6 +122,7 @@ class DoCommand (CommandMethod):
             self.cmd.stdout.write(str(e).lstrip()+'\n')
             self.cmd.stdout.write('Failure\n')
             return
+        print args
         self.cmd.inqueue.put(CommandMessage(self.command, args))
         while True:
             msg = self.cmd.outqueue.get()
@@ -130,12 +151,15 @@ class DoCommand (CommandMethod):
         arg_index = 0
         for argument in self.parser.command_args:
             if argument.count == 1:
-                params[argument.name] = args[arg_index]
+                params[argument.name] = from_string(args[arg_index],
+                                                    argument.type)
             elif argument.count > 1:
-                params[argument.name] = \
-                    args[arg_index:arg_index+argument.count]
+                params[argument.name] = [
+                    from_string(a, argument.type)
+                    for a in args[arg_index:arg_index+argument.count]]
             else: # argument.count == -1:
-                params[argument.name] = args[arg_index:]
+                params[argument.name] = [
+                    from_string(a, argument.type) for a in args[arg_index:]]
             arg_index += argument.count
         return params
 

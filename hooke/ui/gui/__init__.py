@@ -53,7 +53,7 @@ from .dialog.save_file import select_save_file
 from . import menu as menu
 from . import navbar as navbar
 from . import panel as panel
-from .panel.propertyeditor import prop_from_argument, prop_from_setting
+from .panel.propertyeditor import props_from_argument, props_from_setting
 from . import statusbar as statusbar
 
 
@@ -117,7 +117,15 @@ class HookeFrame (wx.Frame):
 
         self.execute_command(
                 command=self._command_by_name('load playlist'),
+                args={'input':'test/data/test'},#vclamp_picoforce/playlist'},
+                )
+        self.execute_command(
+                command=self._command_by_name('load playlist'),
                 args={'input':'test/data/vclamp_picoforce/playlist'},
+                )
+        self.execute_command(
+                command=self._command_by_name('polymer fit'),
+                args={'block':1, 'bounds':[400, 1000]},
                 )
         return # TODO: cleanup
         self.playlists = self._c['playlist'].Playlists
@@ -137,7 +145,7 @@ class HookeFrame (wx.Frame):
 #                    size=(200, 250),
 #                    style=wx.DIRCTRL_SHOW_FILTERS,
 #                    filter=self.gui.config['folders-filters'],
-#                    defaultFilter=int(self.gui.config['folders-filter-index'])), 'left'),  #HACK: config should convert
+#                    defaultFilter=self.gui.config['folders-filter-index']), 'left'),
             (panel.PANELS['playlist'](
                     callbacks={
                         'delete_playlist':self._on_user_delete_playlist,
@@ -291,7 +299,7 @@ class HookeFrame (wx.Frame):
     def _file_name(self, name):
         """Cleanup names according to configured preferences.
         """
-        if self.gui.config['hide extensions'] == 'True':  # HACK: config should decode
+        if self.gui.config['hide extensions'] == True:
             name,ext = os.path.splitext(name)
         return name
 
@@ -313,10 +321,25 @@ class HookeFrame (wx.Frame):
             args = {}
         if ('property editor' in self._c
             and self.gui.config['selected command'] == command):
-            arg_names = [arg.name for arg in command.arguments]
             for name,value in self._c['property editor'].get_values().items():
-                if name in arg_names:
-                    args[name] = value
+                arg = self._c['property editor']._argument_from_label.get(
+                    name, None)
+                if arg == None:
+                    continue
+                elif arg.count == 1:
+                    args[arg.name] = value
+                    continue
+                # deal with counted arguments
+                if arg.name not in args:
+                    args[arg.name] = {}
+                index = int(name[len(arg.name):])
+                args[arg.name][index] = value
+            for arg in command.arguments:
+                if arg.count != 1 and arg.name in args:
+                    keys = sorted(args[arg.name].keys())
+                    assert keys == range(arg.count), keys
+                    args[arg.name] = [args[arg.name][i]
+                                      for i in range(arg.count)]
         self.log.debug('executing %s with %s' % (command.name, args))
         self.inqueue.put(CommandMessage(command, args))
         results = []
@@ -653,6 +676,7 @@ class HookeFrame (wx.Frame):
         if 'assistant' in self._c:
             self._c['assitant'].ChangeValue(command.help)
         self._c['property editor'].clear()
+        self._c['property editor']._argument_from_label = {}
         for argument in command.arguments:
             if argument.name == 'help':
                 continue
@@ -673,11 +697,14 @@ class HookeFrame (wx.Frame):
             else:
                 curves = results[0]
 
-            p = prop_from_argument(
+            ret = props_from_argument(
                 argument, curves=curves, playlists=playlists)
-            if p == None:
+            if ret == None:
                 continue  # property intentionally not handled (yet)
-            self._c['property editor'].append_property(p)
+            for label,p in ret:
+                self._c['property editor'].append_property(p)
+                self._c['property editor']._argument_from_label[label] = (
+                    argument)
 
         self.gui.config['selected command'] = command  # TODO: push to engine
 
@@ -914,10 +941,10 @@ class HookeApp (wx.App):
         self.SetVendorName('')
         self._setup_splash_screen()
 
-        height = int(self.gui.config['main height']) # HACK: config should convert
-        width = int(self.gui.config['main width'])
-        top = int(self.gui.config['main top'])
-        left = int(self.gui.config['main left'])
+        height = self.gui.config['main height']
+        width = self.gui.config['main width']
+        top = self.gui.config['main top']
+        left = self.gui.config['main left']
 
         # Sometimes, the ini file gets confused and sets 'left' and
         # 'top' to large negative numbers.  Here we catch and fix
@@ -940,10 +967,10 @@ class HookeApp (wx.App):
         return True
 
     def _setup_splash_screen(self):
-        if self.gui.config['show splash screen'] == 'True': # HACK: config should decode
+        if self.gui.config['show splash screen'] == True:
             path = self.gui.config['splash screen image']
             if os.path.isfile(path):
-                duration = int(self.gui.config['splash screen duration'])  # HACK: config should decode types
+                duration = self.gui.config['splash screen duration']
                 wx.SplashScreen(
                     bitmap=wx.Image(path).ConvertToBitmap(),
                     splashStyle=wx.SPLASH_CENTRE_ON_SCREEN|wx.SPLASH_TIMEOUT,
@@ -977,15 +1004,18 @@ class GUI (UserInterface):
             Setting(section=self.setting_section, help=self.__doc__),
             Setting(section=self.setting_section, option='icon image',
                     value=os.path.join('doc', 'img', 'microscope.ico'),
+                    type='file',
                     help='Path to the hooke icon image.'),
             Setting(section=self.setting_section, option='show splash screen',
-                    value=True,
+                    value=True, type='bool',
                     help='Enable/disable the splash screen'),
             Setting(section=self.setting_section, option='splash screen image',
                     value=os.path.join('doc', 'img', 'hooke.jpg'),
+                    type='file',
                     help='Path to the Hooke splash screen image.'),
-            Setting(section=self.setting_section, option='splash screen duration',
-                    value=1000,
+            Setting(section=self.setting_section,
+                    option='splash screen duration',
+                    value=1000, type='int',
                     help='Duration of the splash screen in milliseconds.'),
             Setting(section=self.setting_section, option='perspective path',
                     value=os.path.join('resources', 'gui', 'perspective'),
@@ -994,41 +1024,42 @@ class GUI (UserInterface):
                     value='.txt',
                     help='Extension for perspective files.'),
             Setting(section=self.setting_section, option='hide extensions',
-                    value=False,
+                    value=False, type='bool',
                     help='Hide file extensions when displaying names.'),
             Setting(section=self.setting_section, option='plot legend',
-                    value=True,
+                    value=True, type='bool',
                     help='Enable/disable the plot legend.'),
             Setting(section=self.setting_section, option='plot SI format',
-                    value='True',
+                    value='True', type='bool',
                     help='Enable/disable SI plot axes numbering.'),
             Setting(section=self.setting_section, option='plot decimals',
-                    value=2,
+                    value=2, type='int',
                     help='Number of decimal places to show if "plot SI format" is enabled.'),
             Setting(section=self.setting_section, option='folders-workdir',
-                    value='.',
+                    value='.', type='path',
                     help='This should probably go...'),
             Setting(section=self.setting_section, option='folders-filters',
-                    value='.',
+                    value='.', type='path',
                     help='This should probably go...'),
             Setting(section=self.setting_section, option='active perspective',
                     value='Default',
                     help='Name of active perspective file (or "Default").'),
-            Setting(section=self.setting_section, option='folders-filter-index',
-                    value='0',
+            Setting(section=self.setting_section,
+                    option='folders-filter-index',
+                    value=0, type='int',
                     help='This should probably go...'),
             Setting(section=self.setting_section, option='main height',
-                    value=450,
+                    value=450, type='int',
                     help='Height of main window in pixels.'),
             Setting(section=self.setting_section, option='main width',
-                    value=800,
+                    value=800, type='int',
                     help='Width of main window in pixels.'),
             Setting(section=self.setting_section, option='main top',
-                    value=0,
+                    value=0, type='int',
                     help='Pixels from screen top to top of main window.'),
             Setting(section=self.setting_section, option='main left',
-                    value=0,
-                    help='Pixels from screen left to left of main window.'),            
+                    value=0, type='int',
+                    help='Pixels from screen left to left of main window.'),
             Setting(section=self.setting_section, option='selected command',
                     value='load playlist',
                     help='Name of the initially selected command.'),

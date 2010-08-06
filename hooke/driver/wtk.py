@@ -69,7 +69,7 @@ class WTKDriver (Driver):
             Setting(section=self.setting_section, help=self.__doc__),
             Setting(section=self.setting_section,
                     option='cantilever calibration directory',
-                    value=calibcant_dir,
+                    value=calibcant_dir, type='path',
                     help='Set the directory where cantilever calibration data is stored'),
             ]
 
