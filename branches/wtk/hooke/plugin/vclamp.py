@@ -33,27 +33,41 @@ import scipy
 from ..command import Command, Argument, Failure, NullQueue
 from ..config import Setting
 from ..curve import Data
-from ..plugin import Builtin
+from ..plugin import Plugin
 from ..util.fit import PoorFit, ModelFitter
 from .curve import CurveArgument
 
 
-def scale(hooke, curve):
+def scale(hooke, curve, block=None):
+    """Run 'add block force array' on `block`.
+
+    Runs 'zero block surface contact point' first, if necessary.  Does
+    not run either command if the columns they add to the block are
+    already present.
+
+    If `block` is `None`, scale all blocks in `curve`.
+    """
     commands = hooke.commands
     contact = [c for c in hooke.commands
                if c.name == 'zero block surface contact point'][0]
     force = [c for c in hooke.commands if c.name == 'add block force array'][0]
     inqueue = None
     outqueue = NullQueue()
-    for i,block in enumerate(curve.data):
-        numpy.savetxt(open('curve.dat', 'w'), block, delimiter='\t')
-        params = {'curve':curve, 'block':i}
-        try:
-            contact._run(hooke, inqueue, outqueue, params)
-        except PoorFit, e:
-            raise PoorFit('Could not fit %s %s: %s'
-                          % (curve.path, i, str(e)))
-        force._run(hooke, inqueue, outqueue, params)
+    if block == None:
+        for i in range(len(curve.data)):
+            scale(hooke, curve, block=i)
+    else:
+        params = {'curve':curve, 'block':block}
+        b = curve.data[block]
+        if ('surface distance (m)' not in b.info['columns']
+            or 'surface adjusted deflection (m)' not in b.info['columns']):
+            try:
+                contact._run(hooke, inqueue, outqueue, params)
+            except PoorFit, e:
+                raise PoorFit('Could not fit %s %s: %s'
+                              % (curve.path, block, str(e)))
+        if ('deflection (N)' not in b.info['columns']):
+            force._run(hooke, inqueue, outqueue, params)
     return curve
 
 class SurfacePositionModel (ModelFitter):
@@ -195,7 +209,7 @@ class SurfacePositionModel (ModelFitter):
                           % (params[3], self.info['guessed contact slope']))
         return params
 
-class VelocityClampPlugin (Builtin):
+class VelocityClampPlugin (Plugin):
     def __init__(self):
         super(VelocityClampPlugin, self).__init__(name='vclamp')
         self._commands = [
@@ -246,7 +260,7 @@ selects the retracting curve.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        data = params['curve'].data[int(params['block'])] # HACK, int() should be handled by ui
+        data = params['curve'].data[params['block']]
         # HACK? rely on params['curve'] being bound to the local hooke
         # playlist (i.e. not a copy, as you would get by passing a
         # curve through the queue).  Ugh.  Stupid queues.  As an
@@ -267,8 +281,7 @@ selects the retracting curve.
         new.info['surface detection parameters'] = ps
         new[:,-2] = z_data - surface_offset
         new[:,-1] = d_data - deflection_offset
-        data = params['curve'].data[int(params['block'])] # HACK, int() should be handled by ui
-        params['curve'].data[int(params['block'])] = new # HACK, int() should be handled by ui
+        params['curve'].data[params['block']] = new
 
     def find_contact_point(self, curve, z_data, d_data, outqueue=None):
         """Railyard for the `find_contact_point_*` family.
@@ -433,7 +446,7 @@ selects the retracting curve.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        data = params['curve'].data[int(params['block'])] # HACK, int() should be handled by ui
+        data = params['curve'].data[params['block']]
         # HACK? rely on params['curve'] being bound to the local hooke
         # playlist (i.e. not a copy, as you would get by passing a
         # curve through the queue).  Ugh.  Stupid queues.  As an
@@ -445,7 +458,7 @@ selects the retracting curve.
         new.info['columns'].append('deflection (N)')
         d_data = data[:,data.info['columns'].index('surface adjusted deflection (m)')]
         new[:,-1] = d_data * data.info['spring constant (N/m)']
-        params['curve'].data[int(params['block'])] = new # HACK, int() should be handled by ui
+        params['curve'].data[params['block']] = new
 
 
 class generalvclampCommands(object):

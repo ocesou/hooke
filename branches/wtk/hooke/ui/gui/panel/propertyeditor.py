@@ -32,39 +32,48 @@ widely installed (or at least released ;).
 import wx.grid
 
 from . import Panel
+from ....plugin import argument_to_setting
+from ....util.convert import ANALOGS
 
 
-def prop_from_argument(argument, curves=None, playlists=None):
-    """Convert a :class:`~hooke.command.Argument` to a :class:`Property`.
+def props_from_argument(argument, curves=None, playlists=None):
+    """Convert a :class:`~hooke.command.Argument` to a list of
+    :class:`Property`\s.
     """
     type = argument.type
     if type in ['driver']:  # intentionally not handled (yet)
         return None
-    if argument.count != 1:
-        raise NotImplementedError(argument)
+    if argument.count == -1:
+        raise NotImplementedError(argument)  # TODO: maybe just set count to 1?
     kwargs = {
-        'label':argument.name,
+        #'label':argument.name,
         'default':argument.default,
         'help':argument.help(),
         }
-    # type consolidation
-    if type == 'file':
-        type = 'path'
+    type = ANALOGS.get(type, type)  # type consolidation
     # type handling
     if type in ['string', 'bool', 'int', 'float', 'path']:
         _class = globals()['%sProperty' % type.capitalize()]
-        return _class(**kwargs)
     elif type in ['curve', 'playlist']:
         if type == 'curve':
             choices = curves  # extracted from the current playlist
         else:
             choices = playlists
-        return ChoiceProperty(choices=choices, **kwargs)
-    raise NotImplementedError(argument.type)
+        properties = []
+        _class = ChoiceProperty
+        kwargs['choices'] = choices
+    else:
+        raise NotImplementedError(argument.type)
+    labels = ['%s %d' % (argument.name, i) for i in range(argument.count)]
+    return [(label, _class(label=label, **kwargs)) for label in labels]
+   
 
-def prop_from_setting(setting):
-    """Convert a :class:`~hooke.config.Setting` to a :class:`Property`.
+def props_from_setting(setting):
+    """Convert a :class:`~hooke.config.Setting` to a list of
+    :class:`Property`\s.
     """    
+    # TODO: move props_from_argument code here and use
+    # argument_to_setting there.
     raise NotImplementedError()
 
 
@@ -242,7 +251,7 @@ class PropertyPanel(Panel, wx.grid.Grid):
         """Enable tooltips.
         """
         x,y = self.CalcUnscrolledPosition(event.GetPosition())
-        col,row = self.XYToCell(x, y)
+        row,col = self.XYToCell(x, y)
         if col == -1 or row == -1:
             msg = ''
         else:

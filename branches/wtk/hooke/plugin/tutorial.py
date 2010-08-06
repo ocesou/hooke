@@ -220,6 +220,8 @@ class HookeInfoCommand (Command):
         hooke.config.write(config_file)
         outqueue.put('configuration:\n  %s'
                      % '\n  '.join(config_file.getvalue().splitlines()))
+        # The plugin's configuration settings are also available.
+        outqueue.put('plugin config: %s' % self.plugin.config)
         # hooke.plugins contains :class:`hooke.plugin.Plugin`\s defining
         # :class:`hooke.command.Command`\s.
         outqueue.put('plugins: %s'

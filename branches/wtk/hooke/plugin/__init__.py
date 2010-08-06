@@ -34,7 +34,6 @@ PLUGIN_MODULES = [
     ('convfilt', True),
     ('cut', True),
 #    ('fclamp', True),
-#    ('fit', True),
 #    ('flatfilts-rolf', True),
     ('flatfilt', True),
 #    ('jumpstat', True),
@@ -43,6 +42,7 @@ PLUGIN_MODULES = [
 #    ('multidistance', True),
 #    ('multifit', True),
 #    ('pcluster', True),
+    ('polymer_fit', True),
 #    ('procplots', True),
 #    ('review', True),
 #    ('showconvoluted', True),
@@ -124,11 +124,15 @@ def argument_to_setting(section_name, argument):
     """Convert an :class:`~hooke.command.Argument` to a
     `~hooke.conf.Setting`.
 
-    This is a lossy transition, because
+    This is useful if, for example, you want to define arguments with
+    configurable default values.
+
+    Conversion is lossy transition, because
     :class:`~hooke.command.Argument`\s store more information than
     `~hooke.conf.Setting`\s.
     """
     return Setting(section_name, option=argument.name, value=argument.default,
+                   type=argument.type, count=argument.count,
                    help=argument._help)
 
 
@@ -166,6 +170,7 @@ def default_settings():
 def load_graph(graph, config, include_section):
     enabled = {}
     items = []
+    conditions = config.items('conditions')
     for node in graph:
         item = node.data
         try:
@@ -185,6 +190,9 @@ def load_graph(graph, config, include_section):
             try:
                 item.config = dict(config.items(item.setting_section))
             except configparser.NoSectionError:
-                pass
+                item.config = {}
+            for key,value in conditions:
+                if key not in item.config:
+                    item.config[key] = value
             items.append(item)
     return items

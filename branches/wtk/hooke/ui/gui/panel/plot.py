@@ -259,8 +259,8 @@ class PlotPanel (Panel, wx.Panel):
             fontsize=12)
         axes = self._c['figure'].add_subplot(1, 1, 1)
 
-        if config['plot SI format'] == 'True':  # TODO: config should convert
-            d = int(config['plot decimals'])  # TODO: config should convert
+        if config['plot SI format'] == True:
+            d = config['plot decimals']
             x_n, x_unit = split_data_label(self._x_column)
             y_n, y_unit = split_data_label(self._y_column)
             fx = HookeFormatter(decimals=d, unit=x_unit)

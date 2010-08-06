@@ -55,7 +55,7 @@ class ConvFiltPlugin (Plugin):
     def __init__(self):
         super(ConvFiltPlugin, self).__init__(name='convfilt')
         self._arguments = [ # for Command initialization
-            Argument('convolution', type='float', count='-1',
+            Argument('convolution', type='float', count=-1,
                      default=[11.0]+[-1.0]*11, help="""
 Convolution vector roughly matching post-peak cantilever rebound.
 This should roughly match the shape of the feature you're looking for.
@@ -75,7 +75,7 @@ Minimum number of peaks for curve acceptance.
                           ('max cut', 0.2),
                           ('min deviations', 5.0),
                           ('min points', 1),
-                          ('see double', 10e-9),
+                          ('see double', 10), # TODO: points vs. meters. 10e-9),
                           ]:
             argument = [a for a in self._arguments if a.name == key][0]
             argument.default = value

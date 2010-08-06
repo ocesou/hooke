@@ -331,7 +331,7 @@ class Tree (wx.TreeCtrl):
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self._on_select)
 
     def update_playlist(self, playlist):
-        """Absorb changed `._index`, etc.
+        """Absorb changed `.index()`, etc.
         """
         self._playlists[playlist.name] = playlist
 

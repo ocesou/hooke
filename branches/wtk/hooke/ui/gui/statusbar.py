@@ -40,7 +40,7 @@ class StatusBar (wx.StatusBar):
     def _playlist_status(self, playlist):
         fields = [
             playlist.name,
-            '(%d/%d)' % (playlist._index, len(playlist)),
+            '(%d/%d)' % (playlist.index(), len(playlist)),
             ]
         curve = playlist.current()
         if curve != None:

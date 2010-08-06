@@ -21,11 +21,13 @@ Hooke.
 """
 
 import ConfigParser as configparser
+import logging
 import os.path
 import textwrap
 import unittest
 
 from .compat.odict import odict as OrderedDict
+from .util.convert import to_string, from_string
 
 
 DEFAULT_PATHS = [
@@ -42,10 +44,13 @@ in turn overrides the developer defaults.
 class Setting (object):
     """An entry (section or option) in HookeConfigParser.
     """
-    def __init__(self, section, option=None, value=None, help=None, wrap=True):
+    def __init__(self, section, option=None, value=None, type='string',
+                 count=1, help=None, wrap=True):
         self.section = section
         self.option = option
-        self.value = str(value)
+        self.value = value
+        self.type = type
+        self.count = count
         self.help = help
         self.wrap = wrap
 
@@ -82,8 +87,8 @@ class Setting (object):
                                     str(value).replace('\n', '\n\t')))
 
 DEFAULT_SETTINGS = [
-    Setting('conditions', help='Default environmental conditions in case they are not specified in the force curve data.'),
-    Setting('conditions', 'temperature', '301', help='Temperature in Kelvin'),
+    Setting('conditions', help='Default environmental conditions in case they are not specified in the force curve data.  Configuration options in this section are available to every plugin.'),
+    Setting('conditions', 'temperature', value='301', type='float', help='Temperature in Kelvin'),
     # Logging settings
     Setting('loggers', help='Configure loggers, see\nhttp://docs.python.org/library/logging.html#configuration-file-format', wrap=False),
     Setting('loggers', 'keys', 'root, hooke', help='Hooke only uses the hooke logger, but other included modules may also use logging and you can configure their loggers here as well.'),
@@ -127,9 +132,9 @@ class HookeConfigParser (configparser.RawConfigParser):
     Examples
     --------
 
+    >>> import pprint
     >>> import sys
-    >>> c = HookeConfigParser(paths=DEFAULT_PATHS,
-    ...                       default_settings=DEFAULT_SETTINGS)
+    >>> c = HookeConfigParser(default_settings=DEFAULT_SETTINGS)
     >>> c.write(sys.stdout) # doctest: +ELLIPSIS
     # Default environmental conditions in case they are not specified in
     # the force curve data.
@@ -144,6 +149,30 @@ class HookeConfigParser (configparser.RawConfigParser):
     # also use logging and you can configure their loggers here as well.
     keys = root, hooke
     ...
+
+    class:`HookeConfigParser` automatically converts typed settings.
+
+    >>> section = 'test conversion'
+    >>> c = HookeConfigParser(default_settings=[
+    ...         Setting(section),
+    ...         Setting(section, option='my string', value='Lorem ipsum', type='string'),
+    ...         Setting(section, option='my bool', value=True, type='bool'),
+    ...         Setting(section, option='my int', value=13, type='int'),
+    ...         Setting(section, option='my float', value=3.14159, type='float'),
+    ...         ])
+    >>> pprint.pprint(c.items(section))  # doctest: +ELLIPSIS
+    [('my string', 'Lorem ipsum'),
+     ('my bool', True),
+     ('my int', 13),
+     ('my float', 3.1415...)]
+
+    However, the regular `.get()` is not typed.  Users are encouraged
+    to use the standard `.get*()` methods.
+
+    >>> c.get('test conversion', 'my bool')
+    'True'
+    >>> c.getboolean('test conversion', 'my bool')
+    True
     """
     def __init__(self, paths=None, default_settings=None, defaults=None,
                  dict_type=OrderedDict, indent='# ', **kwargs):
@@ -156,6 +185,7 @@ class HookeConfigParser (configparser.RawConfigParser):
         if default_settings == None:
             default_settings = []
         self._default_settings = default_settings
+        self._default_settings_dict = {}
         for key in ['initial_indent', 'subsequent_indent']:
             if key not in kwargs:
                 kwargs[key] = indent
@@ -167,6 +197,8 @@ class HookeConfigParser (configparser.RawConfigParser):
             # reversed cause: http://docs.python.org/library/configparser.html
             # "When adding sections or items, add them in the reverse order of
             # how you want them to be displayed in the actual file."
+            self._default_settings_dict[
+                (setting.section, setting.option)] = setting
             if setting.section not in self.sections():
                 self.add_section(setting.section)
             if setting.option != None:
@@ -258,6 +290,35 @@ class HookeConfigParser (configparser.RawConfigParser):
         if local_fp:
             fp.close()
 
+    def items(self, section, *args, **kwargs):
+        """Return a list of tuples with (name, value) for each option
+        in the section.
+        """
+        # Can't use super() because RawConfigParser is a classic class
+        #return super(HookeConfigParser, self).items(section, *args, **kwargs)
+        items = configparser.RawConfigParser.items(
+            self, section, *args, **kwargs)
+        for i,kv in enumerate(items):
+            key,value = kv
+            setting = self._default_settings_dict[(section, key)]
+            try:
+                items[i] = (key, from_string(value=value, type=setting.type,
+                                             count=setting.count))
+            except ValueError, e:
+                log = logging.getLogger('hooke') 
+                log.error("could not convert '%s' (%s) for %s/%s: %s"
+                          % (value, type(value), section, key, e))
+                raise
+        return items
+
+    def set(self, section, option, value):
+        """Set an option."""
+        setting = self._default_settings_dict[(section, option)]
+        value = to_string(value=value, type=setting.type, count=setting.count)
+        # Can't use super() because RawConfigParser is a classic class
+        #return super(HookeConfigParser, self).set(section, option, value)
+        configparser.RawConfigParser.set(self, section, option, value)
+
     def optionxform(self, option):
         """
 
@@ -273,8 +334,7 @@ class TestHookeConfigParser (unittest.TestCase):
         """
         from multiprocessing import Queue
         q = Queue()
-        a = HookeConfigParser(
-            paths=DEFAULT_PATHS, default_settings=DEFAULT_SETTINGS)
+        a = HookeConfigParser(default_settings=DEFAULT_SETTINGS)
         q.put(a)
         b = q.get(a)
         for attr in ['_dict', '_defaults', '_sections', '_config_paths',

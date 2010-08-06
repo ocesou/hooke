@@ -117,7 +117,8 @@ def default_settings():
         settings.append(Setting(
                 section=DRIVER_SETTING_SECTION,
                 option=driver.name,
-                value=str(default_include),
+                value=default_include,
+                type='bool',
                 help=help,
                 ))
     for dnode in DRIVER_GRAPH:
