@@ -973,7 +973,8 @@ Indicies of points bounding the selected data.
         new.info = copy.deepcopy(data.info)
         new[:,:-1] = data
         new.info['columns'].append('%s tension (N)' % model)  # TODO: WLC fit for each peak, etc.
-        z_data = data[:,data.info['columns'].index('surface distance (m)')]
+        z_data = data[:,data.info['columns'].index(
+                'cantilever adjusted extension (m)')]
         d_data = data[:,data.info['columns'].index('deflection (N)')]
         start,stop = params['bounds']
         tension_data,ps = self.fit_polymer_model(

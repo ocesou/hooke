@@ -51,6 +51,8 @@ def scale(hooke, curve, block=None):
     contact = [c for c in hooke.commands
                if c.name == 'zero block surface contact point'][0]
     force = [c for c in hooke.commands if c.name == 'add block force array'][0]
+    cant_adjust = [c for c in hooke.commands
+               if c.name == 'add block cantilever adjusted extension array'][0]
     inqueue = None
     outqueue = NullQueue()
     if block == None:
@@ -68,6 +70,8 @@ def scale(hooke, curve, block=None):
                               % (curve.path, block, str(e)))
         if ('deflection (N)' not in b.info['columns']):
             force._run(hooke, inqueue, outqueue, params)
+        if ('cantilever adjusted extension (m)' not in b.info['columns']):
+            cant_adjust._run(hooke, inqueue, outqueue, params)
     return curve
 
 class SurfacePositionModel (ModelFitter):
@@ -214,6 +218,7 @@ class VelocityClampPlugin (Plugin):
         super(VelocityClampPlugin, self).__init__(name='vclamp')
         self._commands = [
             SurfaceContactCommand(self), ForceCommand(self),
+            CantileverAdjustedExtensionCommand(self),
             ]
 
     def default_settings(self):
@@ -428,8 +433,8 @@ selects the retracting curve.
 class ForceCommand (Command):
     """Calculate a block's `deflection (N)` array.
 
-    Uses the block's `deflection (m)` array and `spring constant
-    (N/m)`.
+    Uses the block's `deflection (m)` array and
+    `spring constant (N/m)`.
     """
     def __init__(self, plugin):
         super(ForceCommand, self).__init__(
@@ -458,6 +463,43 @@ selects the retracting curve.
         new.info['columns'].append('deflection (N)')
         d_data = data[:,data.info['columns'].index('surface adjusted deflection (m)')]
         new[:,-1] = d_data * data.info['spring constant (N/m)']
+        params['curve'].data[params['block']] = new
+
+
+class CantileverAdjustedExtensionCommand (Command):
+    """Calculate a block's `cantilever adjusted extension (m)` array.
+
+    Uses the block's `deflection (m)` and `surface distance offset (m)`
+    arrays and `spring constant (N/m)`.
+    """
+    def __init__(self, plugin):
+        super(CantileverAdjustedExtensionCommand, self).__init__(
+            name='add block cantilever adjusted extension array',
+            arguments=[
+                CurveArgument,
+                Argument(name='block', aliases=['set'], type='int', default=0,
+                         help="""
+Data block for which the adjusted extension should be calculated.  For
+an approach/retract force curve, `0` selects the approaching curve and
+`1` selects the retracting curve.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        data = params['curve'].data[params['block']]
+        # HACK? rely on params['curve'] being bound to the local hooke
+        # playlist (i.e. not a copy, as you would get by passing a
+        # curve through the queue).  Ugh.  Stupid queues.  As an
+        # alternative, we could pass lookup information through the
+        # queue.
+        new = Data((data.shape[0], data.shape[1]+1), dtype=data.dtype)
+        new.info = copy.deepcopy(data.info)
+        new[:,:-1] = data
+        new.info['columns'].append('cantilever adjusted extension (m)')
+        z_data = data[:,data.info['columns'].index('surface distance (m)')]
+        d_data = data[:,data.info['columns'].index('deflection (N)')]
+        new[:,-1] = z_data - d_data / data.info['spring constant (N/m)']
         params['curve'].data[params['block']] = new
 
 
