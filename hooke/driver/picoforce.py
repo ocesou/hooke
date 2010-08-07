@@ -212,8 +212,12 @@ class PicoForceDriver (Driver):
                 match = type_re.match(image['@4:Image Data'])
                 assert match != None, 'Bad regexp for %s, %s' \
                     % ('@4:Image Data', image['@4:Image Data'])
-                assert match.group(1).lower() == match.group(2).replace(' ','').lower(), \
-                    'Name missmatch: "%s", "%s"' % (match.group(1), match.group(2))
+                if version == '0x06130001' and match.group(1) == 'ZLowVoltage':
+                    assert match.group(2) == 'Low Voltage Z', \
+                        'Name missmatch: "%s", "%s"' % (match.group(1), match.group(2))
+                else:
+                    assert match.group(1).lower() == match.group(2).replace(' ','').lower(), \
+                        'Name missmatch: "%s", "%s"' % (match.group(1), match.group(2))
                 tname = match.group(2)
             else:
                 assert version == '0x07200000', version
