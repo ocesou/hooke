@@ -2,7 +2,7 @@
 The GUI interface
 *****************
 
-by Rolf Schmidt <rschmidt@alcor.concordia.ca>
+Orignially by Rolf Schmidt <rschmidt@alcor.concordia.ca>.
 
 Enable by selecting `gui` in your :file:`hooke.cfg`.::
 
@@ -16,180 +16,159 @@ Starting Hooke's GUI for the first time, you will see the central plot
 area with the current plot surrounded by the following windows (the `F*`
 key toggles the visibility of the panel):
 
-* Folders (`F5`)
-* Playlists (`F6`)
-* Commands (or Settings and commands) (`F7`)
-* Properties (`F8`)
-* Assistant (`F9`)
-* Results (`F10`)
-* Output (`F11`)
-* Note (`F12`)
+* Commands (`F5`)
+* Folders (`F6`)
+* Note (`F7`)
+* Output (`F8`)
+* Playlists (`F9`)
+* Properties (`F10`)
+* Results (`F11`)
 
 .. image:: img/gui_screenshot.jpg
 
 Initially, the window will be rather small in order to work with small
-screen resolutions. Adjust the size and position to your liking.
+screen resolutions.  Adjust the size and position to your liking.
 
-Above the windows you see the navigation toolbar to switch from one
-curve to another (next/previous).
+Underneath the menus at thte top of the window there is a navigation
+toolbar to switch from one curve to another (next/previous).
 
 Plot area
 =========
-The plot area can be customised by setting `preferences` in the core plugin.
 
-* hide_curve_extension: hides the curve extension in the title of the
-  plot (and from the playlist in the playlists panel)
-* legend: show or hide the legend
-* use_zero: display `0` instead of e.g. `0.00` on the axes
-* decimals (x_decimals, y_decimals): set the decimal places for the x
-  and y axes
-* prefixes(x_prefix, y_prefix): set the prefix for the x and y axes
-
-These are global settings. Individual plots can be customised with the
-same options (except hide_curve_extension) by setting `preferences` in
-the plot plugin.
+The plot area displays the current curve.  You can select the data
+column to use as the x axis using the dropdown menu in the plot
+navigation bar (under the plot, not to be confused with the navigation
+bar under the menus).  You can select the columns to plot by clicking
+the `y column(s)` button and checking interesting columns.  We suggest
+you stick to columns with a single unit, and not try and dispay, for
+example, both meters and newtons on the same y axis.
 
 Folders
 =======
 Here you can navigate your file system and double click on a saved
-playlist to open it. You can change the initial folder by modifying
+playlist to open it.  You can change the initial folder by modifying
 `workdir` in the `preferences` (core plugin).
 
 Playlists
 =========
-You can manage several playlists in this window. As the GUI is rather
+You can manage several playlists in this window.  As the GUI is rather
 flexible, it is possible to display the curves from different
 playlists side by side to compare them (relatively handy when
-comparing different fit parameters). You can double-click a file in
-the playlist to display it in the plot area. Deleting entire playlists
+comparing different fit parameters).  You can double-click a file in
+the playlist to display it in the plot area.  Deleting entire playlists
 or single files can be accomplished by right-clicking and selecting
 `Delete`.
 
+.. todo:: Do we need side-by-side comparison?  How did this work in
+  the old GUI?
+
 Commands
 ========
-All available commands are listed under their corresponding plugin. In
-order to see a plugin and its commands, you have to edit
+All available commands are listed under their corresponding plugin.
+In order to see a plugin and its commands, you have to edit
 :file:`hooke.conf` and enable th plugin in the plugins section.
-Selecting a plugin or command will display the associated help in the
-`Assistant`_ window. You can edit the properties of the selected
-command in the `Properties`_ window and click `Execute` to run the
-selected command. If you do not need to modify any properties, you can
-also double-click a command to run it.
+Selecting a plugin or command will display the associated properties
+in the `Properties`_ window.  You can edit the properties and click
+`Execute` to run the selected command.  If you do not need to modify
+any properties, you can also double-click a command to run it.
+
+Mousing over a plugin or command in the `Commands`_ window will
+display the associated help in a tooltip.  The help for the plugin
+should give a general description of the plugin.  The help for a
+command should describe the properties available for this command and
+suggest reasonable default values if possible.  Feel free to point out
+missing help content.
 
 Properties
 ==========
 The properties for the command selected in the `Commands`_ window are
-displayed here. Edit the properties to your satisfaction (some need to
+displayed here.  Edit the properties to your satisfaction (some need to
 be confirmed by hitting enter, this seems to be a problem in
 wxPropertyGrid) and click the `Execute` button to run the selected
-command. Floating point values are limited to a certain number of
+command.  Floating point values are limited to a certain number of
 decimals (limitation of wxPropertyGrid?) so be careful when using
 floating point values.
 
-Assistant
-=========
-Selecting a plugin or command in the `Commands`_ window will display the
-associated help here. The help for the plugin should give a general
-description of the plugin. The help for a command should describe the
-properties available for this command and suggest reasonable default
-values if possible. Feel free to point out missing help content.
+.. todo:: Document new, non-PropGrid
+  :mod:`~hooke.ui.gui.panel.propertyeditor`.
 
 Results
 =======
 The results from the `autopeak` or `multidistance` commands are
-displayed here. Initially, all results are checked (i.e. visible). If
-you want to hide a result, simply uncheck it. Hidden curves will not
-be exported either. You can only display one type of fit result (WLC,
+displayed here.  Initially, all results are checked (i.e. visible).  If
+you want to hide a result, simply uncheck it.  Hidden curves will not
+be exported either.  You can only display one type of fit result (WLC,
 FJC, etc.) at a time and you can switch between result types (results
 plugin - show_results).
+
+.. todo:: Results panel not yet re-implemented.
 
 Output
 ======
 The Output window serves as a log where pertinent information is
-displayed. If something does not work the way you expect it, have a
-look here to see if there is more information available.
+displayed.  The output is generally the same as what you would see if
+you were running the commands from the command line.
 
 Note
 ====
-A note can be added to every curve: enter your note and click
-`Update note`. With the copylog command (core plugin) you can copy all
-the files with a note to a different folder.
+A note can be added to every curve: enter your note and click `Update
+note`.  With the `note filter playlist` command (`playlist` plugin)
+you can copy all the curves with a note into a new playlist.
 
 General remarks
 ===============
-Ignore the text on the `Welcome` tab. This tab is more like a proof of
+Read :doc:`hacking` for an overview of how Hooke works internally and
+:doc:`config` for more information about configuring Hooke.
+
+Ignore the text on the `Welcome` tab.  This tab is more like a proof of
 principle and will contain a short how-to in the future (once the
 howto is written).
 
 Hooke's GUI will remember the size and position of the main window
-(stored in ~/.hooke-gui.cfg).  You can arrange the panels any which
-way you like and save this arrangement as a perspective.
+(stored in the config file, see :doc:`config`).  You can arrange the
+panels any which way you like and save this arrangement as a
+perspective.
+
+.. todo:: Actually write new properties to the config file on GUI exit.
 
 .. image:: img/gui_perspective.jpg
 
 Hooke will always start with the last used perspective and you can
 switch from one perspective to another by selecting a perspective from
-the perspectives menu. After deleting a perspective, the radio
+the perspectives menu.  After deleting a perspective, the radio
 indicator in the perspectives menu disappears (known bug in
-wxPython). This is only a visual problem and does not affect anything
+wxPython).  This is only a visual problem and does not affect anything
 else.
 
 In order to pan the plot, zoom in and out and export the plot of your
-force curves, use the plot toolbar under the plot. A more detailed
-description is available on the `matplotlib website`_
+force curves, use the plot toolbar under the plot.  A more detailed
+description is available on the `Matplotlib website`_
 
-.. _matplotlib website:
+.. _Matplotlib website:
   http://matplotlib.sourceforge.net/users/navigation_toolbar.html
-
 
 Some plugins and commands
 =========================
 
-* replot (plot): replots the current force curve from scratch
-  eliminating any secondary plots.
-* fjc/fjcPEG/wlc (fit): do not use any of these commands directly,
-  they are not implemented properly yet. However, the properties you
-  set for these commands are used for the autopeak command.
-* plotmanipulators (core): select the plotmanipulators you want to use
-  and arrange them in the proper order.
-* test (test): use this for testing purposes. You find do_test in
-  hooke.py.
-* clear_results (results): deletes all fitting results from the curve.
-* show_results (results): select which fitting results should be
-  displayed on the plot.
 * overlay (export): exports all retraction curves in a playlist on the
-  same scale. This is achieved by determining the maximum x window and
+  same scale.  This is achieved by determining the maximum x window and
   adding x(max) and x(min) to all curves that are shorter than the
-  maximum x window. Make sure to filter your playlist before running
+  maximum x window.  Make sure to filter your playlist before running
   this command!
+
+.. todo:: Implement overlay.
 
 Basic analysis and autopeak
 ===========================
-Please follow the steps in the :doc:`tutorial`. Instead of typing in
+
+.. todo:: Implement autopeak.  Bring in autopeak tutorial from the wiki?
+
+Please follow the steps in the :doc:`tutorial`.  Instead of typing in
 the command at the command-line, select it in the `Commands`_ window,
 set your properties in the `Properties`_ window and click on
-`Execute`.
+`Execute` back in the `Commands`_ window.
 
-The :doc:`autopeak` tutorial is also applicable. You need to setup the
+The :doc:`autopeak` tutorial is also applicable.  You need to setup the
 type of fit you want to use: in the Properties of the autopeak command
-(autopeak plugin) select `wlc`, `fjc` or `fjcPEG` from the dropdown
-list for the `fit_function`.
-
-If you run different fits (e.g. WLC and FJC) you can switch the
-display of the results with the `show_results` command (`results`
-plugin).
-
-Brief plugin/Properties tutorial
-================================
-Have a look at the files in the `plugins` folder. The python files
-contain the plot manipulators (i.e. `plotmanip_NAME`), commands
-(i.e. `do_COMMAND`) and auxilliary methods. The :file:`*.ini` files
-contain the information for the `Properties`_ window. You can already
-use a fair number of datatypes (e.g. integer, float, boolean, list,
-color, etc.) and more can be added. Be careful when using floats as
-there is a limit to the number of decimals (see above). The
-plotmanipulators and commands should read the properties directly from
-the :file:`*.ini` file instead of having them passed to them as
-arguments. For the time being, accessor methods are located in
-`hooke.py` (e.g. `GetBoolFromConfig()`).  A more detailed description
-will be made available.
+(autopeak plugin) select `WLC`, `FJC` or `FJC_PEG` from the dropdown
+list for the `polymer model` argument of `polymer fit`.

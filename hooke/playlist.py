@@ -119,8 +119,6 @@ class Playlist (NoteIndexList):
         self._max_loaded = 100 # curves to hold in memory simultaneously.
 
     def append_curve_by_path(self, path, info=None, identify=True):
-        if self.path != None:
-            path = os.path.join(os.path.dirname(self.path), path)
         path = os.path.normpath(path)
         c = curve.Curve(path, info=info)
         if identify == True:
@@ -146,6 +144,7 @@ class FilePlaylist (Playlist):
 
     def __init__(self, drivers, name=None, path=None):
         super(FilePlaylist, self).__init__(drivers, name)
+        self.path = None
         self.set_path(path)
         self._digest = None
         self._ignored_keys = [
@@ -159,6 +158,11 @@ class FilePlaylist (Playlist):
             self.path = path
             if self.name == None:
                 self.name = os.path.basename(path)
+
+    def append_curve_by_path(self, path, *args, **kwargs):
+        if self.path != None:
+            path = os.path.join(os.path.dirname(self.path), path)
+        super(FilePlaylist, self).append_curve_by_path(path, *args, **kwargs)
 
     def is_saved(self):
         return self.digest() == self._digest
@@ -344,6 +348,6 @@ class FilePlaylist (Playlist):
         """Saves the playlist in a XML file.
         """
         self.set_path(path)
-        f = file(self.path, 'w')
-        f.write(self.flatten())
-        f.close()
+        with open(self.path, 'w') as f:
+            f.write(self.flatten())
+            self._digest = self.digest()

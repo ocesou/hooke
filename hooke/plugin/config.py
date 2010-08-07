@@ -95,7 +95,7 @@ class SetCommand (Command):
         outqueue.put(ReloadUserInterfaceConfig(hooke.config))
 
 class PrintCommand (Command):
-    """Get the current value of a configuration option.
+    """Get the current value of all configuration options.
     """
     def __init__(self, plugin):
         super(PrintCommand, self).__init__(

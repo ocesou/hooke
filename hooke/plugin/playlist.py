@@ -58,6 +58,8 @@ playlist.
 """.strip())
 
 def playlist_name_callback(hooke, command, argument, value):
+    if value != None:
+        return value
     i = 0
     names = [p.name for p in hooke.playlists]
     while True:
@@ -170,7 +172,8 @@ class SaveCommand (Command):
                 Argument(name='output', type='file',
                          help="""
 File name for the output playlist.  Defaults to overwriting the input
-playlist.
+playlist.  If the playlist does not have an input file (e.g. it was
+created from scratch with 'new playlist'), this option is required.
 """.strip()),
                 ],
             help=self.__doc__, plugin=plugin)

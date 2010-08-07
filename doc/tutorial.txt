@@ -51,9 +51,14 @@ also check that the current working directory (`.`) is in your
 As Hooke launches, you should see something like the following in your
 terminal::
 
-    Hooke version 0.8.0 Seinei
+    Hooke version 0.9.0.devel (Kenzo)
 
-    COPYRIGHT
+    Copyright (C) 2006-2010 A. Seeholzer, Alberto Gomez-Casado, Allen
+    Chen, Fabrizio Benedetti, Francesco Musiani, Marco Brucale, Massimo
+    Sandal, Pancaldi Paolo, Richard Naud, Rolf Schmidt, W. Trevor King
+
+    Hooke comes with ABSOLUTELY NO WARRANTY and is licensed under the GNU
+    Lesser General Public License.  For details, run `license`.
     ----
     hooke>
 
@@ -116,18 +121,42 @@ You can list the files in the directory using ``ls`` or ``dir``
     mycurve.001
     ...
 
-Now you are ready to generate the playlist. The command to use is
-``glob_curves_to_playlist``.::
+Now you are ready to generate the playlist.  First, create a blank playlist::
+
+    hooke> new_playlist --name mylist
+
+Ensure that the new playlist is active::
+
+    hooke> jump_to_playlist -- -1
+    hooke> get_playlist
+    <FilePlaylist mylist>
+
+The ``--`` in the ``jump_to_playlist`` command lets
+``jump_to_playlist`` know that ``-1`` is an argument and not an
+option.  Using the bare ``--`` is a POSIX specification [#POSIX]_
+supported by the `optparse module`_.
+
+.. _optparse module:
+  http://docs.python.org/library/optparse.html#callback-example-6-variable-arguments
+
+.. [#POSIX] `Guideline 10 of POSIX:2008's section 12.2 <http://www.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02>`_ states:
+
+    "The first ``--`` argument that is not an option-argument should be
+    accepted as a delimiter indicating the end of options. Any
+    following arguments should be treated as operands, even if they
+    begin with the ``-`` character."
+
+Then glob your curves onto the new list::
 
     hooke> glob_curves_to_playlist mycurve.*
 
-You can also be more specific with wildcards.  For example
+You can also be more specific with wildcards.  For example::
 
     hooke> glob_curve_to_playlist mycurve.05*
 
 will take only curves from :file:`mycurve.050` to :file:`mycurve.059`.
 
-Note that by using ``glob_curve_to_playlist`` you just generate the
+Note that by using ``glob_curves_to_playlist`` you just generate the
 playlist in the local session. To save your playlist to a file for
 future reuse, type::
 
@@ -161,18 +190,23 @@ You can also jump to a given curve::
 
     hooke> jump_to_curve 14
 
-will jump to the 14th curve in the playlist.  TODO: jump_to_curve
-<PATH>, where the path can be either an absolute path or a path
-relative to the directory holding the playlist file.
+will jump to the 14th curve in the playlist.
+
+.. todo:: ``jump_to_curve <PATH>``, where the path can be either an
+  absolute path or a path relative to the directory holding the
+  playlist file.
 
 Taking notes
 ------------
 
 You can take notes about the curves you are looking at.  Just type
-``add_note`` followed by the text you want to append to that curve.
+``set_note`` followed by the text you want to attach to that curve.
 Hooke will save the text in your current playlist and in an external
-log file (TODO: no external file yet.  Is this important?).  The
-output will look like this::
+log file.
+
+.. todo:: No external file yet.  Is this important?
+
+The output will look like this::
 
     Notes taken at Sun Sep 17 20:42:07 2006
     /home/cyclopia/work/tris/20060620a.041 | This is a note
@@ -191,8 +225,8 @@ will create sub-playlist :file:`c:\curves\nice.hkp`.  Make sure that
 the target directory (here :file:`c:\curves\`) already exists before
 doing that.
 
-If you change your mind about a note, you can remove it with
-``clear_note``.
+If you change your mind about a note, you can remove it by setting a
+blank note string with ``set_note ''``.
 
 Exporting curves
 ----------------
@@ -205,8 +239,9 @@ the filename extension, so ``export_block foo.png``, ``export_block
 foo.eps``, and ``export_block foo.txt`` will save PNG, EPS, and
 TAB-delimited text files respectively.
 
-TODO: multiple cycles?  Solution: blank lines for "breaks", add option
-to extract specific sections using Python's slice notation.
+.. todo:: Multiple cycles in exported data?  Solution: blank lines for
+  "breaks", add option to extract specific sections using Python's
+  slice notation.
 
 If you don't want the entire block, try the ``cut`` command.
 
@@ -218,27 +253,21 @@ Interacting with the plot
 Measuring distances and forces
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can easily zoom in the plot by dragging a rectangle on it with the
-left mouse button.  To zoom out, click the right mouse
-button. Sometimes by zooming in and out too much, you can lose the
-picture (this is probably a small bug in Matplotlib).  Just type
-``plot`` at the command line and the curve will be refreshed.
+You can move about the plot using its navigation toolbar.  See the
+`Matplotlib manual`_ for details.
+
+.. _Matplotlib manual:
+  http://matplotlib.sourceforge.net/users/navigation_toolbar.html
 
 You can measure distances and forces directly in the plot. Just issue
-the command ``distance``.  You will be asked to click two points.
-When you click a point, a blue dot should appear.  When you click the
-second point, the distances (in nanometers and piconewtons) will
-appear on the command line.  You can use ``delta`` if you prefer,
-which gives meaningful values for every kind of graph (not only force
-curves). If you want to know the coordinates of a single point, use
-``point``.
+the command ``delta``.  You will be asked to click two points.  When
+you click a point, a blue dot should appear.  When you click the
+second point, the distances will appear in the output panel.  If you
+want to know the coordinates of a single point, left click on it.
 
 Hooke automatically adjusts the position of the clicked point to the
 nearest point in the graph, so you will be always measuring distances
 and forces between points in the graph.
-
-The commands ``force`` and ``distance`` are present in the
-``generalvclamp`` plugin.
 
 Worm like chain and freely jointed chain fitting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -278,9 +307,8 @@ directory.
 Configuring Hooke
 -----------------
 
-You can set environment variables to inﬂuence the behaviour of
-Hooke. The command to use is ``set_config``.
-
-You can alter permanently the behaviour of Hooke by setting these
-variables in a Hooke configuration file.  See :doc:`config` for
-details.
+You can set environment variables to influence the behaviour of
+Hooke. The command to use is ``set_config``.  Use ``get_config`` to
+read a particular option and ``print_config`` to display the entire
+configuration file.  Any changes to the configuration will be saved
+when you exit Hooke, see :doc:`config` for details.
