@@ -134,7 +134,7 @@ class WTKDriver (Driver):
         ret['raw spring constant'] = calibcant_info
         ret['spring constant (N/m)'] = calibcant_info['Cantilever k (N/m)']
         ret['deflection sensitivity (m/V)'] = \
-            1.0/numpy.sqrt(calibcant_info['photoSensitivity**2 (V/nm)**2'])
+            1.0/numpy.sqrt(calibcant_info['photoSensitivity**2 (V/nm)**2']) * 1e-9
 
         # (32768 bits = 2**15 bits = 10 Volts)
         ret['deflection sensitivity (V/bit)'] = 1.0/3276.8

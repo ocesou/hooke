@@ -37,7 +37,6 @@ PLUGIN_MODULES = [
 #    ('flatfilts-rolf', True),
     ('flatfilt', True),
 #    ('jumpstat', True),
-#    ('macro', True),
 #    ('massanalysis', True),
 #    ('multidistance', True),
 #    ('multifit', True),

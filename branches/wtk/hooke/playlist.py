@@ -45,7 +45,13 @@ class NoteIndexList (list):
         self._index = 0
 
     def __str__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.name)
+        return str(self.__unicode__())
+
+    def __unicode__(self):
+        return u'<%s %s>' % (self.__class__.__name__, self.name)
+
+    def __repr__(self):
+        return self.__str__()
 
     def _setup_item(self, item):
         """Perform any required initialization before returning an item.

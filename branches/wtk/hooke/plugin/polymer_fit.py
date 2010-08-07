@@ -32,7 +32,7 @@ import StringIO
 import sys
 
 import numpy
-from scipy.optimize import newton, bisect
+from scipy.optimize import newton
 
 from ..command import Command, Argument, Failure
 from ..config import Setting
@@ -454,10 +454,9 @@ def FJC_PEG_fn(x_data, T, N, k, Lp, Lh, dG, a):
 
     Notes
     -----
-    We approximate the PEG adjusted eJPG via bisection
-    (:func:`scipy.optimize.bisect`) Because it is more stable than
-    Newton's algorithm.  For the starting point, we use the standard
-    JPG function with an averaged contour length.
+    We approximate the PEG adjusted eFJC via Newton's method
+    (:func:`scipy.optimize.newton`).  For the starting point, we use
+    the standard FJC function with an averaged contour length.
     """
     kwargs = {'T':T, 'N':N, 'k':k, 'Lp':Lp, 'Lh':Lh, 'dG':dG, 'a':a}
     if is_iterable(x_data):
@@ -474,19 +473,9 @@ def FJC_PEG_fn(x_data, T, N, k, Lp, Lh, dG, a):
         guess = FJC_fn(x_data, T=T, L=L, a=a)
         L *= 2.0
 
-    if False: # Bisection
-        while inverse_FJC_PEG_fn(guess, **kwargs) < x_data:
-            guess *= 2.0
-        lower = guess
-        while inverse_FJC_PEG_fn(lower, **kwargs) > x_data:
-            lower /= 2.0
-    
-        fn = lambda f: inverse_FJC_PEG_fn(guess*abs(f), **kwargs) - x_data
-        return guess*abs(bisect(f=fn, a=lower/guess, b=1.0))
-    else:  # Newton
-        fn = lambda f: inverse_FJC_PEG_fn(guess*abs(f), **kwargs) - x_data
-        ret = guess*abs(newton(func=fn, x0=1.0))
-        return ret
+    fn = lambda f: inverse_FJC_PEG_fn(guess*abs(f), **kwargs) - x_data
+    ret = guess*abs(newton(func=fn, x0=1.0))
+    return ret
 
 class FJC_PEG (ModelFitter):
     """Fit the data to an poly(ethylene-glycol) adjusted extended FJC.
@@ -998,16 +987,14 @@ Indicies of points bounding the selected data.
                       outqueue=None):
         """Fit the data with :class:`FJC`.
         """
-        """Fit the data with :class:`WLC`.
-        """
         info = {
             'temperature (K)': self.plugin.config['temperature'],
-            'x data (m)': z_data,
+            'x data (m)': z_data[start:stop],
             }
         if True:  # TODO: optionally free persistence length
             info['Kuhn length (m)'] = (
                 self.plugin.config['FJC Kuhn length'])
-        model = FJC(d_data, info=info)
+        model = FJC(d_data[start:stop], info=info, rescale=True)
         queue = Queue.Queue()
         params = model.fit(outqueue=queue)
         if True:  # TODO: if Kuhn length fixed
@@ -1028,7 +1015,30 @@ Indicies of points bounding the selected data.
                           outqueue=None):
         """Fit the data with :class:`FJC_PEG`.
         """
-        pass
+        info = {
+            'temperature (K)': self.plugin.config['temperature'],
+            'x data (m)': z_data[start:stop],
+            # TODO: more info
+            }
+        if True:  # TODO: optionally free persistence length
+            info['Kuhn length (m)'] = (
+                self.plugin.config['FJC Kuhn length'])
+        model = FJC(d_data[start:stop], info=info, rescale=True)
+        queue = Queue.Queue()
+        params = model.fit(outqueue=queue)
+        if True:  # TODO: if Kuhn length fixed
+            params = [params]
+            a = info['Kuhn length (m)']
+        else:
+            a = params[1]
+        Nr = params[0]
+        N = model.L(Nr)
+        T = info['temperature (K)']
+        fit_info = queue.get(block=False)
+        mask = numpy.zeros(z_data.shape, dtype=numpy.bool)
+        mask[start:stop] = True
+        return [FJC_PEG_fn(z_data, **kwargs) * mask,
+                fit_info]
 
     def fit_WLC_model(self, curve, z_data, d_data, start, stop,
                       outqueue=None):
@@ -1036,12 +1046,12 @@ Indicies of points bounding the selected data.
         """
         info = {
             'temperature (K)': self.plugin.config['temperature'],
-            'x data (m)': z_data,
+            'x data (m)': z_data[start:stop],
             }
         if True:  # TODO: optionally free persistence length
             info['persistence length (m)'] = (
                 self.plugin.config['WLC persistence length'])
-        model = WLC(d_data, info=info)
+        model = WLC(d_data[start:stop], info=info, rescale=True)
         queue = Queue.Queue()
         params = model.fit(outqueue=queue)
         if True:  # TODO: if persistence length fixed

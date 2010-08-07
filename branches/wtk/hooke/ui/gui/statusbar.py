@@ -27,6 +27,7 @@ from ... import version
 class StatusBar (wx.StatusBar):
     def __init__(self, *args, **kwargs):
         super(StatusBar, self).__init__(*args, **kwargs)
+        self.SetFieldsCount(2)
         self.SetStatusWidths([-2, -3])
         self.SetStatusText('Ready', 0)
         self.SetStatusText(u'Welcome to Hooke (version %s)' % version(), 1)
@@ -36,6 +37,9 @@ class StatusBar (wx.StatusBar):
 
     def set_curve(self, curve):
         pass
+
+    def set_plot_text(self, text):
+        self.SetStatusText(text, 1)
 
     def _playlist_status(self, playlist):
         fields = [
