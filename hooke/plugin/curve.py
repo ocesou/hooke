@@ -190,11 +190,11 @@ approaching curve and `1` selects the retracting curve.
                          help='Block B in A-B.'),
                 Argument(name='x column', type='int', default=0,
                          help="""
-Column of data block to differentiate with respect to.
+Column of data to return as x values.
 """.strip()),
-                Argument(name='f column', type='int', default=1,
+                Argument(name='y column', type='int', default=1,
                          help="""
-Column of data block to differentiate.
+Column of data block to difference.
 """.strip()),
                 ],
             help=self.__doc__, plugin=plugin)
@@ -205,7 +205,7 @@ Column of data block to differentiate.
         assert a[:,params['x column']] == b[:,params['x column']]
         out = Data((a.shape[0],2), dtype=a.dtype)
         out[:,0] = a[:,params['x column']]
-        out[:,1] = a[:,params['f column']] - b[:,params['f column']]
+        out[:,1] = a[:,params['y column']] - b[:,params['y column']]
         outqueue.put(out)
 
 class DerivativeCommand (Command):
@@ -260,9 +260,9 @@ class PowerSpectrumCommand (Command):
 Data block to act on.  For an approach/retract force curve, `0`
 selects the approaching curve and `1` selects the retracting curve.
 """.strip()),
-                Argument(name='f column', type='int', default=1,
+                Argument(name='column', type='int', default=1,
                          help="""
-Column of data block to differentiate with respect to.
+Column of data block containing time-series data.
 """.strip()),
                 Argument(name='freq', type='float', default=1.0,
                          help="""
@@ -283,6 +283,6 @@ Otherwise, the chunks are end-to-end, and not overlapping.
     def _run(self, hooke, inqueue, outqueue, params):
         data = params['curve'].data[params['block']]
         outqueue.put(unitary_avg_power_spectrum(
-                data[:,params['f column']], freq=params['freq'],
+                data[:,params['column']], freq=params['freq'],
                 chunk_size=params['chunk size'],
                 overlap=params['overlap']))

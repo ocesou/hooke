@@ -64,7 +64,10 @@ def props_from_argument(argument, curves=None, playlists=None):
         kwargs['choices'] = choices
     else:
         raise NotImplementedError(argument.type)
-    labels = ['%s %d' % (argument.name, i) for i in range(argument.count)]
+    if argument.count == 1:
+        labels = [argument.name]
+    else:
+        labels = ['%s %d' % (argument.name, i) for i in range(argument.count)]
     return [(label, _class(label=label, **kwargs)) for label in labels]
    
 

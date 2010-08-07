@@ -49,6 +49,7 @@ class Selection (wx.Dialog):
             callbacks = {}
         self._callbacks = callbacks
         self._selection_style = selection_style
+        self.canceled = False
 
         self._c = {
             'text': wx.StaticText(
@@ -97,6 +98,7 @@ class Selection (wx.Dialog):
     def cancel(self, event):
         """Close the dialog.
         """
+        self.canceled = True
         self.EndModal(wx.ID_CANCEL)
 
     def button(self, event):

@@ -28,16 +28,20 @@ Originally based on `this example`_.
   http://matplotlib.sourceforge.net/examples/user_interfaces/embedding_in_wx2.html
 """
 
+import logging
+
 import matplotlib
 matplotlib.use('WXAgg')  # use wxpython with antigrain (agg) rendering
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx as NavToolbar
 from matplotlib.figure import Figure
 from matplotlib.ticker import Formatter, ScalarFormatter
+import numpy
 import wx
 
 from ....util.callback import callback, in_callback
 from ....util.si import ppSI, split_data_label
+from ..dialog.selection import Selection
 from . import Panel
 
 
@@ -101,8 +105,11 @@ class PlotPanel (Panel, wx.Panel):
         self.display_coordinates = False
         self.style = 'line'
         self._curve = None
+        self._config = {}
         self._x_column = None
-        self._y_column = None  # TODO: _y_columns (allow multiple, simultaneous y axes (rescaled?))
+        self._y_columns = []  # TODO: select right/left scales?
+        self._x_unit = ''
+        self._y_unit = ''
         super(PlotPanel, self).__init__(
             name='plot', callbacks=callbacks, **kwargs)
         self._c = {}
@@ -134,11 +141,11 @@ class PlotPanel (Panel, wx.Panel):
         self._c['x column'].SetToolTip(wx.ToolTip('x column'))
         self._c['toolbar'].AddControl(self._c['x column'])
         self._c['x column'].Bind(wx.EVT_CHOICE, self._on_x_column)
-        self._c['y column'] = wx.Choice(
-            parent=self._c['toolbar'], choices=[])
+        self._c['y column'] = wx.Button(
+            parent=self._c['toolbar'], label='y column(s)')
         self._c['y column'].SetToolTip(wx.ToolTip('y column'))
         self._c['toolbar'].AddControl(self._c['y column'])
-        self._c['y column'].Bind(wx.EVT_CHOICE, self._on_y_column)
+        self._c['y column'].Bind(wx.EVT_BUTTON, self._on_y_column)
 
         self._c['toolbar'].Realize()  # call after putting items in the toolbar
         if wx.Platform == '__WXMAC__':
@@ -170,17 +177,32 @@ class PlotPanel (Panel, wx.Panel):
         self._c['figure'].set_edgecolor(col)
         self._c['canvas'].SetBackgroundColour(wx.Colour(*rgbtuple))
 
-    #def SetStatusText(self, text, field=1):
-    #    self.Parent.Parent.statusbar.SetStatusText(text, field)
+    def _set_status_text(self, text):
+        in_callback(self, text)
 
     def _on_size(self, event):
         event.Skip()
         wx.CallAfter(self._resize_canvas)
 
     def _on_click(self, event):
-        #self.SetStatusText(str(event.xdata))
-        #print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f'%(event.button, event.x, event.y, event.xdata, event.ydata)
-        pass
+        if self._curve == None:
+            return
+        d = self._config.get('plot decimals', 2)
+        x,y = (event.xdata, event.ydata)
+        xt = ppSI(value=x, unit=self._x_unit, decimals=d)
+        yt = ppSI(value=y, unit=self._y_unit, decimals=d)
+        point_indexes = []
+        for data in self._curve.data:
+            try:
+                x_col = data.info['columns'].index(self._x_column)
+            except ValueError:
+                continue  # data is missing a required column
+            index = numpy.absolute(data[:,x_col]-x).argmin()
+            point_indexes.append((data.info['name'], index))
+        self._set_status_text(
+            '(%s, %s) %s'
+            % (xt, yt,
+               ', '.join(['%s: %d' % (n,i) for n,i in point_indexes])))
 
     def _on_enter_axes(self, event):
         self.display_coordinates = True
@@ -206,7 +228,25 @@ class PlotPanel (Panel, wx.Panel):
         self.update()
 
     def _on_y_column(self, event):
-        self._y_column = self._c['y column'].GetStringSelection()
+        if not hasattr(self, '_columns') or len(self._columns) == 0:
+            self._y_columns = []
+            return
+        s = Selection(
+            options=self._columns,
+            message='Select visible y column(s).',
+            button_id=wx.ID_OK,
+            selection_style='multiple',
+            parent=self,
+            title='Select y column(s)',
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        s.CenterOnScreen()
+        s.ShowModal()
+        if s.canceled == True:
+            return
+        self._y_columns = [self._columns[i] for i in s.selected]
+        s.Destroy()
+        if len(self._y_columns) == 0:
+            self._y_columns = self._columns[-1:]
         self.update()
 
     def _resize_canvas(self):
@@ -234,18 +274,14 @@ class PlotPanel (Panel, wx.Panel):
         self._columns = sorted(columns)
         if self._x_column not in self._columns:
             self._x_column = self._columns[0]
-        if self._y_column not in self._columns:
-            self._y_column = self._columns[-1]
+        self._y_columns = [y for y in self._y_columns if y in self._columns]
+        if len(self._y_columns) == 0:
+            self._y_columns = self._columns[-1:]
         if 'x column' in self._c:
             for i in range(self._c['x column'].GetCount()):
                 self._c['x column'].Delete(0)
             self._c['x column'].AppendItems(self._columns)
             self._c['x column'].SetStringSelection(self._x_column)
-        if 'y column' in self._c:
-            for i in range(self._c['y column'].GetCount()):
-                self._c['y column'].Delete(0)
-            self._c['y column'].AppendItems(self._columns)
-            self._c['y column'].SetStringSelection(self._y_column)
         self.update(config=config)
 
     def update(self, config=None):
@@ -261,28 +297,39 @@ class PlotPanel (Panel, wx.Panel):
 
         if config['plot SI format'] == True:
             d = config['plot decimals']
-            x_n, x_unit = split_data_label(self._x_column)
-            y_n, y_unit = split_data_label(self._y_column)
-            fx = HookeFormatter(decimals=d, unit=x_unit)
+            x_n, self._x_unit = split_data_label(self._x_column)
+            y_n, self._y_unit = split_data_label(self._y_columns[0])
+            for y_column in self._y_columns[1:]:
+                y_n, y_unit = split_data_label(y_column)
+                if y_unit != self._y_unit:
+                    log = logging.getLogger('hooke')
+                    log.warn('y-axes unit mismatch: %s != %s, using %s.'
+                             % (self._y_unit, y_unit, self._y_unit))
+            fx = HookeFormatter(decimals=d, unit=self._x_unit)
             axes.xaxis.set_major_formatter(fx)
-            fy = HookeFormatter(decimals=d, unit=y_unit)
+            fy = HookeFormatter(decimals=d, unit=self._y_unit)
             axes.yaxis.set_major_formatter(fy)
             axes.set_xlabel(x_n)
-            axes.set_ylabel(y_n)
+            if len(self._y_columns) == 1:
+                axes.set_ylabel(y_n)
         else:
+            self._x_unit = ''
+            self._y_unit = ''
             axes.set_xlabel(self._x_column)
-            axes.set_ylabel(self._y_column)
+            if len(self._y_columns) == 1:
+                axes.set_ylabel(self._y_columns[0])
 
         self._c['figure'].hold(True)
         for i,data in enumerate(self._curve.data):
-            try:
-                x_col = data.info['columns'].index(self._x_column)
-                y_col = data.info['columns'].index(self._y_column)
-            except ValueError:
-                continue  # data is missing a required column
-            axes.plot(data[:,x_col], data[:,y_col],
-                      '.',
-                      label=data.info['name'])
-        if config['plot legend'] == 'True':  # HACK: config should convert
+            for y_column in self._y_columns:
+                try:
+                    x_col = data.info['columns'].index(self._x_column)
+                    y_col = data.info['columns'].index(y_column)
+                except ValueError:
+                    continue  # data is missing a required column
+                axes.plot(data[:,x_col], data[:,y_col],
+                          '.',
+                          label=('%s, %s' % (data.info['name'], y_column)))
+        if config['plot legend'] == True:
             axes.legend(loc='best')
         self._c['canvas'].draw()

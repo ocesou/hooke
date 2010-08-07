@@ -505,25 +505,6 @@ an approach/retract force curve, `0` selects the approaching curve and
 
 class generalvclampCommands(object):
 
-    def do_subtplot(self, args):
-        '''
-        SUBTPLOT
-        (procplots.py plugin)
-        Plots the difference between ret and ext current curve
-        -------
-        Syntax: subtplot
-        '''
-        #FIXME: sub_filter and sub_order must be args
-
-        if len(self.plots[0].vectors) != 2:
-            print 'This command only works on a curve with two different plots.'
-            pass
-
-        outplot=self.subtract_curves(sub_order=1)
-
-        plot_graph=self.list_of_events['plot_graph']
-        wx.PostEvent(self.frame,plot_graph(plots=[outplot]))
-
     def _plug_init(self):
         self.basecurrent=None
         self.basepoints=None

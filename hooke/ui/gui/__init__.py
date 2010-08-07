@@ -125,7 +125,7 @@ class HookeFrame (wx.Frame):
                 )
         self.execute_command(
                 command=self._command_by_name('polymer fit'),
-                args={'block':1, 'bounds':[400, 1000]},
+                args={'block':1, 'bounds':[918, 1103]},
                 )
         return # TODO: cleanup
         self.playlists = self._c['playlist'].Playlists
@@ -201,6 +201,7 @@ class HookeFrame (wx.Frame):
 #                    style=wx.NO_BORDER|wx.TE_MULTILINE), 'right'),
             (panel.PANELS['plot'](
                     callbacks={
+                        '_set_status_text': self._on_plot_status_text,
                         },
                     parent=self,
                     style=wx.WANTS_CHARS|wx.NO_BORDER,
@@ -771,6 +772,14 @@ class HookeFrame (wx.Frame):
 
 
 
+    # Plot panel interface
+
+    def _on_plot_status_text(self, _class, method, text):
+        if 'status bar' in self._c:
+            self._c['status bar'].set_plot_text(text)
+
+
+
     # Navbar interface
 
     def _next_curve(self, *args):
@@ -912,6 +921,8 @@ class HookeFrame (wx.Frame):
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         dialog.CenterOnScreen()
         dialog.ShowModal()
+        if dialog.canceled == True:
+            return
         names = [options[i] for i in dialog.selected]
         dialog.Destroy()
         self._delete_perspectives(
