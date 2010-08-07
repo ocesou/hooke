@@ -3,14 +3,6 @@
 """Type conversion utilities.
 """
 
-CONVERT_FROM_STRING = {
-    'string': lambda x: x,
-    'bool': lambda x: x == 'True',
-    'int': lambda x: int(x),
-    'float': lambda x: float(x),
-    }
-"""Functions converting strings to values, keyed by type.
-"""
 
 ANALOGS = {
     'file': 'string',
@@ -63,6 +55,8 @@ def from_string(value, type, count=1):
     return fn(value)
 
 def _string_to_string(value):
+    if len(value) == 0:
+        return None
     return unicode(value)
 
 def _string_to_bool(value):

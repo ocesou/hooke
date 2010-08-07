@@ -28,7 +28,7 @@ import hooke
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.coverage', 'sphinx.ext.doctest', 
               'sphinx.ext.intersphinx', 'sphinx.ext.pngmath',
-              'numpydoc']
+              'sphinx.ext.todo', 'numpydoc']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -216,3 +216,7 @@ pngmath_latex_preamble = r"""
 \newcommand{\rfft}{\textrm{rfft}}
 \newcommand{\sinc}{\textrm{sinc}}
 """
+
+# -- Options for todo ----------------------------------------------------------
+
+todo_include_todos = True

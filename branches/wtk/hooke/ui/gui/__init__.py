@@ -735,6 +735,7 @@ class HookeFrame (wx.Frame):
         pass
 
     def _on_delete_curve(self, _class, method, playlist, curve):
+        # TODO: execute_command 'remove curve from playlist'
         os.remove(curve.path)
 
     def _on_set_selected_playlist(self, _class, method, playlist):

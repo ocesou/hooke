@@ -34,7 +34,7 @@ class NotePlugin (Builtin):
 
 
 class SetNoteCommand (Command):
-    """Add a note to one of several Hooke objects.
+    """Set the note on one of several Hooke objects.
     """
     def __init__(self, plugin):
         super(SetNoteCommand, self).__init__(
@@ -59,7 +59,7 @@ The note text.
 
 
 class GetNoteCommand (Command):
-    """Retrieve notes from one of several Hooke objects.
+    """Retrieve the note from one of several Hooke objects.
     """
     def __init__(self, plugin):
         super(GetNoteCommand, self).__init__(

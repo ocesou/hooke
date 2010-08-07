@@ -71,7 +71,7 @@ Running Hooke from the source directory
 If you like, you can avoid installation by running Hooke directly from
 it's source directory::
 
-     $ wget -o hooke.zip http://www.physics.drexel.edu/~wking/code/git/git.php?p=hooke.git&dl=zip&h=HEAD
+     $ wget -O hooke.zip http://www.physics.drexel.edu/~wking/code/git/git.php?p=hooke.git&dl=zip&h=HEAD
      $ unzip hooke.zip
      $ cd hooke
      $ python bin/hooke

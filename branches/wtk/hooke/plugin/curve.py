@@ -32,15 +32,16 @@ from ..plugin import Builtin
 from ..plugin.playlist import current_playlist_callback
 from ..util.calculus import derivative
 from ..util.fft import unitary_avg_power_spectrum
+from ..util.si import ppSI, split_data_label
 
 
 class CurvePlugin (Builtin):
     def __init__(self):
         super(CurvePlugin, self).__init__(name='curve')
         self._commands = [
-            GetCommand(self), InfoCommand(self), ExportCommand(self),
-            DifferenceCommand(self), DerivativeCommand(self),
-            PowerSpectrumCommand(self)]
+            GetCommand(self), InfoCommand(self), DeltaCommand(self),
+            ExportCommand(self), DifferenceCommand(self),
+            DerivativeCommand(self), PowerSpectrumCommand(self)]
 
 
 # Define common or complicated arguments
@@ -133,6 +134,50 @@ class InfoCommand (Command):
 
     def _get_block_sizes(self, curve):
         return [block.shape for block in curve.data]
+
+
+class DeltaCommand (Command):
+    """Get distance information between two points.
+
+    With two points A and B, the returned distances are A-B.
+    """
+    def __init__(self, plugin):
+        super(DeltaCommand, self).__init__(
+            name='delta',
+            arguments=[
+                CurveArgument,
+                Argument(name='block', type='int', default=0,
+                    help="""
+Data block that points are selected from.  For an approach/retract
+force curve, `0` selects the approaching curve and `1` selects the
+retracting curve.
+""".strip()),
+                Argument(name='point', type='point', optional=False, count=2,
+                         help="""
+Indicies of points bounding the selected data.
+""".strip()),
+                Argument(name='SI', type='bool', default=False,
+                         help="""
+Return distances in SI notation.
+""".strip())
+                ],
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        data = params['curve'].data[params['block']]
+        As = data[params['point'][0],:]
+        Bs = data[params['point'][1],:]
+        ds = [A-B for A,B in zip(As, Bs)]
+        if params['SI'] == False:
+            out = [(name, d) for name,d in zip(data.info['columns'], ds)]
+        else:
+            out = []
+            for name,d in zip(data.info['columns'], ds):
+                n,units = split_data_label(name)
+                out.append(
+                  (n, ppSI(value=d, unit=units, decimals=2)))
+        outqueue.put(out)
+
 
 class ExportCommand (Command):
     """Export a :class:`hooke.curve.Curve` data block as TAB-delimeted

@@ -252,7 +252,7 @@ class HookeInfoCommand (Command):
 
 
 class PointInfoCommand (Command):
-    """Get information about two user-selected points.
+    """Get information about user-selected points.
 
     Ordinarily a command that knew it would need user selected points
     would declare an appropriate argument (see, for example,

@@ -423,11 +423,13 @@ class HookeCmd (cmd.Cmd):
         argv = shlex.split(line, comments=True, posix=True)
         if len(argv) == 0:
             return None, None, '' # return an empty line
-        elif argv[0] == '?':
-            argv[0] = 'help'
-        elif argv[0] == '!':
-            argv[0] = 'system'
-        return argv[0], argv[1:], line
+        cmd = argv[0]
+        args = argv[1:]
+        if cmd == '?':
+            cmd = 'help'
+        elif cmd == '!':
+            cmd = 'system'
+        return cmd, args, line
 
     def do_help(self, arg):
         """Wrap Cmd.do_help to handle our .parseline argument list.
@@ -436,13 +438,14 @@ class HookeCmd (cmd.Cmd):
             return cmd.Cmd.do_help(self, '')
         return cmd.Cmd.do_help(self, arg[0])
 
-    def empytline(self):
+    def emptyline(self):
         """Override Cmd.emptyline to not do anything.
 
         Repeating the last non-empty command seems unwise.  Explicit
         is better than implicit.
         """
         pass
+
 
 class CommandLine (UserInterface):
     """Command line interface.  Simple and powerful.

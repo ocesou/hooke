@@ -22,7 +22,9 @@ lists of :class:`hooke.playlist.Playlist` classes.
 """
 
 from ..command import Command, Argument, Failure
+from ..playlist import FilePlaylist
 from ..plugin import Builtin
+from .playlist import PlaylistNameArgument
 
 
 class PlaylistsPlugin (Builtin):
@@ -30,7 +32,7 @@ class PlaylistsPlugin (Builtin):
         super(PlaylistsPlugin, self).__init__(name='playlists')
         self._commands = [
             NextCommand(self), PreviousCommand(self), JumpCommand(self),
-            IndexCommand(self), PlaylistListCommand(self)]
+            IndexCommand(self), PlaylistListCommand(self), NewCommand(self)]
 
 
 # Define commands
@@ -96,3 +98,28 @@ class PlaylistListCommand (Command):
 
     def _run(self, hooke, inqueue, outqueue, params):
 	outqueue.put(list(hooke.playlists))
+
+
+class NewCommand (Command):
+    """Create a new playlist.
+    """
+    def __init__(self, plugin):
+        super(NewCommand, self).__init__(
+            name='new playlist',
+            arguments=[
+                PlaylistNameArgument,
+                Argument(name='file', type='file', optional=True,
+                         help="""
+Default filename for future saves.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        print 'PP', params['name']
+        hooke.playlists.append(
+            FilePlaylist(
+                drivers=hooke.drivers,
+                name=params['name'],
+                path=params['file'],
+                ))
