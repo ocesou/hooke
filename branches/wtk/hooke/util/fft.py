@@ -114,7 +114,6 @@ def unitary_rfft(data, freq=1.0):
 
     Notes
     -----
-    
     If the units on your data are Volts,
     and your sampling frequency is in Hz,
     then `freq_axis` will be in Hz,
@@ -307,7 +306,7 @@ def avg_power_spectrum(data, freq=1.0, chunk_size=2048,
 
 def unitary_avg_power_spectrum(data, freq=1.0, chunk_size=2048,
                                overlap=True, window=window_hann):
-    """Compute the unitary avgerage power spectrum of `data`.
+    """Compute the unitary average power spectrum of `data`.
 
     See Also
     --------
@@ -334,7 +333,6 @@ class TestRFFT (unittest.TestCase):
 
     Notes
     -----
-
     The expected return values are [#dft]_:
 
     .. math:: X_k = \sum_{m=0}^{n-1} x_m \exp^{-2\pi imk/n}
@@ -372,7 +370,6 @@ class TestUnitaryRFFT (unittest.TestCase):
 
         Notes
         -----
-
         Which is:
 
         .. math:: \sum_{m=0}^{n-1} |x_m|^2 dt = \sum_{k=0}^{n-1} |X_k|^2 df
@@ -421,7 +418,6 @@ class TestUnitaryRFFT (unittest.TestCase):
 
         Notes
         -----
-
         Analytic result:
 
         .. math:: \rfft(\rect(at)) = 1/|a|\cdot\sinc(f/a)
@@ -486,7 +482,6 @@ class TestUnitaryRFFT (unittest.TestCase):
 
         Notes
         -----
-
         Analytic result:
 
         .. math::

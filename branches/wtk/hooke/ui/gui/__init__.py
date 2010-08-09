@@ -194,11 +194,6 @@ class HookeFrame (wx.Frame):
                     style=wx.WANTS_CHARS,
                     # WANTS_CHARS so the panel doesn't eat the Return key.
                     ), 'center'),
-#            ('assistant', wx.TextCtrl(
-#                    parent=self,
-#                    pos=wx.Point(0, 0),
-#                    size=wx.Size(150, 90),
-#                    style=wx.NO_BORDER|wx.TE_MULTILINE), 'right'),
             (panel.PANELS['plot'](
                     callbacks={
                         '_set_status_text': self._on_plot_status_text,
@@ -217,7 +212,6 @@ class HookeFrame (wx.Frame):
 #            ('results', panel.results.Results(self), 'bottom'),
             ]:
             self._add_panel(p, style)
-        #self._c['assistant'].SetEditable(False)
 
     def _add_panel(self, panel, style):
         self._c[panel.name] = panel
@@ -674,8 +668,6 @@ class HookeFrame (wx.Frame):
 
     def select_command(self, _class, method, command):
         #self.select_plugin(plugin=command.plugin)
-        if 'assistant' in self._c:
-            self._c['assitant'].ChangeValue(command.help)
         self._c['property editor'].clear()
         self._c['property editor']._argument_from_label = {}
         for argument in command.arguments:

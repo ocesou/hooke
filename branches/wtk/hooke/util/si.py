@@ -166,8 +166,28 @@ def prefix_from_value(value):
     """
     return PREFIX[get_power(value)]
 
+def join_data_label(name, unit):
+    """Create laels for `curve.data[i].info['columns']`.
+
+    See Also
+    --------
+    split_data_label
+
+    Examples
+    --------
+    >>> join_data_label('z piezo', 'm')
+    'z piezo (m)'
+    >>> join_data_label('deflection', 'N')
+    'deflection N'
+    """
+    return '%s (%s)' % (name, unit)
+
 def split_data_label(label):
-    """Split `curve.data[i].info['name']` labels into `(name, unit)`.
+    """Split `curve.data[i].info['columns']` labels into `(name, unit)`.
+
+    See Also
+    --------
+    join_data_label
 
     Examples
     --------
