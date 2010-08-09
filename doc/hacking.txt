@@ -148,6 +148,42 @@ changes with different versions of Python.  :mod:`~hooke.compat`
 provides a uniform interface to those tools so that Hooke will work
 with several Python versions.
 
+Analysis
+--------
+
+The :class:`hooke.curve.Data` blocks store data in various states of
+processing.  For example, velocity clamp drivers will load two columns
+of data: `z piezo (m)` and `deflection (m)` (all column names have the
+`name (unit)` format, see :func:`~hooke.util.si.split_data_label`).
+Most data processing consists of manipulating current block
+information to create additional data columns in the same block.  For
+example, :class:`~hooke.plugin.vclamp.SurfaceContactCommand` usually
+uses the `z piezo (m)` and `deflection (m)` columns to add
+`surface distance (m)` and `surface adjusted deflection (m)` columns.
+However, you might want to use e.g. `median filtered deflection (m)`
+instead of `deflection (m)`.  Because of this, analysis plugins should
+use :class:`~hooke.command.Argument`\s rather than hard-coding source
+or target column or info dict names.  See
+:class:`~hooke.plugin.vclamp.SurfaceContactCommand` for an example of
+the recommended approach.
+
+Also keep in mind that some analyses will not generate columns that
+are the same size as the source data
+(e.g. :class:`~hooke.plugin.flatfilt.FlatPeaksCommand` and
+:class:`~hooke.plugin.curve.PowerSpectrumCommand`).  These commands
+will either stash information in the :class:`~hooke.curve.Data`'s
+`.info` dictionary (e.g. a list of peaks) and/or add new
+:class:`~hooke.curve.Data` blocks to the parent
+:class:`~hooke.curve.Curve`.  The main reason for adding new blocks
+rather than storing all the data in `.info` is to take advantage of
+built in :class:`~hooke.curve.Data` processing
+:class:`~hooke.command.Command`\s.  For example, the power spectrum
+from :class:`~hooke.plugin.curve.PowerSpectrumCommand` can be easily
+exported to a text file.  However, extra care must be taken to avoid
+name collisions or ambiguity, since the output blocks must be unique
+on a :class:`~hooke.curve.Curve`-wide level, while `Data.info` output
+need only be unique on a :class:`~hooke.curve.Data`-wide level.
+
 GUI
 ---
 
