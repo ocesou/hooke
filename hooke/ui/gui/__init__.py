@@ -127,6 +127,14 @@ class HookeFrame (wx.Frame):
                 command=self._command_by_name('polymer fit'),
                 args={'block':1, 'bounds':[918, 1103]},
                 )
+        self.execute_command(
+                command=self._command_by_name('flat filter peaks'),
+                args={'median window':3, 'min points':1},
+                )
+        self.execute_command(
+                command=self._command_by_name('polymer fit peaks'),
+                args={'block':1},
+                )
         return # TODO: cleanup
         self.playlists = self._c['playlist'].Playlists
         self._displayed_plot = None
@@ -330,11 +338,20 @@ class HookeFrame (wx.Frame):
                 index = int(name[len(arg.name):])
                 args[arg.name][index] = value
             for arg in command.arguments:
-                if arg.count != 1 and arg.name in args:
+                count = arg.count
+                if hasattr(arg, '_display_count'):  # support HACK in props_from_argument()
+                    count = arg._display_count
+                if count != 1 and arg.name in args:
                     keys = sorted(args[arg.name].keys())
-                    assert keys == range(arg.count), keys
+                    assert keys == range(count), keys
                     args[arg.name] = [args[arg.name][i]
-                                      for i in range(arg.count)]
+                                      for i in range(count)]
+                if arg.count == -1:
+                    while (len(args[arg.name]) > 0
+                           and args[arg.name][-1] == None):
+                        args[arg.name].pop()
+                    if len(args[arg.name]) == 0:
+                        args[arg.name] = arg.default
         self.log.debug('executing %s with %s' % (command.name, args))
         self.inqueue.put(CommandMessage(command, args))
         results = []

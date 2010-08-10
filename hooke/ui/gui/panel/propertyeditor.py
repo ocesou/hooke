@@ -33,7 +33,7 @@ import wx.grid
 
 from . import Panel
 from ....plugin import argument_to_setting
-from ....util.convert import ANALOGS
+from ....util.convert import ANALOGS, to_string, from_string
 
 
 def props_from_argument(argument, curves=None, playlists=None):
@@ -43,8 +43,10 @@ def props_from_argument(argument, curves=None, playlists=None):
     type = argument.type
     if type in ['driver']:  # intentionally not handled (yet)
         return None
-    if argument.count == -1:
-        raise NotImplementedError(argument)  # TODO: maybe just set count to 1?
+    count = argument.count
+    if count == -1:
+        count = 3  # HACK: should allow unlimited entries (somehow...)
+        argument._display_count = count  # suport HACK in execute_command()
     kwargs = {
         #'label':argument.name,
         'default':argument.default,
@@ -64,10 +66,10 @@ def props_from_argument(argument, curves=None, playlists=None):
         kwargs['choices'] = choices
     else:
         raise NotImplementedError(argument.type)
-    if argument.count == 1:
+    if count == 1:
         labels = [argument.name]
     else:
-        labels = ['%s %d' % (argument.name, i) for i in range(argument.count)]
+        labels = ['%s %d' % (argument.name, i) for i in range(count)]
     return [(label, _class(label=label, **kwargs)) for label in labels]
    
 
@@ -102,12 +104,12 @@ class Property (object):
     def string_for_value(self, value):
         """Return a string representation of `value` for loading the table.
         """
-        return str(value)
+        return to_string(value, 'string')
 
     def value_for_string(self, string):
         """Return the value represented by `string`.
         """
-        return string
+        return from_string(string, 'string')
 
 
 class StringProperty (Property):
@@ -174,7 +176,7 @@ class IntProperty (Property):
         return wx.grid.GridCellNumberRenderer()
 
     def value_for_string(self, string):
-        return int(string)
+        return from_string(string, 'int')
 
 
 class FloatProperty (Property):
@@ -191,7 +193,7 @@ class FloatProperty (Property):
         return wx.grid.GridCellFloatRenderer()
 
     def value_for_string(self, string):
-        return float(string)
+        return from_string(string, 'float')
 
 
 class ChoiceProperty (Property):

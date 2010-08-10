@@ -254,7 +254,7 @@ selects the retracting curve.
                 Argument(name='input distance column', type='string',
                          default='z piezo (m)',
                          help="""
-Name of the column to use as the surface positioning input.
+Name of the column to use as the surface position input.
 """.strip()),
                 Argument(name='input deflection column', type='string',
                          default='deflection (m)',
@@ -264,7 +264,7 @@ Name of the column to use as the deflection input.
                 Argument(name='output distance column', type='string',
                          default='surface distance',
                          help="""
-Name of the column (without units) to use as the surface positioning output.
+Name of the column (without units) to use as the surface position output.
 """.strip()),
                 Argument(name='output deflection column', type='string',
                          default='surface deflection',
@@ -284,7 +284,7 @@ Name (without units) for storing the deflection offset in the `.info` dictionary
                 Argument(name='fit parameters info name', type='string',
                          default='surface deflection offset',
                          help="""
-Name (without units) for storing the deflection offset in the `.info` dictionary.
+Name (without units) for storing fit parameters in the `.info` dictionary.
 """.strip()),
                 ],
             help=self.__doc__, plugin=plugin)

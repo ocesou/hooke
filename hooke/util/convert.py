@@ -39,6 +39,23 @@ def to_string(value, type, count=1):
 
 def from_string(value, type, count=1):
     """Convert `value` from a string to `type`.
+
+    Examples
+    --------
+    >>> from_string('abcde', type='string')
+    u'abcde'
+    >>> from_string('None', type='string')
+    >>> from_string(None, type='string')
+    >>> from_string('true', type='bool')
+    True
+    >>> from_string('false', type='bool')
+    False
+    >>> from_string(None, type='bool')
+    False
+    >>> from_string('123', type='int')
+    123
+    >>> from_string('123', type='float')
+    123.0
     """
     type = ANALOGS.get(type, type)
     if type in RAW_TYPES:
@@ -55,15 +72,19 @@ def from_string(value, type, count=1):
     return fn(value)
 
 def _string_to_string(value):
-    if len(value) == 0:
+    if value in [None, 'None'] or len(value) == 0:
         return None
     return unicode(value)
 
 def _string_to_bool(value):
-    return value == 'True'
+    return hasattr(value, 'lower') and value.lower() == 'true'
 
 def _string_to_int(value):
+    if value in [None, 'None']:
+        return None
     return int(value)
 
 def _string_to_float(value):
+    if value in [None, 'None']:
+        return None
     return float(value)

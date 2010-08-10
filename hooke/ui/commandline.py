@@ -23,7 +23,11 @@ line.
 import codecs
 import cmd
 import optparse
-import readline # including readline makes cmd.Cmd.cmdloop() smarter
+try:
+    import readline # including readline makes cmd.Cmd.cmdloop() smarter
+except ImportError, e:
+    import logging
+    logging.warn('Could not import readline, bash-like line editing disabled.')
 import shlex
 
 from ..command import CommandExit, Exit, Command, Argument, StoreValue

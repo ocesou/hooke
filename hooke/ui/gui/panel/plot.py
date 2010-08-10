@@ -189,6 +189,8 @@ class PlotPanel (Panel, wx.Panel):
             return
         d = self._config.get('plot decimals', 2)
         x,y = (event.xdata, event.ydata)
+        if None in [x, y]:
+            return
         xt = ppSI(value=x, unit=self._x_unit, decimals=d)
         yt = ppSI(value=y, unit=self._y_unit, decimals=d)
         point_indexes = []

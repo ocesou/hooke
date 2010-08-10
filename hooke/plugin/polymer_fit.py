@@ -27,19 +27,20 @@ velocity-clamp data to various polymer models (WLC, FJC, etc.).
 """
 
 import copy
-import Queue
+from Queue import Queue
 import StringIO
 import sys
 
 import numpy
 from scipy.optimize import newton
 
-from ..command import Command, Argument, Failure
+from ..command import Command, Argument, Success, Failure
 from ..config import Setting
 from ..curve import Data
-from ..plugin import Plugin
-from ..util.fit import PoorFit, ModelFitter
+from ..plugin import Plugin, argument_to_setting
 from ..util.callback import is_iterable
+from ..util.fit import PoorFit, ModelFitter
+from ..util.si import join_data_label, split_data_label
 from .curve import CurveArgument
 from .vclamp import scale
 
@@ -230,7 +231,7 @@ class FJC (ModelFitter):
     ...     'x data (m)': x_data,
     ...     }
     >>> model = FJC(d_data, info=info, rescale=True)
-    >>> outqueue = Queue.Queue()
+    >>> outqueue = Queue()
     >>> Lp,a = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
     >>> model.L(Lp)  # doctest: +ELLIPSIS
@@ -500,7 +501,7 @@ class FJC_PEG (ModelFitter):
     ...     'Gibbs free energy difference (Gp - Gh) (kBT)': kwargs['dG'],
     ...     }
     >>> model = FJC_PEG(d_data, info=info, rescale=True)
-    >>> outqueue = Queue.Queue()
+    >>> outqueue = Queue()
     >>> Nr,a = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
     >>> model.L(Nr)  # doctest: +ELLIPSIS
@@ -723,7 +724,7 @@ class WLC (ModelFitter):
     ...     'x data (m)': x_data,
     ...     }
     >>> model = WLC(d_data, info=info, rescale=True)
-    >>> outqueue = Queue.Queue()
+    >>> outqueue = Queue()
     >>> Lp,p = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
     >>> model.L(Lp)  # doctest: +ELLIPSIS
@@ -828,6 +829,7 @@ class WLC (ModelFitter):
             p = self.info['persistence length (m)']
         # compute model data
         self._model_data[:] = WLC_fn(x_data, T, L, p)
+        print 'WLC', L/x_data.max(), self._model_data
         return self._model_data
 
     def guess_initial_params(self, outqueue=None):
@@ -877,47 +879,55 @@ class PolymerFitPlugin (Plugin):
     """
     def __init__(self):
         super(PolymerFitPlugin, self).__init__(name='polymer_fit')
-        self._commands = [PolymerFitCommand(self),]
+        self._arguments = [  # For Command initialization
+            Argument('polymer model', default='WLC', help="""
+Select the default polymer model for 'polymer fit'.  See the
+documentation for descriptions of available algorithms.
+""".strip()),
+            Argument('FJC Kuhn length', type='float', default=4e-10,
+                    help='Kuhn length in meters'),
+            Argument('FJC_PEG Kuhn length', type='float', default=4e-10,
+                    help='Kuhn length in meters'),
+            Argument('FJC_PEG elasticity', type='float', default=150.0,
+                    help='Elasticity of a PEG segment in Newtons per meter.'),
+            Argument('FJC_PEG delta G', type='float', default=3.0, help="""
+Gibbs free energy difference between trans-trans-trans (ttt) and
+trans-trans-gauche (ttg) PEG states in units of kBT.
+""".strip()),
+            Argument('FJC_PEG L_helical', type='float', default=2.8e-10,
+                    help='Contour length of PEG in the ttg state.'),
+            Argument('FJC_PEG L_planar', type='float', default=3.58e-10,
+                    help='Contour length of PEG in the ttt state.'),
+            Argument('WLC persistence length', type='float', default=4e-10,
+                    help='Persistence length in meters'),            
+            ]
+        self._settings = [
+            Setting(section=self.setting_section, help=self.__doc__)]
+        for argument in self._arguments:
+            self._settings.append(argument_to_setting(
+                    self.setting_section, argument))
+            argument.default = None # if argument isn't given, use the config.
+        self._arguments.extend([  # Non-configurable arguments
+                Argument(name='input distance column', type='string',
+                         default='cantilever adjusted extension (m)',
+                         help="""
+Name of the column to use as the surface position input.
+""".strip()),
+                Argument(name='input deflection column', type='string',
+                         default='deflection (N)',
+                         help="""
+Name of the column to use as the deflection input.
+""".strip()),
+                ])
+        self._commands = [
+            PolymerFitCommand(self), PolymerFitPeaksCommand(self),
+            ]
 
     def dependencies(self):
         return ['vclamp']
 
     def default_settings(self):
-        return [
-            Setting(section=self.setting_section, help=self.__doc__),
-            Setting(section=self.setting_section,
-                    option='polymer model',
-                    value='WLC',
-                    help="Select the default polymer model for 'polymer fit'.  See the documentation for descriptions of available algorithms."),
-            Setting(section=self.setting_section,
-                    option='FJC Kuhn length',
-                    value=4e-10, type='float',
-                    help='Kuhn length in meters'),
-            Setting(section=self.setting_section,
-                    option='FJC-PEG Kuhn length',
-                    value=4e-10, type='float',
-                    help='Kuhn length in meters'),
-            Setting(section=self.setting_section,
-                    option='FJC-PEG elasticity',
-                    value=150.0, type='float',
-                    help='Elasticity of a PEG segment in Newtons per meter.'),
-            Setting(section=self.setting_section,
-                    option='FJC-PEG delta G',
-                    value=3.0, type='float',
-                    help='Gibbs free energy difference between trans-trans-trans (ttt) and trans-trans-gauche (ttg) PEG states in units of kBT.'),
-            Setting(section=self.setting_section,
-                    option='FJC-PEG L_helical',
-                    value=2.8e-10, type='float',
-                    help='Contour length of PEG in the ttg state.'),
-            Setting(section=self.setting_section,
-                    option='FJC-PEG L_planar',
-                    value=3.58e-10, type='float',
-                    help='Contour length of PEG in the ttt state.'),
-            Setting(section=self.setting_section,
-                    option='WLC persistence length',
-                    value=4e-10, type='float',
-                    help='Persistence length in meters'),
-            ]
+        return self._settings
 
 
 class PolymerFitCommand (Command):
@@ -946,10 +956,24 @@ approach/retract force curve, `0` selects the approaching curve and
                          help="""
 Indicies of points bounding the selected data.
 """.strip()),
+                ] + plugin._arguments + [
+                Argument(name='output tension column', type='string',
+                         default='polymer tension',
+                         help="""
+Name of the column (without units) to use as the polymer tension output.
+""".strip()),
+                Argument(name='fit parameters info name', type='string',
+                         default='surface deflection offset',
+                         help="""
+Name (without units) for storing the fit parameters in the `.info` dictionary.
+""".strip()),
                 ],
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        for key,value in params.items():
+            if value == None:  # Use configured default value.
+                params[key] = self.plugin.config[key]
         scale(hooke, params['curve'], params['block'])  # TODO: is autoscaling a good idea? (explicit is better than implicit)
         data = params['curve'].data[params['block']]
         # HACK? rely on params['curve'] being bound to the local hooke
@@ -957,22 +981,25 @@ Indicies of points bounding the selected data.
         # curve through the queue).  Ugh.  Stupid queues.  As an
         # alternative, we could pass lookup information through the
         # queue...
-        model = self.plugin.config['polymer model']
+        model = params['polymer model']
         new = Data((data.shape[0], data.shape[1]+1), dtype=data.dtype)
         new.info = copy.deepcopy(data.info)
         new[:,:-1] = data
-        new.info['columns'].append('%s tension (N)' % model)  # TODO: WLC fit for each peak, etc.
+        new.info['columns'].append(
+            join_data_label(params['output tension column'], 'N'))
         z_data = data[:,data.info['columns'].index(
-                'cantilever adjusted extension (m)')]
-        d_data = data[:,data.info['columns'].index('deflection (N)')]
+                params['input distance column'])]
+        d_data = data[:,data.info['columns'].index(
+                params['input deflection column'])]
         start,stop = params['bounds']
         tension_data,ps = self.fit_polymer_model(
-            params['curve'], z_data, d_data, start, stop, outqueue)
-        new.info['%s polymer fit parameters' % model] = ps
+            params, z_data, d_data, start, stop, outqueue)
+        new.info[params['fit parameters info name']] = ps
+        new.info[params['fit parameters info name']]['model'] = model
         new[:,-1] = tension_data
         params['curve'].data[params['block']] = new
 
-    def fit_polymer_model(self, curve, z_data, d_data, start, stop,
+    def fit_polymer_model(self, params, z_data, d_data, start, stop,
                           outqueue=None):
         """Railyard for the `fit_*_model` family.
 
@@ -980,10 +1007,10 @@ Indicies of points bounding the selected data.
         appropriate backend algorithm.
         """
         fn = getattr(self, 'fit_%s_model'
-                     % self.plugin.config['polymer model'].replace('-','_'))
-        return fn(curve, z_data, d_data, start, stop, outqueue)
+                     % params['polymer model'].replace('-','_'))
+        return fn(params, z_data, d_data, start, stop, outqueue)
 
-    def fit_FJC_model(self, curve, z_data, d_data, start, stop,
+    def fit_FJC_model(self, params, z_data, d_data, start, stop,
                       outqueue=None):
         """Fit the data with :class:`FJC`.
         """
@@ -993,9 +1020,9 @@ Indicies of points bounding the selected data.
             }
         if True:  # TODO: optionally free persistence length
             info['Kuhn length (m)'] = (
-                self.plugin.config['FJC Kuhn length'])
+                params['FJC Kuhn length'])
         model = FJC(d_data[start:stop], info=info, rescale=True)
-        queue = Queue.Queue()
+        queue = Queue()
         params = model.fit(outqueue=queue)
         if True:  # TODO: if Kuhn length fixed
             params = [params]
@@ -1006,12 +1033,11 @@ Indicies of points bounding the selected data.
         L = model.L(Lp)
         T = info['temperature (K)']
         fit_info = queue.get(block=False)
-        mask = numpy.zeros(z_data.shape, dtype=numpy.bool)
-        mask[start:stop] = True
-        return [FJC_fn(z_data, T=T, L=L, a=a) * mask,
-                fit_info]
+        f_data = numpy.ones(z_data.shape, dtype=z_data.dtype) * numpy.nan
+        f_data[start:stop] = FJC_fn(z_data[start:stop], T=T, L=L, a=a)
+        return [f_data, fit_info]
 
-    def fit_FJC_PEG_model(self, curve, z_data, d_data, start, stop,
+    def fit_FJC_PEG_model(self, params, z_data, d_data, start, stop,
                           outqueue=None):
         """Fit the data with :class:`FJC_PEG`.
         """
@@ -1022,9 +1048,9 @@ Indicies of points bounding the selected data.
             }
         if True:  # TODO: optionally free persistence length
             info['Kuhn length (m)'] = (
-                self.plugin.config['FJC Kuhn length'])
-        model = FJC(d_data[start:stop], info=info, rescale=True)
-        queue = Queue.Queue()
+                params['FJC Kuhn length'])
+        model = FJC_PEG(d_data[start:stop], info=info, rescale=True)
+        queue = Queue()
         params = model.fit(outqueue=queue)
         if True:  # TODO: if Kuhn length fixed
             params = [params]
@@ -1035,12 +1061,11 @@ Indicies of points bounding the selected data.
         N = model.L(Nr)
         T = info['temperature (K)']
         fit_info = queue.get(block=False)
-        mask = numpy.zeros(z_data.shape, dtype=numpy.bool)
-        mask[start:stop] = True
-        return [FJC_PEG_fn(z_data, **kwargs) * mask,
-                fit_info]
+        f_data = numpy.ones(z_data.shape, dtype=z_data.dtype) * numpy.nan
+        f_data[start:stop] = FJC_PEG_fn(z_data[start:stop], **kwargs)
+        return [f_data, fit_info]
 
-    def fit_WLC_model(self, curve, z_data, d_data, start, stop,
+    def fit_WLC_model(self, params, z_data, d_data, start, stop,
                       outqueue=None):
         """Fit the data with :class:`WLC`.
         """
@@ -1050,9 +1075,9 @@ Indicies of points bounding the selected data.
             }
         if True:  # TODO: optionally free persistence length
             info['persistence length (m)'] = (
-                self.plugin.config['WLC persistence length'])
+                params['WLC persistence length'])
         model = WLC(d_data[start:stop], info=info, rescale=True)
-        queue = Queue.Queue()
+        queue = Queue()
         params = model.fit(outqueue=queue)
         if True:  # TODO: if persistence length fixed
             params = [params]
@@ -1063,11 +1088,59 @@ Indicies of points bounding the selected data.
         L = model.L(Lp)
         T = info['temperature (K)']
         fit_info = queue.get(block=False)
-        mask = numpy.zeros(z_data.shape, dtype=numpy.bool)
-        mask[start:stop] = True
-        return [WLC_fn(z_data, T=T, L=L, p=p) * mask,
-                fit_info]
+        f_data = numpy.ones(z_data.shape, dtype=z_data.dtype) * numpy.nan
+        f_data[start:stop] = WLC_fn(z_data[start:stop], T=T, L=L, p=p)
+        return [f_data, fit_info]
 
+
+class PolymerFitPeaksCommand (Command):
+    """Polymer model (WLC, FJC, etc.) fitting.
+
+    Use :class:`PolymerFitCommand` to fit the each peak in a list of
+    previously determined peaks.
+    """
+    def __init__(self, plugin):
+        super(PolymerFitPeaksCommand, self).__init__(
+            name='polymer fit peaks',
+            arguments=[
+                CurveArgument,
+                Argument(name='block', aliases=['set'], type='int', default=0,
+                         help="""
+Data block for which the fit should be calculated.  For an
+approach/retract force curve, `0` selects the approaching curve and
+`1` selects the retracting curve.
+""".strip()),
+                Argument(name='peak info name', type='string',
+                         default='flat filter peaks',
+                         help="""
+Name for storing the distance offset in the `.info` dictionary.
+""".strip()),
+                Argument(name='peak index', type='int', count=-1, default=None,
+                         help="""
+Index of the selected peak in the list of peaks.  Use `None` to fit all peaks.
+""".strip()),
+                ] + plugin._arguments,
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        data = params['curve'].data[params['block']]
+        fit_command = [c for c in hooke.commands
+                       if c.name=='polymer fit'][0]
+        inq = Queue()
+        outq = Queue()
+        p = copy.deepcopy(params)
+        p['curve'] = params['curve']
+        del(p['peak info name'])
+        del(p['peak index'])
+        for i,peak in enumerate(data.info[params['peak info name']]):
+            if params['peak index'] == None or i in params['peak index']:
+                p['bounds'] = [peak.index, peak.post_index()]
+                p['output tension column'] = peak.name
+                p['fit parameters info name'] = peak.name
+                fit_command.run(hooke, inq, outq, **p)
+            ret = outq.get()
+            if not isinstance(ret, Success):
+                raise ret
 
 # TODO:
 # def dist2fit(self):
