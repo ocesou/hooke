@@ -34,7 +34,7 @@ except ImportError, e:
     __license__ = 'All rights reserved.' 
 
 
-__version__ = (0, 9, 0, 'devel', None, 'Kenzo')
+__version__ = (1, 0, 0, 'alpha', None, 'Ninken')
 """Version tuple::
 
     (major, minor, release, type, patch, name)

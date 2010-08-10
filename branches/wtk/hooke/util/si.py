@@ -111,7 +111,7 @@ def ppSI(value, unit='', decimals=None, power=None, pad=False):
     """
     if value == 0:
         return '0'
-    if isnan(value):
+    if value == None or isnan(value):
         return 'NaN'
 
     if power == None:  # auto-detect power

@@ -33,20 +33,22 @@ See Also
 """
 
 import copy
-from multiprocessing import Queue
+from Queue import Queue
 
 from numpy import diff
 from scipy.signal.signaltools import medfilt
 
 from ..command import Command, Argument, Success, Failure, UncaughtException
 from ..config import Setting
+from ..curve import Data
 from ..experiment import VelocityClamp
 from ..plugin import Plugin, argument_to_setting
 from ..plugin.curve import CurveArgument
 from ..plugin.playlist import FilterCommand
-from ..plugin.vclamp import scale
 from ..util.fit import PoorFit
-from ..util.peak import find_peaks, find_peaks_arguments, Peak, _kwargs
+from ..util.peak import (find_peaks, peaks_to_mask,
+                         find_peaks_arguments, Peak, _kwargs)
+from ..util.si import join_data_label, split_data_label
 
 
 class FlatFiltPlugin (Plugin):
@@ -82,6 +84,33 @@ Minimum number of peaks for curve acceptance.
             self._settings.append(argument_to_setting(
                     self.setting_section, argument))
             argument.default = None # if argument isn't given, use the config.
+        self._arguments.extend([ # Non-configurable arguments
+                Argument(name='retract block', type='string',
+                         default='retract',
+                         help="""
+Name of the retracting data block.
+""".strip()),
+                Argument(name='input distance column', type='string',
+                         default='surface distance (m)',
+                         help="""
+Name of the column to use as the surface position input.
+""".strip()),
+                Argument(name='input deflection column', type='string',
+                         default='deflection (N)',
+                         help="""
+Name of the column to use as the deflection input.
+""".strip()),
+                Argument(name='output peak column', type='string',
+                         default='peak deflection',
+                         help="""
+Name of the column (without units) to use as the peak-maske deflection output.
+""".strip()),
+                Argument(name='peak info name', type='string',
+                         default='flat filter peaks',
+                         help="""
+Name for storing the distance offset in the `.info` dictionary.
+""".strip()),
+                ])
         self._commands = [FlatPeaksCommand(self), FlatFilterCommand(self)]
 
     def dependencies(self):
@@ -96,7 +125,6 @@ class FlatPeaksCommand (Command):
 
     Notes
     -----
-
     Noise analysis on the retraction curve:
 
     1) A median window filter (using
@@ -110,7 +138,7 @@ class FlatPeaksCommand (Command):
     The algorithm was originally Francesco Musiani's idea.
     """
     def __init__(self, plugin):
-        config_arguments = [a for a in plugin._arguments
+        plugin_arguments = [a for a in plugin._arguments
                             if a.name != 'min peaks']
         # Drop min peaks, since we're not filtering with this
         # function, just detecting peaks.
@@ -118,11 +146,11 @@ class FlatPeaksCommand (Command):
             name='flat filter peaks',
             arguments=[
                 CurveArgument,
-                ] + config_arguments,
+                ] + plugin_arguments,
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        z_data,d_data,params = self._setup(hooke, params)
+        data,block_index,z_data,d_data,params = self._setup(hooke, params)
         start_index = 0
         while (start_index < len(z_data)
                and z_data[start_index] < params['blind window']):
@@ -131,10 +159,22 @@ class FlatPeaksCommand (Command):
         deriv = diff(median)
         peaks = find_peaks(deriv, **_kwargs(params, find_peaks_arguments,
                                             argument_input_keys=True))
-        for peak in peaks:
-            peak.name = 'flat filter of %s' % (params['deflection column name'])
+        d_name,d_unit = split_data_label(params['input deflection column'])
+        for i,peak in enumerate(peaks):
+            peak.name = 'flat filter peak %d of %s' % (i, d_name)
             peak.index += start_index
+        data.info[params['peak info name']] = peaks
+
+        # Add a peak-masked deflection column.
+        new = Data((data.shape[0], data.shape[1]+1), dtype=data.dtype)
+        new.info = copy.deepcopy(data.info)
+        new[:,:-1] = data
+        d_name,d_unit = split_data_label(params['input deflection column'])
+        new.info['columns'].append(
+            join_data_label(params['output peak column'], d_unit))
+        new[:,-1] = peaks_to_mask(d_data, peaks) * d_data
         outqueue.put(peaks)
+        params['curve'].data[block_index] = new
 
     def _setup(self, hooke, params):
         """Setup `params` from config and return the z piezo and
@@ -144,31 +184,24 @@ class FlatPeaksCommand (Command):
         if curve.info['experiment'] != VelocityClamp:
             raise Failure('%s operates on VelocityClamp experiments, not %s'
                           % (self.name, curve.info['experiment']))
-        for col in ['surface distance (m)', 'deflection (N)']:
-            if col not in curve.data[0].info['columns']:
-                scale(hooke, curve)
         data = None
         for i,block in enumerate(curve.data):
-            if block.info['name'].startswith('retract'):
+            if block.info['name'].startswith(params['retract block']):
                 data = block
+                block_index = i
                 break
         if data == None:
             raise Failure('No retraction blocks in %s.' % curve)
-        z_data = data[:,data.info['columns'].index('surface distance (m)')]
-        if 'flattened deflection (N)' in data.info['columns']:
-            params['deflection column name'] = 'flattened deflection (N)'
-        else:
-            params['deflection column name'] = 'deflection (N)'
+        z_data = data[:,data.info['columns'].index(
+                params['input distance column'])]
         d_data = data[:,data.info['columns'].index(
-                params['deflection column name'])]
+                params['input deflection column'])]
         for key,value in params.items():
             if value == None: # Use configured default value.
                 params[key] = self.plugin.config[key]
-        # TODO: better option parser to do this automatically by Argument.type
-        for key in ['blind window', 'median window', 'max cut', 'min deviations', 'min points', 'see double', 'stable']:
-            params[key] = float(params[key])
         # TODO: convert 'see double' from nm to points
-        return z_data,d_data,params
+        return (data, block_index, z_data, d_data, params)
+
 
 class FlatFilterCommand (FilterCommand):
     u"""Create a subset playlist of curves with enough flat peaks.
@@ -190,7 +223,7 @@ class FlatFilterCommand (FilterCommand):
 
     See Also
     --------
-    FlatCommand : Underlying flat-based peak detection.
+    FlatPeaksCommand : Underlying flat-based peak detection.
     """
     def __init__(self, plugin):
         super(FlatFilterCommand, self).__init__(

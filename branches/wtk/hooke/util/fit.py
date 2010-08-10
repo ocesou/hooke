@@ -140,7 +140,10 @@ class ModelFitter (object):
         self.info = info
         self._rescale = rescale
         if rescale == True:
-            self._data_scale_factor = data.std()
+            for x in [data.std(), data.max()-data.min(), abs(data.max()), 1.0]:
+                if x != 0:
+                    self._data_scale_factor = x
+                    break
         else:
             self._data_scale_factor = 1.0
 
@@ -158,9 +161,12 @@ class ModelFitter (object):
     def residual(self, params):
         if self._rescale == True:
             params = [p*s for p,s in zip(params, self._param_scale_factors)]
-        residual = self._data - self.model(params)
-        if self._rescale == True or False:
+        m = self.model(params)
+        residual = self._data - m
+        if self._rescale == True:
             residual /= self._data_scale_factor
+        x = None
+        print 'residual', residual, self._data, m, self._data_scale_factor
         return residual
 
     def fit(self, initial_params=None, scale=None, outqueue=None, **kwargs):
@@ -194,6 +200,7 @@ class ModelFitter (object):
         else:
             active_scale = scale
             active_params = initial_params
+        print 'scale', active_scale
         params,cov,info,mesg,ier = leastsq(
             func=self.residual, x0=active_params, full_output=True,
             diag=active_scale, **kwargs)

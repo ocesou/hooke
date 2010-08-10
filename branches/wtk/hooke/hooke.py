@@ -64,12 +64,13 @@ import unittest
 import StringIO
 import sys
 
-from . import engine as engine
+from . import version
+from . import engine
 from . import config as config_mod
-from . import playlist as playlist
+from . import playlist
 from . import plugin as plugin_mod
 from . import driver as driver_mod
-from . import ui as ui
+from . import ui
 
 
 class Hooke (object):
@@ -172,6 +173,9 @@ class HookeRunner (object):
 def main():
     p = optparse.OptionParser()
     p.add_option(
+        '--version', dest='version', default=False, action='store_true',
+        help="Print Hooke's version information and exit.")
+    p.add_option(
         '-s', '--script', dest='script', metavar='FILE',
         help='Script of command line Hooke commands to run.')
     p.add_option(
@@ -188,6 +192,9 @@ def main():
     hooke = Hooke(debug=__debug__)
     runner = HookeRunner()
 
+    if options.version == True:
+        print version()
+        sys.exit(0)
     if options.script != None:
         f = open(os.path.expanduser(options.script), 'r')
         options.commands.extend(f.readlines())
