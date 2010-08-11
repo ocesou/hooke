@@ -31,50 +31,14 @@ import logging
 import numpy
 import scipy
 
-from ..command import Command, Argument, Failure, NullQueue
+from ..command import Argument, Failure, NullQueue
 from ..config import Setting
 from ..curve import Data
 from ..plugin import Plugin
 from ..util.fit import PoorFit, ModelFitter
 from ..util.si import join_data_label, split_data_label
-from .curve import CurveArgument
+from .curve import ColumnAddingCommand
 
-
-def scale(hooke, curve, block=None):
-    """Run 'add block force array' on `block`.
-
-    Runs 'zero block surface contact point' first, if necessary.  Does
-    not run either command if the columns they add to the block are
-    already present.
-
-    If `block` is `None`, scale all blocks in `curve`.
-    """
-    commands = hooke.commands
-    contact = [c for c in hooke.commands
-               if c.name == 'zero block surface contact point'][0]
-    force = [c for c in hooke.commands if c.name == 'add block force array'][0]
-    cant_adjust = [c for c in hooke.commands
-               if c.name == 'add block cantilever adjusted extension array'][0]
-    inqueue = None
-    outqueue = NullQueue()
-    if block == None:
-        for i in range(len(curve.data)):
-            scale(hooke, curve, block=i)
-    else:
-        params = {'curve':curve, 'block':block}
-        b = curve.data[block]
-        if ('surface distance (m)' not in b.info['columns']
-            or 'surface deflection (m)' not in b.info['columns']):
-            try:
-                contact.run(hooke, inqueue, outqueue, **params)
-            except PoorFit, e:
-                raise PoorFit('Could not fit %s %s: %s'
-                              % (curve.path, block, str(e)))
-        if ('deflection (N)' not in b.info['columns']):
-            force.run(hooke, inqueue, outqueue, **params)
-        if ('cantilever adjusted extension (m)' not in b.info['columns']):
-            cant_adjust.run(hooke, inqueue, outqueue, **params)
-    return curve
 
 class SurfacePositionModel (ModelFitter):
     """Bilinear surface position model.
@@ -97,7 +61,9 @@ class SurfacePositionModel (ModelFitter):
     In order for this model to produce a satisfactory fit, there
     should be enough data in the off-surface region that interactions
     due to proteins, etc. will not seriously skew the fit in the
-    off-surface region.
+    off-surface region.  If you don't have much of a tail, you can set
+    the `info` dict's `ignore non-contact before index` parameter to
+    the index of the last surface- or protein-related feature.
     """
     def model(self, params):
         """A continuous, bilinear model.
@@ -116,7 +82,8 @@ class SurfacePositionModel (ModelFitter):
         :math:`p_3` is the slope of the second region.
         """
         p = params  # convenient alias
-        if self.info.get('force zero non-contact slope', None) == True:
+        rNC_ignore = self.info['ignore non-contact before index']
+        if self.info['force zero non-contact slope'] == True:
             p = list(p)
             p.append(0.)  # restore the non-contact slope parameter
         r2 = numpy.round(abs(p[2]))
@@ -125,19 +92,32 @@ class SurfacePositionModel (ModelFitter):
         if r2 < len(self._data)-1:
             self._model_data[r2:] = \
                 p[0] + p[1]*p[2] + p[3] * numpy.arange(len(self._data)-r2)
+            if r2 < rNC_ignore:
+                self._model_data[r2:rNC_ignore] = self._data[r2:rNC_ignore]
         return self._model_data
 
-    def set_data(self, data, info=None):
-        super(SurfacePositionModel, self).set_data(data, info)
-        if info == None:
-            info = {}
-        self.info = info
-        self.info['min position'] = 0
-        self.info['max position'] = len(data)
-        self.info['max deflection'] = data.max()
-        self.info['min deflection'] = data.min()
-        self.info['position range'] = self.info['max position'] - self.info['min position']
-        self.info['deflection range'] = self.info['max deflection'] - self.info['min deflection']
+    def set_data(self, data, info=None, *args, **kwargs):
+        super(SurfacePositionModel, self).set_data(data, info, *args, **kwargs)
+        if self.info == None:
+            self.info = {}
+        for key,value in [
+            ('force zero non-contact slope', False),
+            ('ignore non-contact before index', -1),
+            ('min position', 0),  # Store postions etc. to avoid recalculating.
+            ('max position', len(data)),
+            ('max deflection', data.max()),
+            ('min deflection', data.min()),
+            ]:
+            if key not in self.info:
+                self.info[key] = value
+        for key,value in [
+            ('position range',
+             self.info['max position'] - self.info['min position']),
+            ('deflection range',
+             self.info['max deflection'] - self.info['min deflection']),
+            ]:
+            if key not in self.info:
+                self.info[key] = value
 
     def guess_initial_params(self, outqueue=None):
         """Guess the initial parameters.
@@ -158,36 +138,25 @@ class SurfacePositionModel (ModelFitter):
         right_slope = 0
         self.info['guessed contact slope'] = left_slope
         params = [left_offset, left_slope, kink_position, right_slope]
-        if self.info.get('force zero non-contact slope', None) == True:
+        if self.info['force zero non-contact slope'] == True:
             params = params[:-1]
         return params
 
-    def guess_scale(self, params, outqueue=None):
-        """Guess the parameter scales.
+    def fit(self, *args, **kwargs):
+        """Fit the model to the data.
 
         Notes
         -----
-        We guess offset scale (:math:`p_0`) as one tenth of the total
-        deflection range, the kink scale (:math:`p_2`) as one tenth of
-        the total index range, the initial (contact) slope scale
-        (:math:`p_1`) as one tenth of the contact slope estimation,
-        and the final (non-contact) slope scale (:math:`p_3`) is as
-        one tenth of the initial slope scale.
+        We change the `epsfcn` default from :func:`scipy.optimize.leastsq`'s
+        `0` to `1e-3`, so the initial Jacobian estimate takes larger steps,
+        which helps avoid being trapped in noise-generated local minima.
         """
-        offset_scale = self.info['deflection range']/10.
-        left_slope_scale = abs(params[1])/10.
-        kink_scale = self.info['position range']/10.
-        right_slope_scale = left_slope_scale/10.
-        scale = [offset_scale, left_slope_scale, kink_scale, right_slope_scale]
-        if self.info.get('force zero non-contact slope', None) == True:
-            scale = scale[:-1]
-        return scale
-
-    def fit(self, *args, **kwargs):
         self.info['guessed contact slope'] = None
+        if 'epsfcn' not in kwargs:
+            kwargs['epsfcn'] = 1e-3  # take big steps to estimate the Jacobian
         params = super(SurfacePositionModel, self).fit(*args, **kwargs)
         params[2] = abs(params[2])
-        if self.info.get('force zero non-contact slope', None) == True:
+        if self.info['force zero non-contact slope'] == True:
             params = list(params)
             params.append(0.)  # restore the non-contact slope parameter
 
@@ -211,6 +180,7 @@ class SurfacePositionModel (ModelFitter):
                           % (params[3], self.info['guessed contact slope']))
         return params
 
+
 class VelocityClampPlugin (Plugin):
     def __init__(self):
         super(VelocityClampPlugin, self).__init__(name='vclamp')
@@ -229,7 +199,7 @@ class VelocityClampPlugin (Plugin):
             ]
 
 
-class SurfaceContactCommand (Command):
+class SurfaceContactCommand (ColumnAddingCommand):
     """Automatically determine a block's surface contact point.
 
     You can select the contact point algorithm with the creatively
@@ -242,34 +212,34 @@ class SurfaceContactCommand (Command):
     """
     def __init__(self, plugin):
         super(SurfaceContactCommand, self).__init__(
-            name='zero block surface contact point',
-            arguments=[
-                CurveArgument,
-                Argument(name='block', aliases=['set'], type='int', default=0,
-                         help="""
-Data block for which the force should be calculated.  For an
-approach/retract force curve, `0` selects the approaching curve and `1`
-selects the retracting curve.
-""".strip()),
-                Argument(name='input distance column', type='string',
-                         default='z piezo (m)',
-                         help="""
+            name='zero surface contact point',
+            columns=[
+                ('distance column', 'z piezo (m)', """
 Name of the column to use as the surface position input.
 """.strip()),
-                Argument(name='input deflection column', type='string',
-                         default='deflection (m)',
-                         help="""
+                ('deflection column', 'deflection (m)', """
 Name of the column to use as the deflection input.
 """.strip()),
-                Argument(name='output distance column', type='string',
-                         default='surface distance',
-                         help="""
+                ],
+            new_columns=[
+                ('output distance column', 'surface distance', """
 Name of the column (without units) to use as the surface position output.
 """.strip()),
-                Argument(name='output deflection column', type='string',
-                         default='surface deflection',
-                         help="""
+                ('output deflection column', 'surface deflection', """
 Name of the column (without units) to use as the deflection output.
+""".strip()),
+                ],
+            arguments=[
+                Argument(name='ignore index', type='int', default=None,
+                         help="""
+Ignore the residual from the non-contact region before the indexed
+point (for the `wtk` algorithm).
+""".strip()),
+                Argument(name='ignore after last peak info name',
+                         type='string', default=None,
+                         help="""
+As an alternative to 'ignore index', ignore after the last peak in the
+peak list stored in the `.info` dictionary.
 """.strip()),
                 Argument(name='distance info name', type='string',
                          default='surface distance offset',
@@ -290,38 +260,39 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        data = params['curve'].data[params['block']]
-        # HACK? rely on params['curve'] being bound to the local hooke
-        # playlist (i.e. not a copy, as you would get by passing a
-        # curve through the queue).  Ugh.  Stupid queues.  As an
-        # alternative, we could pass lookup information through the
-        # queue...
-        new = Data((data.shape[0], data.shape[1]+2), dtype=data.dtype)
-        new.info = copy.deepcopy(data.info)
-        new[:,:-2] = data
-        name,dist_units = split_data_label(params['input distance column'])
-        name,def_units = split_data_label(params['input deflection column'])
-        new.info['columns'].extend([
-                join_data_label(params['output distance column'], dist_units),
-                join_data_label(params['output deflection column'], def_units),
-                ])
-        dist_data = data[:,data.info['columns'].index(
-                params['input distance column'])]
-        def_data = data[:,data.info['columns'].index(
-                params['input deflection column'])]
+        params = self.__setup_params(hooke=hooke, params=params)
+        block = self._block(hooke=hooke, params=params)
+        dist_data = self._get_column(hooke=hooke, params=params,
+                                     column_name='distance column')
+        def_data = self._get_column(hooke=hooke, params=params,
+                                    column_name='deflection column')
         i,def_offset,ps = self.find_contact_point(
-            params['curve'], dist_data, def_data, outqueue)
+            params, dist_data, def_data, outqueue)
         dist_offset = dist_data[i]
-        new.info[join_data_label(params['distance info name'], dist_units
-                                 )] = dist_offset
-        new.info[join_data_label(params['deflection info name'], def_units
-                                 )] = def_offset
-        new.info[params['fit parameters info name']] = ps
-        new[:,-2] = dist_data - dist_offset
-        new[:,-1] = def_data - def_offset
-        params['curve'].data[params['block']] = new
+        block.info[params['distance info name']] = dist_offset
+        block.info[params['deflection info name']] = def_offset
+        block.info[params['fit parameters info name']] = ps
+        self._set_column(hooke=hooke, params=params,
+                         column_name='output distance column',
+                         values=dist_data - dist_offset)
+        self._set_column(hooke=hooke, params=params,
+                         column_name='output deflection column',
+                         values=def_data - def_offset)
 
-    def find_contact_point(self, curve, z_data, d_data, outqueue=None):
+    def __setup_params(self, hooke, params):
+        name,dist_unit = split_data_label(params['distance column'])
+        name,def_unit = split_data_label(params['deflection column'])
+        params['output distance column'] = join_data_label(
+            params['output distance column'], dist_unit)
+        params['output deflection column'] = join_data_label(
+            params['output deflection column'], def_unit)
+        params['distance info name'] = join_data_label(
+            params['distance info name'], dist_unit)
+        params['deflection info name'] = join_data_label(
+            params['deflection info name'], def_unit)
+        return params
+
+    def find_contact_point(self, params, z_data, d_data, outqueue=None):
         """Railyard for the `find_contact_point_*` family.
 
         Uses the `surface contact point algorithm` configuration
@@ -329,9 +300,9 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
         """
         fn = getattr(self, 'find_contact_point_%s'
                      % self.plugin.config['surface contact point algorithm'])
-        return fn(curve, z_data, d_data, outqueue)
+        return fn(params, z_data, d_data, outqueue)
 
-    def find_contact_point_fmms(self, curve, z_data, d_data, outqueue=None):
+    def find_contact_point_fmms(self, params, z_data, d_data, outqueue=None):
         """Algorithm by Francesco Musiani and Massimo Sandal.
 
         Notes
@@ -351,7 +322,7 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
         curve, until you find a point with greater than baseline
         deflection.  That point is the contact point.
         """
-        if curve.info['filetype'] == 'picoforce':
+        if params['curve'].info['filetype'] == 'picoforce':
             # Take care of the picoforce trigger bug (TODO: example
             # data file demonstrating the bug).  We exclude portions
             # of the curve that have too much standard deviation.
@@ -392,7 +363,7 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
             i += 1
         return (i, d_baseline, {})
 
-    def find_contact_point_ms(self, curve, z_data, d_data, outqueue=None):
+    def find_contact_point_ms(self, params, z_data, d_data, outqueue=None):
         """Algorithm by Massimo Sandal.
 
         Notes
@@ -437,18 +408,31 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
         else:
             return dummy.index
 
-    def find_contact_point_wtk(self, curve, z_data, d_data, outqueue=None):
+    def find_contact_point_wtk(self, params, z_data, d_data, outqueue=None):
         """Algorithm by W. Trevor King.
 
         Notes
         -----
-        Uses :func:`analyze_surf_pos_data_wtk` internally.
+        Uses :class:`SurfacePositionModel` internally.
         """
         reverse = z_data[0] > z_data[-1]
         if reverse == True:    # approaching, contact region on the right
             d_data = d_data[::-1]
-        s = SurfacePositionModel(d_data)
-        s.info['force zero non-contact slope'] = True
+        s = SurfacePositionModel(d_data, info={
+                'force zero non-contact slope':True},
+                                 rescale=True)
+        ignore_index = None
+        if params['ignore index'] != None:
+            ignore_index = params['ignore index']
+        elif params['ignore after last peak info name'] != None:
+            peaks = z_data.info[params['ignore after last peak info name']]
+            if not len(peaks) > 0:
+                raise Failure('Need at least one peak in %s, not %s'
+                              % (params['ignore after last peak info name'],
+                                 peaks))
+            ignore_index = peaks[-1].post_index()
+        if ignore_index != None:
+            s.info['ignore non-contact before index'] = ignore_index
         offset,contact_slope,surface_index,non_contact_slope = s.fit(
             outqueue=outqueue)
         info = {
@@ -464,30 +448,23 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
         return (numpy.round(surface_index), deflection_offset, info)
 
 
-class ForceCommand (Command):
+class ForceCommand (ColumnAddingCommand):
     """Convert a deflection column from meters to newtons.
     """
     def __init__(self, plugin):
         super(ForceCommand, self).__init__(
-            name='add block force array',
-            arguments=[
-                CurveArgument,
-                Argument(name='block', aliases=['set'], type='int', default=0,
-                         help="""
-Data block for which the force should be calculated.  For an
-approach/retract force curve, `0` selects the approaching curve and `1`
-selects the retracting curve.
-""".strip()),
-                Argument(name='input deflection column', type='string',
-                         default='surface deflection (m)',
-                         help="""
+            name='convert distance to force',
+            columns=[
+                ('deflection column', 'surface deflection (m)', """
 Name of the column to use as the deflection input.
 """.strip()),
-                Argument(name='output deflection column', type='string',
-                         default='deflection',
-                         help="""
+                ],
+            new_columns=[
+                ('output deflection column', 'deflection', """
 Name of the column (without units) to use as the deflection output.
 """.strip()),
+                ],
+            arguments=[
                 Argument(name='spring constant info name', type='string',
                          default='spring constant (N/m)',
                          help="""
@@ -497,52 +474,54 @@ Name of the spring constant in the `.info` dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        data = params['curve'].data[params['block']]
-        # HACK? rely on params['curve'] being bound to the local hooke
-        # playlist (i.e. not a copy, as you would get by passing a
-        # curve through the queue).  Ugh.  Stupid queues.  As an
-        # alternative, we could pass lookup information through the
-        # queue.
-        new = Data((data.shape[0], data.shape[1]+1), dtype=data.dtype)
-        new.info = copy.deepcopy(data.info)
-        new[:,:-1] = data
-        new.info['columns'].append(
-            join_data_label(params['output deflection column'], 'N'))
-        d_data = data[:,data.info['columns'].index(
-                params['input deflection column'])]
-        new[:,-1] = d_data * data.info[params['spring constant info name']]
-        params['curve'].data[params['block']] = new
+        params = self.__setup_params(hooke=hooke, params=params)
+        def_data = self._get_column(hooke=hooke, params=params,
+                                    column_name='deflection column')
+        out = def_data * def_data.info[params['spring constant info name']]
+        self._set_column(hooke=hooke, params=params,
+                         column_name='output deflection column',
+                         values=out)
+
+    def __setup_params(self, hooke, params):
+        name,in_unit = split_data_label(params['deflection column'])
+        out_unit = 'N'  # HACK: extract target units from k_unit.
+        params['output deflection column'] = join_data_label(
+            params['output deflection column'], out_unit)
+        name,k_unit = split_data_label(params['spring constant info name'])
+        expected_k_unit = '%s/%s' % (out_unit, in_unit)
+        if k_unit != expected_k_unit:
+            raise Failure('Cannot convert from %s to %s with %s'
+                          % (params['deflection column'],
+                             params['output deflection column'],
+                             params['spring constant info name']))
+        return params
 
 
-class CantileverAdjustedExtensionCommand (Command):
+class CantileverAdjustedExtensionCommand (ColumnAddingCommand):
     """Remove cantilever extension from a total extension column.
+
+    If `distance column` and `deflection column` have the same units
+    (e.g. `z piezo (m)` and `deflection (m)`), `spring constant info
+    name` is ignored and a deflection/distance conversion factor of
+    one is used.
     """
     def __init__(self, plugin):
         super(CantileverAdjustedExtensionCommand, self).__init__(
-            name='add block cantilever adjusted extension array',
-            arguments=[
-                CurveArgument,
-                Argument(name='block', aliases=['set'], type='int', default=0,
-                         help="""
-Data block for which the adjusted extension should be calculated.  For
-an approach/retract force curve, `0` selects the approaching curve and
-`1` selects the retracting curve.
+            name='remove cantilever from extension',
+            columns=[
+                ('distance column', 'surface distance (m)', """
+Name of the column to use as the surface position input.
 """.strip()),
-                Argument(name='input distance column', type='string',
-                         default='surface distance (m)',
-                         help="""
-Name of the column to use as the distance input.
-""".strip()),
-                Argument(name='input deflection column', type='string',
-                         default='deflection (N)',
-                         help="""
+                ('deflection column', 'deflection (N)', """
 Name of the column to use as the deflection input.
 """.strip()),
-                Argument(name='output distance column', type='string',
-                         default='cantilever adjusted extension',
-                         help="""
-Name of the column (without units) to use as the deflection output.
+                ],
+            new_columns=[
+                ('output distance column', 'cantilever adjusted extension', """
+Name of the column (without units) to use as the surface position output.
 """.strip()),
+                ],
+            arguments=[
                 Argument(name='spring constant info name', type='string',
                          default='spring constant (N/m)',
                          help="""
@@ -552,35 +531,38 @@ Name of the spring constant in the `.info` dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        data = params['curve'].data[params['block']]
-        # HACK? rely on params['curve'] being bound to the local hooke
-        # playlist (i.e. not a copy, as you would get by passing a
-        # curve through the queue).  Ugh.  Stupid queues.  As an
-        # alternative, we could pass lookup information through the
-        # queue.
-        new = Data((data.shape[0], data.shape[1]+1), dtype=data.dtype)
-        new.info = copy.deepcopy(data.info)
-        new[:,:-1] = data
-        new.info['columns'].append(
-            join_data_label(params['output distance column'], 'm'))
-        z_data = data[:,data.info['columns'].index(
-                params['input distance column'])]
-        d_data = data[:,data.info['columns'].index(
-                params['input deflection column'])]
-        k = data.info[params['spring constant info name']]
+        params = self.__setup_params(hooke=hooke, params=params)
+        def_data = self._get_column(hooke=hooke, params=params,
+                                    column_name='deflection column')
+        dist_data = self._get_column(hooke=hooke, params=params,
+                                     column_name='distance column')
+        if params['spring constant info name'] == None:
+            k = 1.0  # distance and deflection in the same units
+        else:
+            k = def_data.info[params['spring constant info name']]
+        self._set_column(hooke=hooke, params=params,
+                         column_name='output distance column',
+                         values=dist_data - def_data / k)
 
-        z_name,z_unit = split_data_label(params['input distance column'])
-        assert z_unit == 'm', params['input distance column']
-        d_name,d_unit = split_data_label(params['input deflection column'])
-        assert d_unit == 'N', params['input deflection column']
-        k_name,k_unit = split_data_label(params['spring constant info name'])
-        assert k_unit == 'N/m', params['spring constant info name']
+    def __setup_params(self, hooke, params):
+        name,dist_unit = split_data_label(params['distance column'])
+        name,def_unit = split_data_label(params['deflection column'])
+        params['output distance column'] = join_data_label(
+            params['output distance column'], dist_unit)
+        if dist_unit == def_unit:
+            params['spring constant info name'] == None
+        else:
+            name,k_unit = split_data_label(params['spring constant info name'])
+            expected_k_unit = '%s/%s' % (def_unit, dist_unit)
+            if k_unit != expected_k_unit:
+                raise Failure('Cannot convert from %s to %s with %s'
+                              % (params['deflection column'],
+                                 params['output distance column'],
+                                 params['spring constant info name']))
+        return params
 
-        new[:,-1] = z_data - d_data / k
-        params['curve'].data[params['block']] = new
 
-
-class FlattenCommand (Command):
+class FlattenCommand (ColumnAddingCommand):
     """Flatten a deflection column.
 
     Subtracts a polynomial fit from the non-contact part of the curve
@@ -594,37 +576,27 @@ class FlattenCommand (Command):
     """
     def __init__(self, plugin):
         super(FlattenCommand, self).__init__(
-            name='add flattened extension array',
-            arguments=[
-                CurveArgument,
-                Argument(name='block', aliases=['set'], type='int', default=0,
-                         help="""
-Data block for which the adjusted extension should be calculated.  For
-an approach/retract force curve, `0` selects the approaching curve and
-`1` selects the retracting curve.
+            name='polynomial flatten',
+            columns=[
+                ('distance column', 'surface distance (m)', """
+Name of the column to use as the surface position input.
 """.strip()),
-                Argument(name='max degree', type='int',
-                         default=1,
-                         help="""
-Highest order polynomial to consider for flattening.  Using values
-greater than one usually doesn't help and can give artifacts.
-However, it could be useful too.  (TODO: Back this up with some
-theory...)
-""".strip()),
-                Argument(name='input distance column', type='string',
-                         default='surface distance (m)',
-                         help="""
-Name of the column to use as the distance input.
-""".strip()),
-                Argument(name='input deflection column', type='string',
-                         default='deflection (N)',
-                         help="""
+                ('deflection column', 'deflection (N)', """
 Name of the column to use as the deflection input.
 """.strip()),
-                Argument(name='output deflection column', type='string',
-                         default='flattened deflection',
-                         help="""
+                ],
+            new_columns=[
+                ('output deflection column', 'flattened deflection', """
 Name of the column (without units) to use as the deflection output.
+""".strip()),
+                ],
+            arguments=[
+                Argument(name='degree', type='int',
+                         default=1,
+                         help="""
+Order of the polynomial used for flattening.  Using values greater
+than one usually doesn't help and can give artifacts.  However, it
+could be useful too.  (TODO: Back this up with some theory...)
 """.strip()),
                 Argument(name='fit info name', type='string',
                          default='flatten fit',
@@ -635,54 +607,40 @@ Name of the flattening information in the `.info` dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        data = params['curve'].data[params['block']]
-        # HACK? rely on params['curve'] being bound to the local hooke
-        # playlist (i.e. not a copy, as you would get by passing a
-        # curve through the queue).  Ugh.  Stupid queues.  As an
-        # alternative, we could pass lookup information through the
-        # queue.
-        new = Data((data.shape[0], data.shape[1]+1), dtype=data.dtype)
-        new.info = copy.deepcopy(data.info)
-        new[:,:-1] = data
-        z_data = data[:,data.info['columns'].index(
-                params['input distance column'])]
-        d_data = data[:,data.info['columns'].index(
-                params['input deflection column'])]
-
-        d_name,d_unit = split_data_label(params['input deflection column'])
-        new.info['columns'].append(
-            join_data_label(params['output deflection column'], d_unit))
-
-        contact_index = numpy.absolute(z_data).argmin()
-        mask = z_data > 0
+        params = self.__setup_params(hooke=hooke, params=params)
+        block = self._block(hooke=hooke, params=params)
+        dist_data = self._get_column(hooke=hooke, params=params,
+                                     column_name='distance column')
+        def_data = self._get_column(hooke=hooke, params=params,
+                                    column_name='deflection column')
+        degree = params['degree']
+        mask = dist_data > 0
         indices = numpy.argwhere(mask)
-        z_nc = z_data[indices].flatten()
-        d_nc = d_data[indices].flatten()
+        if len(indices) == 0:
+            raise Failure('no positive distance values in %s'
+                          % params['distance column'])
+        dist_nc = dist_data[indices].flatten()
+        def_nc = def_data[indices].flatten()
 
-        min_err = numpy.inf
-        degree = poly_values = None
-        log = logging.getLogger('hooke')
-        for deg in range(params['max degree']):
-            try:
-                pv = scipy.polyfit(z_nc, d_nc, deg)
-                df = scipy.polyval(pv, z_nc)
-                err = numpy.sqrt((df-d_nc)**2).sum()
-            except Exception,e:
-                log.warn('failed to flatten with a degree %d polynomial: %s'
-                         % (deg, e))
-                continue
-            if err < min_err:  # new best fit
-                min_err = err
-                degree = deg
-                poly_values = pv
-
-        if degree == None:
-            raise Failure('failed to flatten with all degrees')
-        new.info[params['fit info name']] = {
-            'error':min_err/len(z_nc),
+        try:
+            poly_values = scipy.polyfit(dist_nc, def_nc, degree)
+            def_nc_fit = scipy.polyval(poly_values, dist_nc)
+        except Exception, e:
+            raise Failure('failed to flatten with a degree %d polynomial: %s'
+                          % (degree, e))
+        error = numpy.sqrt((def_nc_fit-def_nc)**2).sum() / len(def_nc)
+        block.info[params['fit info name']] = {
+            'error':error,
             'degree':degree,
-            'max degree':params['max degree'],
             'polynomial values':poly_values,
             }
-        new[:,-1] = d_data - mask*scipy.polyval(poly_values, z_data)
-        params['curve'].data[params['block']] = new
+        out = def_data - mask*scipy.polyval(poly_values, dist_data)
+        self._set_column(hooke=hooke, params=params,
+                         column_name='output deflection column',
+                         values=out)
+
+    def __setup_params(self, hooke, params):
+        d_name,d_unit = split_data_label(params['deflection column'])
+        params['output deflection column'] = join_data_label(
+            params['output deflection column'], d_unit)
+        return params

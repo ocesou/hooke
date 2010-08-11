@@ -106,7 +106,7 @@ DEFAULT_SETTINGS = [
     Setting('logger_hooke', 'qualname', 'hooke'),
     Setting('handler_hand1', help='Configure the default log handler, see\nhttp://docs.python.org/library/logging.html#configuration-file-format', wrap=False),
     Setting('handler_hand1', 'class', 'StreamHandler'),
-    Setting('handler_hand1', 'level', 'NOTSET'),
+    Setting('handler_hand1', 'level', 'WARN'), #NOTSET'),
     Setting('handler_hand1', 'formatter', 'form1'),
     Setting('handler_hand1', 'args', '(sys.stderr,)'),
     Setting('formatter_form1', help='Configure the default log formatter, see\nhttp://docs.python.org/library/logging.html#configuration-file-format', wrap=False),
@@ -300,12 +300,16 @@ class HookeConfigParser (configparser.RawConfigParser):
             self, section, *args, **kwargs)
         for i,kv in enumerate(items):
             key,value = kv
-            setting = self._default_settings_dict[(section, key)]
+            log = logging.getLogger('hooke') 
+            try:
+                setting = self._default_settings_dict[(section, key)]
+            except KeyError, e:
+                log.error('unknown setting %s/%s: %s' % (section, key, e))
+                raise
             try:
                 items[i] = (key, from_string(value=value, type=setting.type,
                                              count=setting.count))
             except ValueError, e:
-                log = logging.getLogger('hooke') 
                 log.error("could not convert '%s' (%s) for %s/%s: %s"
                           % (value, type(value), section, key, e))
                 raise

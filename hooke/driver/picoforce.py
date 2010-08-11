@@ -348,10 +348,17 @@ class PicoForceDriver (Driver):
         # offset assumed if raw data is signed...
 
         nm_sens_re = re.compile('V ([.0-9]*) nm/V')
-        match = nm_sens_re.match(info['Ciao scan list']['@Sens. ZSensorSens'])
-        assert match != None, 'Bad regexp for %s/%s, %s' \
-            % ('Ciao scan list', '@Sens. ZSensorSens',
-               info['Ciao scan list']['@Sens. ZSensorSens'])
+        if version in ['0x06120002', '0x06130001']:        
+            match = nm_sens_re.match(info['Ciao scan list']['@Sens. ZSensorSens'])
+            assert match != None, 'Bad regexp for %s/%s, %s' \
+                % ('Ciao scan list', '@Sens. ZSensorSens',
+                   info['Ciao scan list']['@Sens. ZSensorSens'])
+        else:
+            assert version == '0x07200000', version
+            match = nm_sens_re.match(info['Ciao scan list']['@Sens. ZsensSens'])
+            assert match != None, 'Bad regexp for %s/%s, %s' \
+                % ('Ciao scan list', '@Sens. ZsensSens',
+                   info['Ciao scan list']['@Sens. ZsensSens'])
         ret['z piezo sensitivity (m/V)'] = float(match.group(1))*1e-9
 
         match = nm_sens_re.match(info['Ciao scan list']['@Sens. DeflSens'])

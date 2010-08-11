@@ -250,9 +250,6 @@ class Argument (object):
         """
         pass # TODO: validation
 
-    # TODO: type conversion
-
-# TODO: type extensions?
 
 # Useful callbacks
 

@@ -27,14 +27,13 @@ import numpy
 from ..curve import Data
 
 
-def derivative(data, x_col=0, f_col=1, weights={-1:-0.5, 1:0.5}):
+def derivative(x_data, f_data, weights={-1:-0.5, 1:0.5}):
     """Calculate the discrete derivative (finite difference) of
-    data[:,f_col] with respect to data[:,x_col].
+    f_data with respect to x_data.
 
     Examples
     --------
 
-    >>> import pprint
     >>> d = Data((5,2), dtype=numpy.float,
     ...          info={'columns':['x', 'x**2']})
     >>> for i in range(5):
@@ -46,15 +45,9 @@ def derivative(data, x_col=0, f_col=1, weights={-1:-0.5, 1:0.5}):
            [  2.,   4.],
            [  3.,   9.],
            [  4.,  16.]])
-    >>> dd = derivative(d)
+    >>> dd = derivative(x_data=d[:,0], f_data=d[:,1])
     >>> dd
-    Data([[ 0.,  1.],
-           [ 1.,  2.],
-           [ 2.,  4.],
-           [ 3.,  6.],
-           [ 4.,  7.]])
-    >>> pprint.pprint(dd.info)
-    {'columns': ['x', 'deriv x**2 with respect to x']}
+    Data([ 1.,  2.,  4.,  6.,  7.])
 
     Notes
     -----
@@ -62,7 +55,7 @@ def derivative(data, x_col=0, f_col=1, weights={-1:-0.5, 1:0.5}):
     *Weights*
 
     The returned :class:`Data` block shares its x vector with the
-    input data.  The ith df/dx value in the returned data is
+    input data.  The `i`\th df/dx value in the returned data is
     caclulated with::
 
         (df/dx)[i] = (SUM_j w[j] f[i+j]) / h
@@ -95,17 +88,11 @@ def derivative(data, x_col=0, f_col=1, weights={-1:-0.5, 1:0.5}):
 
         f[i] - f[0] = f[0] - f[-i] == -(f[-i] - f[0])    
     """
-    output = Data((data.shape[0],2), dtype=data.dtype)
-    output.info = copy.copy(data.info)
-    output.info['columns'] = [
-        data.info['columns'][x_col],
-        'deriv %s with respect to %s' \
-        % (data.info['columns'][f_col], data.info['columns'][x_col]),
-        ]
-    h = data[1,x_col] - data[0,x_col]
+    output = Data(f_data.shape, dtype=f_data.dtype)
+    h = x_data[1] - x_data[0]
     chunks = []
     for i,w in weights.items():
-        chunk = numpy.roll(w*data[:,f_col], -i)
+        chunk = numpy.roll(w*f_data, -i)
         if i > 0: # chunk shifted down, replace the high `i`s
             zero = len(chunk) - 1 - i
             for j in range(1,i+1):
@@ -115,6 +102,4 @@ def derivative(data, x_col=0, f_col=1, weights={-1:-0.5, 1:0.5}):
             for j in range(1,zero+1):
                 chunk[zero-j] = 2*chunk[zero] - chunk[zero+j]
         chunks.append(chunk)
-    output[:,0] = data[:,x_col]
-    output[:,1] = sum(chunks)
-    return output
+    return sum(chunks)

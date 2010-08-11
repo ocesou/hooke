@@ -40,6 +40,7 @@ from ..curve import Data
 from ..plugin import Plugin, argument_to_setting
 from ..util.callback import is_iterable
 from ..util.fit import PoorFit, ModelFitter
+from ..util.peak import Peak
 from ..util.si import join_data_label, split_data_label
 from .curve import CurveArgument
 from .vclamp import scale
@@ -232,21 +233,21 @@ class FJC (ModelFitter):
     ...     }
     >>> model = FJC(d_data, info=info, rescale=True)
     >>> outqueue = Queue()
-    >>> Lp,a = model.fit(outqueue=outqueue)
+    >>> L,a = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
-    >>> model.L(Lp)  # doctest: +ELLIPSIS
-    3.500...e-08
-    >>> a  # doctest: +ELLIPSIS
-    2.499...e-10
+    >>> print L
+    3.5e-08
+    >>> print a
+    2.5e-10
 
     Fit the example data with a one-parameter fit (`L`).  We introduce
     some error in our fixed Kuhn length for fun.
 
     >>> info['Kuhn length (m)'] = 2*a
     >>> model = FJC(d_data, info=info, rescale=True)
-    >>> Lp = model.fit(outqueue=outqueue)
+    >>> L = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
-    >>> model.L(Lp)  # doctest: +ELLIPSIS
+    >>> print L  # doctest: +ELLIPSIS
     3.199...e-08
     """
     def Lp(self, L):
@@ -338,6 +339,15 @@ class FJC (ModelFitter):
         self._model_data[:] = FJC_fn(x_data, T, L, a)
         return self._model_data
 
+    def fit(self, *args, **kwargs):
+        params = super(FJC, self).fit(*args, **kwargs)
+        if is_iterable(params):
+            params[0] = self.L(params[0])  # convert Lp -> L
+            params[1] = abs(params[1])  # take the absolute value of `a`
+        else:  # params is a float
+            params = self.L(params)  # convert Lp -> L
+        return params
+
     def guess_initial_params(self, outqueue=None):
         """Guess initial fitting parameters.
 
@@ -360,22 +370,6 @@ class FJC (ModelFitter):
         if a_given:
             return [Lp]
         return [Lp, a]
-
-    def guess_scale(self, params, outqueue=None):
-        """Guess parameter scales.
-
-        Returns
-        -------
-        Lp_scale : float
-            A guess at the reparameterized contour length scale in meters.
-        a_scale : float (optional)
-            A guess at the Kuhn length in meters.  If the length of
-            `params` is less than 2, `a_scale` is not returned.
-        """
-        Lp_scale = 1.0
-        if len(params) == 1:
-            return [Lp_scale]
-        return [Lp_scale] + [x/10.0 for x in params[1:]]
 
 
 def inverse_FJC_PEG_fn(F_data, T=300, N=1, k=150., Lp=3.58e-10, Lh=2.8e-10, dG=3., a=7e-10):
@@ -502,21 +496,21 @@ class FJC_PEG (ModelFitter):
     ...     }
     >>> model = FJC_PEG(d_data, info=info, rescale=True)
     >>> outqueue = Queue()
-    >>> Nr,a = model.fit(outqueue=outqueue)
+    >>> N,a = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
-    >>> model.L(Nr)  # doctest: +ELLIPSIS
-    122.999...
-    >>> a  # doctest: +ELLIPSIS
-    6.999...e-10
+    >>> print N
+    123.0
+    >>> print a
+    7e-10
 
     Fit the example data with a one-parameter fit (`N`).  We introduce
     some error in our fixed Kuhn length for fun.
 
     >>> info['Kuhn length (m)'] = 2*kwargs['a']
     >>> model = FJC_PEG(d_data, info=info, rescale=True)
-    >>> Nr = model.fit(outqueue=outqueue)
+    >>> N = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
-    >>> model.L(Nr)  # doctest: +ELLIPSIS
+    >>> print N  # doctest: +ELLIPSIS
     96.931...
     """
     def Lr(self, L):
@@ -618,6 +612,15 @@ class FJC_PEG (ModelFitter):
         self._model_data[:] = FJC_PEG_fn(x_data, N=N, a=a, **kwargs)
         return self._model_data
 
+    def fit(self, *args, **kwargs):
+        params = super(FJC_PEG, self).fit(*args, **kwargs)
+        if is_iterable(params):
+            params[0] = self.L(params[0])  # convert Nr -> N
+            params[1] = abs(params[1])  # take the absolute value of `a`
+        else:  # params is a float
+            params = self.L(params)  # convert Nr -> N
+        return params
+
     def guess_initial_params(self, outqueue=None):
         """Guess initial fitting parameters.
 
@@ -644,19 +647,6 @@ class FJC_PEG (ModelFitter):
         if a_given:
             return [Nr]
         return [Nr, a]
-
-    def guess_scale(self, params, outqueue=None):
-        """Guess parameter scales.
-
-        Returns
-        -------
-        N_scale : float
-            A guess at the section count scale in meters.
-        a_scale : float (optional)
-            A guess at the Kuhn length in meters.  If the length of
-            `params` is less than 2, `a_scale` is not returned.
-        """
-        return [x/10.0 for x in params]
 
 
 def WLC_fn(x_data, T, L, p):
@@ -725,21 +715,21 @@ class WLC (ModelFitter):
     ...     }
     >>> model = WLC(d_data, info=info, rescale=True)
     >>> outqueue = Queue()
-    >>> Lp,p = model.fit(outqueue=outqueue)
+    >>> L,p = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
-    >>> model.L(Lp)  # doctest: +ELLIPSIS
-    3.500...e-08
-    >>> p  # doctest: +ELLIPSIS
-    2.500...e-10
+    >>> print L
+    3.5e-08
+    >>> print p
+    2.5e-10
 
     Fit the example data with a one-parameter fit (`L`).  We introduce
     some error in our fixed persistence length for fun.
 
     >>> info['persistence length (m)'] = 2*p
     >>> model = WLC(d_data, info=info, rescale=True)
-    >>> Lp = model.fit(outqueue=outqueue)
+    >>> L = model.fit(outqueue=outqueue)
     >>> fit_info = outqueue.get(block=False)
-    >>> model.L(Lp)  # doctest: +ELLIPSIS
+    >>> print L  # doctest: +ELLIPSIS
     3.318...e-08
     """
     def Lp(self, L):
@@ -829,8 +819,16 @@ class WLC (ModelFitter):
             p = self.info['persistence length (m)']
         # compute model data
         self._model_data[:] = WLC_fn(x_data, T, L, p)
-        print 'WLC', L/x_data.max(), self._model_data
         return self._model_data
+
+    def fit(self, *args, **kwargs):
+        params = super(WLC, self).fit(*args, **kwargs)
+        if is_iterable(params):
+            params[0] = self.L(params[0])  # convert Lp -> L
+            params[1] = abs(params[1])  # take the absolute value of `p`
+        else:  # params is a float
+            params = self.L(params)  # convert Lp -> L
+        return params
 
     def guess_initial_params(self, outqueue=None):
         """Guess initial fitting parameters.
@@ -855,23 +853,6 @@ class WLC (ModelFitter):
         if p_given:
             return [Lp]
         return [Lp, p]
-
-    def guess_scale(self, params, outqueue=None):
-        """Guess parameter scales.
-
-        Returns
-        -------
-        Lp_scale : float
-            A guess at the reparameterized contour length scale in meters.
-        p_scale : float (optional)
-            A guess at the persistence length in meters.  If the
-            length of `params` is less than 2, `p_scale` is not
-            returned.
-        """
-        Lp_scale = 1.0
-        if len(params) == 1:
-            return [Lp_scale]
-        return [Lp_scale] + [x/10.0 for x in params[1:]]
 
 
 class PolymerFitPlugin (Plugin):
@@ -921,6 +902,7 @@ Name of the column to use as the deflection input.
                 ])
         self._commands = [
             PolymerFitCommand(self), PolymerFitPeaksCommand(self),
+            TranslateFlatPeaksCommand(self),
             ]
 
     def dependencies(self):
@@ -1029,8 +1011,7 @@ Name (without units) for storing the fit parameters in the `.info` dictionary.
             a = info['Kuhn length (m)']
         else:
             a = params[1]
-        Lp = params[0]
-        L = model.L(Lp)
+        L = params[0]
         T = info['temperature (K)']
         fit_info = queue.get(block=False)
         f_data = numpy.ones(z_data.shape, dtype=z_data.dtype) * numpy.nan
@@ -1057,8 +1038,7 @@ Name (without units) for storing the fit parameters in the `.info` dictionary.
             a = info['Kuhn length (m)']
         else:
             a = params[1]
-        Nr = params[0]
-        N = model.L(Nr)
+        N = params[0]
         T = info['temperature (K)']
         fit_info = queue.get(block=False)
         f_data = numpy.ones(z_data.shape, dtype=z_data.dtype) * numpy.nan
@@ -1084,8 +1064,7 @@ Name (without units) for storing the fit parameters in the `.info` dictionary.
             p = info['persistence length (m)']
         else:
             p = params[1]
-        Lp = params[0]
-        L = model.L(Lp)
+        L = params[0]
         T = info['temperature (K)']
         fit_info = queue.get(block=False)
         f_data = numpy.ones(z_data.shape, dtype=z_data.dtype) * numpy.nan
@@ -1111,9 +1090,9 @@ approach/retract force curve, `0` selects the approaching curve and
 `1` selects the retracting curve.
 """.strip()),
                 Argument(name='peak info name', type='string',
-                         default='flat filter peaks',
+                         default='polymer peaks',
                          help="""
-Name for storing the distance offset in the `.info` dictionary.
+Name for the list of peaks in the `.info` dictionary.
 """.strip()),
                 Argument(name='peak index', type='int', count=-1, default=None,
                          help="""
@@ -1141,6 +1120,80 @@ Index of the selected peak in the list of peaks.  Use `None` to fit all peaks.
             ret = outq.get()
             if not isinstance(ret, Success):
                 raise ret
+
+
+class TranslateFlatPeaksCommand (Command):
+    """Translate flat filter peaks into polymer peaks for fitting.
+
+    Use :class:`~hooke.plugin.flatfilt.FlatPeaksCommand` creates a
+    list of peaks for regions with large derivatives.  For velocity
+    clamp measurements, these regions are usually the rebound phase
+    after a protein domain unfolds, the cantilever detaches, etc.
+    Because these features occur after the polymer loading phase, we
+    need to shift the selected regions back to align them with the
+    polymer loading regions.
+    """
+    def __init__(self, plugin):
+        plugin_arguments = [a for a in plugin._arguments
+                            if a.name in ['input distance column',
+                                          'input deflection column']]
+        arguments = [
+            CurveArgument,
+            Argument(name='block', aliases=['set'], type='int', default=0,
+                     help="""
+Data block for which the fit should be calculated.  For an
+approach/retract force curve, `0` selects the approaching curve and
+`1` selects the retracting curve.
+""".strip()),
+            ] + plugin_arguments + [
+            Argument(name='input peak info name', type='string',
+                     default='flat filter peaks',
+                     help="""
+Name for the input peaks in the `.info` dictionary.
+""".strip()),
+            Argument(name='output peak info name', type='string',
+                     default='polymer peaks',
+                     help="""
+Name for the ouptput peaks in the `.info` dictionary.
+""".strip()),
+            Argument(name='end offset', type='int', default=-1,
+                     help="""
+Number of points between the end of a new peak and the start of the old.
+""".strip()),
+            Argument(name='start fraction', type='float', default=0.2,
+                     help="""
+Place the start of the new peak at `start_fraction` from the end of
+the previous old peak to the end of the new peak.  Because the first
+new peak will have no previous old peak, it uses a distance of zero
+instead.
+""".strip()),
+            ]
+        super(TranslateFlatPeaksCommand, self).__init__(
+            name='flat peaks to polymer peaks',
+            arguments=arguments,
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        data = params['curve'].data[params['block']]
+        z_data = data[:,data.info['columns'].index(
+                params['input distance column'])]
+        d_data = data[:,data.info['columns'].index(
+                params['input deflection column'])]
+        previous_old_stop = numpy.absolute(z_data).argmin()
+        new = []
+        for i,peak in enumerate(data.info[params['input peak info name']]):
+            next_old_start = peak.index
+            stop = next_old_start + params['end offset'] 
+            z_start = z_data[previous_old_stop] + params['start fraction']*(
+                z_data[stop] - z_data[previous_old_stop])
+            start = numpy.absolute(z_data - z_start).argmin()
+            p = Peak('polymer peak %d' % i,
+                     index=start,
+                     values=d_data[start:stop])
+            new.append(p)
+            previous_old_stop = peak.post_index()
+        data.info[params['output peak info name']] = new
+
 
 # TODO:
 # def dist2fit(self):

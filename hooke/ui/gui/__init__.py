@@ -114,29 +114,7 @@ class HookeFrame (wx.Frame):
 
         self._setup_perspectives()
         self._bind_events()
-
-        self.execute_command(
-                command=self._command_by_name('load playlist'),
-                args={'input':'test/data/test'},#vclamp_picoforce/playlist'},
-                )
-        self.execute_command(
-                command=self._command_by_name('load playlist'),
-                args={'input':'test/data/vclamp_picoforce/playlist'},
-                )
-        self.execute_command(
-                command=self._command_by_name('polymer fit'),
-                args={'block':1, 'bounds':[918, 1103]},
-                )
-        self.execute_command(
-                command=self._command_by_name('flat filter peaks'),
-                args={'median window':3, 'min points':1},
-                )
-        self.execute_command(
-                command=self._command_by_name('polymer fit peaks'),
-                args={'block':1},
-                )
         return # TODO: cleanup
-        self.playlists = self._c['playlist'].Playlists
         self._displayed_plot = None
         #load default list, if possible
         self.do_loadlist(self.GetStringFromConfig('core', 'preferences', 'playlists'))
@@ -220,6 +198,10 @@ class HookeFrame (wx.Frame):
 #            ('results', panel.results.Results(self), 'bottom'),
             ]:
             self._add_panel(p, style)
+        self.execute_command(  # setup already loaded playlists
+            command=self._command_by_name('playlists'))
+        self.execute_command(  # setup already loaded curve
+            command=self._command_by_name('get curve'))
 
     def _add_panel(self, panel, style):
         self._c[panel.name] = panel
@@ -417,6 +399,22 @@ class HookeFrame (wx.Frame):
                 self._c['output'].write(result.__class__.__name__+'\n')
             self._c['output'].write(str(result).rstrip()+'\n')
 
+    def _postprocess_playlists(self, command, args={}, results=None):
+        """Update `self` to show the playlists.
+        """
+        if not isinstance(results[-1], Success):
+            self._postprocess_text(command, results=results)
+            return
+        assert len(results) == 2, results
+        playlists = results[0]
+        loaded_playlists = []  # TODO
+        if 'playlist' in self._c:
+            for playlist in playlists:
+                if playlist in loaded_playlists:
+                    self._c['playlist'].update_playlist(playlist)
+                else:
+                    self._c['playlist'].add_playlist(playlist)
+
     def _postprocess_load_playlist(self, command, args={}, results=None):
         """Update `self` to show the playlist.
         """
@@ -425,7 +423,7 @@ class HookeFrame (wx.Frame):
             return
         assert len(results) == 2, results
         playlist = results[0]
-        self._c['playlist']._c['tree'].add_playlist(playlist)
+        self._c['playlist'].add_playlist(playlist)
 
     def _postprocess_get_playlist(self, command, args={}, results=[]):
         if not isinstance(results[-1], Success):
@@ -433,7 +431,7 @@ class HookeFrame (wx.Frame):
             return
         assert len(results) == 2, results
         playlist = results[0]
-        self._c['playlist']._c['tree'].update_playlist(playlist)
+        self._c['playlist'].update_playlist(playlist)
 
     def _postprocess_get_curve(self, command, args={}, results=[]):
         """Update `self` to show the curve.
@@ -453,7 +451,7 @@ class HookeFrame (wx.Frame):
         if 'note' in self._c:
             self._c['note'].set_text(curve.info['note'])
         if 'playlist' in self._c:
-            self._c['playlist']._c['tree'].set_selected_curve(
+            self._c['playlist'].set_selected_curve(
                 playlist, curve)
         if 'plot' in self._c:
             self._c['plot'].set_curve(curve, config=self.gui.config)
