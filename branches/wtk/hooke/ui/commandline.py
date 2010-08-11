@@ -22,6 +22,7 @@ line.
 
 import codecs
 import cmd
+import logging
 import optparse
 try:
     import readline # including readline makes cmd.Cmd.cmdloop() smarter
@@ -118,6 +119,7 @@ class DoCommand (CommandMethod):
     def __init__(self, *args, **kwargs):
         super(DoCommand, self).__init__(*args, **kwargs)
         self.parser = CommandLineParser(self.command, self.name_fn)
+        self.log = logging.getLogger('hooke')
 
     def __call__(self, args):
         try:
@@ -126,7 +128,7 @@ class DoCommand (CommandMethod):
             self.cmd.stdout.write(str(e).lstrip()+'\n')
             self.cmd.stdout.write('Failure\n')
             return
-        print args
+        self.log.debug('executing %s with %s' % (self.command.name, args))
         self.cmd.inqueue.put(CommandMessage(self.command, args))
         while True:
             msg = self.cmd.outqueue.get()

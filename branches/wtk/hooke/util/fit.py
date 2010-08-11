@@ -42,7 +42,7 @@ class ModelFitter (object):
         Store any extra information useful inside your overridden
         methods.
     rescale : boolean
-        Rescale parameters so the scale of each is 1.0.  Also rescale
+        Rescale parameters so the guess for each is 1.0.  Also rescale
         the data so data.std() == 1.0.
 
     Examples
@@ -76,14 +76,13 @@ class ModelFitter (object):
     ...         return [float(self._data[-1] - self._data[0])/len(self._data),
     ...                 self._data[0]]
     ...     def guess_scale(self, params, outqueue=None):
-    ...         slope_scale = params[0]/10.
-    ...         if slope_scale == 0:  # data is expected to be flat
-    ...             slope_scale = float(self._data.max()-self._data.min())/len(self._data)
-    ...             if slope_scale == 0:  # data is completely flat
-    ...                 slope_scale = 1.
-    ...         offset_scale = self._data.std()/10.0
-    ...         if offset_scale == 0:  # data is completely flat
-    ...             offset_scale = 1.
+    ...         slope_scale = 0.1
+    ...         if params[1] == 0:
+    ...             offset_scale = 1
+    ...         else:
+    ...             offset_scale = 0.1*self._data.std()/abs(params[1])
+    ...             if offset_scale == 0:  # data is completely flat
+    ...                 offset_scale = 1.
     ...         return [slope_scale, offset_scale]
     >>> data = 20*numpy.sin(arange(1000)) + 7.*arange(1000) - 33.0
     >>> m = LinearModel(data)
@@ -93,7 +92,6 @@ class ModelFitter (object):
     >>> pprint(info)  # doctest: +ELLIPSIS, +REPORT_UDIFF
     {'active fitted parameters': array([  6.999..., -32.889...]),
      'active parameters': array([  6.999..., -32.889...]),
-     'active scale': [0.699..., 202.071...],
      'convergence flag': 2,
      'covariance matrix': array([[  1.199...e-08,  -5.993...e-06],
            [ -5.993...e-06,   3.994...e-03]]),
@@ -107,7 +105,7 @@ class ModelFitter (object):
      'initial parameters': [6.992..., -33.0],
      'message': 'The relative error between two consecutive iterates is at most 0.000...',
      'rescaled': False,
-     'scale': [0.699..., 202.071...]}
+     'scale': [0.100..., 6.123...]}
 
     We round the outputs to protect the doctest against differences in
     machine rounding during computation.  We expect the values to be close
@@ -156,17 +154,41 @@ class ModelFitter (object):
         return []
 
     def guess_scale(self, params, outqueue=None):
+        """Guess the problem length scale in each parameter dimension.
+
+        Notes
+        -----
+        From the :func:`scipy.optimize.leastsq` documentation, `diag`
+        (which we refer to as `scale`, sets `factor * || diag * x||`
+        as the initial step.  If `x == 0`, then `factor` is used
+        instead (from `lmdif.f`_)::
+
+                      do 70 j = 1, n
+                        wa3(j) = diag(j)*x(j)
+               70       continue
+                      xnorm = enorm(n,wa3)
+                      delta = factor*xnorm
+                      if (delta .eq. zero) delta = factor
+  
+        For most situations then, you don't need to do anything fancy.
+        The default scaling (if you don't set a scale) is::
+
+            c        on the first iteration and if mode is 1, scale according
+            c        to the norms of the columns of the initial jacobian.
+
+        (i.e. `diag(j) = acnorm(j)`, where `acnorm(j) is the norm of the `j`th column
+        of the initial Jacobian).
+
+        .. _lmdif.f: http://www.netlib.org/minpack/lmdif.f
+        """
         return None
 
     def residual(self, params):
         if self._rescale == True:
             params = [p*s for p,s in zip(params, self._param_scale_factors)]
-        m = self.model(params)
-        residual = self._data - m
+        residual = self._data - self.model(params)
         if self._rescale == True:
             residual /= self._data_scale_factor
-        x = None
-        print 'residual', residual, self._data, m, self._data_scale_factor
         return residual
 
     def fit(self, initial_params=None, scale=None, outqueue=None, **kwargs):
@@ -191,19 +213,20 @@ class ModelFitter (object):
             initial_params = self.guess_initial_params(outqueue)
         if scale == None:
             scale = self.guess_scale(initial_params, outqueue)
-        assert min(scale) > 0, scale
+        if scale != None:
+            assert min(scale) > 0, scale
         if self._rescale == True:
-            self._param_scale_factors = scale
-            active_scale = [1.0 for s in scale]
+            self._param_scale_factors = initial_params
+            for i,s in enumerate(self._param_scale_factors):
+                if s == 0:
+                    self._param_scale_factors[i] = 1.0
             active_params = [p/s for p,s in zip(initial_params,
                                                 self._param_scale_factors)]
         else:
-            active_scale = scale
             active_params = initial_params
-        print 'scale', active_scale
         params,cov,info,mesg,ier = leastsq(
             func=self.residual, x0=active_params, full_output=True,
-            diag=active_scale, **kwargs)
+            diag=scale, **kwargs)
         if self._rescale == True:
             active_params = params
             if len(initial_params) == 1:  # params is a float
@@ -219,7 +242,6 @@ class ModelFitter (object):
                     'initial parameters': initial_params,
                     'active parameters': active_params,
                     'scale': scale,
-                    'active scale': active_scale,
                     'data scale factor': self._data_scale_factor,
                     'active fitted parameters': active_params,
                     'fitted parameters': params,

@@ -182,6 +182,10 @@ def main():
         '-c', '--command', dest='commands', metavar='COMMAND',
         action='append', default=[],
         help='Add a command line Hooke command to run.')
+    p.add_option(
+        '--command-no-exit', dest='command_exit',
+        action='store_false', default=True,
+        help="Don't exit after running a script or commands.")
     options,arguments = p.parse_args()
     if len(arguments) > 0:
         print >> sys.stderr, 'More than 0 arguments to %s: %s' \
@@ -196,15 +200,15 @@ def main():
         print version()
         sys.exit(0)
     if options.script != None:
-        f = open(os.path.expanduser(options.script), 'r')
-        options.commands.extend(f.readlines())
-        f.close
+        with open(os.path.expanduser(options.script), 'r') as f:
+            options.commands.extend(f.readlines())
     if len(options.commands) > 0:
         try:
             hooke = runner.run_lines(hooke, options.commands)
         finally:
-            hooke.close()
-        sys.exit(0)
+            if options.command_exit == True:
+                hooke.close()
+                sys.exit(0)
 
     try:
         hooke = runner.run(hooke)

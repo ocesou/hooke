@@ -127,7 +127,11 @@ def ppSI(value, unit='', decimals=None, power=None, pad=False):
                 # 1 for ' ', 1 for '-', 3 for number, 1 for '.', and decimals.
                 pad = 6 + decimals
             format = lambda n: '%*.*f' % (pad, decimals, n)
-    return '%s %s%s' % (format(value / pow(10,power)), PREFIX[power], unit)
+    try:
+        prefix = ' '+PREFIX[power]
+    except KeyError:
+        prefix = 'e%d ' % power
+    return '%s%s%s' % (format(value / pow(10,power)), prefix, unit)
 
 
 def get_power(value):

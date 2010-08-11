@@ -359,8 +359,8 @@ class Playlist (Panel, wx.Panel):
         # Following DRY and the LoD.
         for attribute_name in dir(self._c['tree']):
             if (attribute_name.startswith('_')
-                or 'playlist' not in attribute_name
-                or 'curve' not in attribute_name):
+                or ('playlist' not in attribute_name
+                    and 'curve' not in attribute_name)):
                 continue  # not an attribute we're interested in
             attr = getattr(self._c['tree'], attribute_name)
             if hasattr(attr, '__call__'):  # attr is a function / method

@@ -23,6 +23,7 @@ Hooke plugin, including description of main Hooke internals.
 
 import logging
 import StringIO
+import sys
 
 from numpy import arange
 
@@ -65,7 +66,7 @@ class TutorialPlugin (Plugin):
         # the plugin is loaded, this function is executed.  If there
         # is something you need to do when Hooke starts, code it in
         # this function.
-        print 'I am the Tutorial plugin initialization!'
+        print >> sys.stderr, 'I am the Tutorial plugin initialization!'
 
         # This super() call similar to the old-style
         #   Plugin.__init__
