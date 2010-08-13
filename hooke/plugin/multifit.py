@@ -24,8 +24,8 @@ all sorts of :class:`hooke.experiment.VelocityClamp` parameters.
 
 from ..command import Command, Argument, Failure
 from ..playlist import FilePlaylist
-from ..plugin import Plugin
-from ..plugin.playlist import PlaylistArgument
+from . import Plugin
+from .playlist import PlaylistArgument
 
 
 class MultifitPlugin (Plugin):

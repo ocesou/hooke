@@ -23,7 +23,7 @@ licensing information.
 
 from .. import __license__
 from ..command import Command, Argument, Failure
-from ..plugin import Builtin
+from . import Builtin
 
 
 class LicensePlugin (Builtin):

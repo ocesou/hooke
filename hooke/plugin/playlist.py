@@ -26,7 +26,7 @@ import os.path
 
 from ..command import Command, Argument, Failure
 from ..playlist import FilePlaylist
-from ..plugin import Builtin
+from . import Builtin
 
 
 class PlaylistPlugin (Builtin):
@@ -37,7 +37,9 @@ class PlaylistPlugin (Builtin):
             GetCommand(self), IndexCommand(self), CurveListCommand(self),
             SaveCommand(self), LoadCommand(self),
             AddCommand(self), AddGlobCommand(self),
-            RemoveCommand(self), FilterCommand(self), NoteFilterCommand(self)]
+            RemoveCommand(self), ApplyCommandStack(self),
+            FilterCommand(self), NoteFilterCommand(self),
+            ]
 
 
 # Define common or complicated arguments
@@ -69,7 +71,8 @@ def playlist_name_callback(hooke, command, argument, value):
         i += 1
 
 PlaylistNameArgument = Argument(
-    name='name', type='string', optional=True, callback=playlist_name_callback,
+    name='output playlist', type='string', optional=True,
+    callback=playlist_name_callback,
     help="""
 Name of the new playlist (defaults to an auto-generated name).
 """.strip())
@@ -78,40 +81,85 @@ def all_drivers_callback(hooke, command, argument, value):
     return hooke.drivers
 
 
+# Define useful command subclasses
+
+class PlaylistCommand (Command):
+    """A :class:`~hooke.command.Command` operating on a
+    :class:`~hooke.playlist.Playlist`.
+    """
+    def __init__(self, **kwargs):
+        if 'arguments' in kwargs:
+            kwargs['arguments'].insert(0, PlaylistArgument)
+        else:
+            kwargs['arguments'] = [PlaylistArgument]
+        super(PlaylistCommand, self).__init__(**kwargs)
+
+    def _playlist(self, hooke, params):
+        """Get the selected playlist.
+
+        Notes
+        -----
+        `hooke` is intended to attach the selected playlist to the
+        local hooke instance; the returned playlist should not be
+        effected by the state of `hooke`.
+        """
+        # HACK? rely on params['playlist'] being bound to the local
+        # hooke (i.e. not a copy, as you would get by passing a
+        # playlist through the queue).  Ugh.  Stupid queues.  As an
+        # alternative, we could pass lookup information through the
+        # queue...
+        return params['playlist']
+
+
+class PlaylistAddingCommand (Command):
+    """A :class:`~hooke.command.Command` adding a
+    :class:`~hooke.playlist.Playlist`.
+    """
+    def __init__(self, **kwargs):
+        if 'arguments' in kwargs:
+            kwargs['arguments'].insert(0, PlaylistNameArgument)
+        else:
+            kwargs['arguments'] = [PlaylistNameArgument]
+        super(PlaylistAddingCommand, self).__init__(**kwargs)
+
+    def _set_playlist(self, hooke, params, playlist):
+        """Attach a new playlist.
+        """
+        playlist.name = params['output playlist']
+        hooke.playlists.append(playlist)
+
+
 # Define commands
 
-class NextCommand (Command):
+class NextCommand (PlaylistCommand):
     """Move playlist to the next curve.
     """
     def __init__(self, plugin):
         super(NextCommand, self).__init__(
-            name='next curve',
-            arguments=[PlaylistArgument],
-            help=self.__doc__, plugin=plugin)
+            name='next curve', help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	params['playlist'].next()
+	self._playlist(hooke, params).next()
 
-class PreviousCommand (Command):
+
+class PreviousCommand (PlaylistCommand):
     """Move playlist to the previous curve.
     """
     def __init__(self, plugin):
         super(PreviousCommand, self).__init__(
-            name='previous curve',
-            arguments=[PlaylistArgument],
-            help=self.__doc__, plugin=plugin)
+            name='previous curve', help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	params['playlist'].previous()
+	self._playlist(hooke, params).previous()
 
-class JumpCommand (Command):
+
+class JumpCommand (PlaylistCommand):
     """Move playlist to a given curve.
     """
     def __init__(self, plugin):
         super(JumpCommand, self).__init__(
             name='jump to curve',
             arguments=[
-                PlaylistArgument,
                 Argument(name='index', type='int', optional=False, help="""
 Index of target curve.
 """.strip()),
@@ -119,56 +167,51 @@ Index of target curve.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	params['playlist'].jump(params['index'])
+	self._playlist(hooke, params).jump(params['index'])
 
-class IndexCommand (Command):
+
+class IndexCommand (PlaylistCommand):
     """Print the index of the current curve.
 
     The first curve has index 0.
     """
     def __init__(self, plugin):
         super(IndexCommand, self).__init__(
-            name='curve index',
-            arguments=[
-                PlaylistArgument,
-                ],
-            help=self.__doc__, plugin=plugin)
+            name='curve index', help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	outqueue.put(params['playlist'].index())
+	outqueue.put(self._playlist(hooke, params).index())
 
-class GetCommand (Command):
+
+class GetCommand (PlaylistCommand):
     """Return a :class:`hooke.playlist.Playlist`.
     """
     def __init__(self, plugin):
         super(GetCommand, self).__init__(
-            name='get playlist',
-            arguments=[PlaylistArgument],
-            help=self.__doc__, plugin=plugin)
+            name='get playlist', help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        outqueue.put(params['playlist'])
+        outqueue.put(self._playlist(hooke, params))
 
-class CurveListCommand (Command):
+
+class CurveListCommand (PlaylistCommand):
     """Get the curves in a playlist.
     """
     def __init__(self, plugin):
         super(CurveListCommand, self).__init__(
-            name='playlist curves',
-            arguments=[PlaylistArgument],
-            help=self.__doc__, plugin=plugin)
+            name='playlist curves', help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	outqueue.put(list(params['playlist']))
+	outqueue.put(list(self._playlist(hooke, params)))
 
-class SaveCommand (Command):
+
+class SaveCommand (PlaylistCommand):
     """Save a playlist.
     """
     def __init__(self, plugin):
         super(SaveCommand, self).__init__(
             name='save playlist',
             arguments=[
-                PlaylistArgument,
                 Argument(name='output', type='file',
                          help="""
 File name for the output playlist.  Defaults to overwriting the input
@@ -179,9 +222,10 @@ created from scratch with 'new playlist'), this option is required.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-	params['playlist'].save(params['output'])
+	self._playlist(hooke, params).save(params['output'])
 
-class LoadCommand (Command):
+
+class LoadCommand (PlaylistAddingCommand):
     """Load a playlist.
     """
     def __init__(self, plugin):
@@ -202,18 +246,18 @@ Drivers for loading curves.
 
     def _run(self, hooke, inqueue, outqueue, params):
         p = FilePlaylist(drivers=params['drivers'], path=params['input'])
-        p.load()
-        hooke.playlists.append(p)
+        p.load(hooke=hooke)
+        self._set_playlist(hooke, params, p)
 	outqueue.put(p)
 
-class AddCommand (Command):
+
+class AddCommand (PlaylistCommand):
     """Add a curve to a playlist.
     """
     def __init__(self, plugin):
         super(AddCommand, self).__init__(
             name='add curve to playlist',
             arguments=[
-                PlaylistArgument,
                 Argument(name='input', type='file', optional=False,
                          help="""
 File name for the input :class:`hooke.curve.Curve`.
@@ -226,10 +270,11 @@ Additional information for the input :class:`hooke.curve.Curve`.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        params['playlist'].append_curve_by_path(params['input'],
-                                                params['info'])
+        self._playlist(hooke, params).append_curve_by_path(
+            params['input'], params['info'], hooke=hooke)
 
-class AddGlobCommand (Command):
+
+class AddGlobCommand (PlaylistCommand):
     """Add curves to a playlist with file globbing.
 
     Adding lots of files one at a time can be tedious.  With this
@@ -240,7 +285,6 @@ class AddGlobCommand (Command):
         super(AddGlobCommand, self).__init__(
             name='glob curves to playlist',
             arguments=[
-                PlaylistArgument,
                 Argument(name='input', type='string', optional=False,
                          help="""
 File name glob for the input :class:`hooke.curve.Curve`.
@@ -254,16 +298,17 @@ Additional information for the input :class:`hooke.curve.Curve`.
 
     def _run(self, hooke, inqueue, outqueue, params):
         for path in sorted(glob.glob(params['input'])):
-            params['playlist'].append_curve_by_path(path, params['info'])
+            self._playlist(hooke, params).append_curve_by_path(
+                path, params['info'], hooke=hooke)
 
-class RemoveCommand (Command):
+
+class RemoveCommand (PlaylistCommand):
     """Remove a curve from a playlist.
     """
     def __init__(self, plugin):
         super(RemoveCommand, self).__init__(
             name='remove curve from playlist',
             arguments=[
-                PlaylistArgument,
                 Argument(name='index', type='int', optional=False, help="""
 Index of target curve.
 """.strip()),
@@ -271,10 +316,47 @@ Index of target curve.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        params['playlist'].pop(params['index'])
-        params['playlist'].jump(params.index())
+        self._playlist(hooke, params).pop(params['index'])
+        self._playlist(hooke, params).jump(params.index())
 
-class FilterCommand (Command):
+
+class ApplyCommandStack (PlaylistCommand):
+    """Apply a :class:`~hooke.command_stack.CommandStack` to each
+    curve in a playlist.
+
+    TODO: discuss `evaluate`.
+    """
+    def __init__(self, plugin):
+        super(ApplyCommandStack, self).__init__(
+            name='apply command stack',
+            arguments=[
+                Argument(name='commands', type='command stack', optional=False,
+                         help="""
+Command stack to apply to each curve.
+""".strip()),
+                Argument(name='evaluate', type='bool', default=False,
+                         help="""
+Evaluate the applied command stack immediately.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        if len(params['commands']) == 0:
+            return
+        p = self._playlist(hooke, params)
+        if params['evaluate'] == True:
+            for curve in p.items():
+                for command in params['commands']:
+                    curve.command_stack.execute_command(hooke, command)
+                    curve.command_stack.append(command)
+        else:
+            for curve in p:
+                curve.command_stack.extend(params['commands'])
+                curve.unload()  # force command stack execution on next access.
+
+
+class FilterCommand (PlaylistAddingCommand, PlaylistCommand):
     """Create a subset playlist via a selection function.
 
     Removing lots of curves one at a time can be tedious.  With this
@@ -293,12 +375,7 @@ class FilterCommand (Command):
     """
     def __init__(self, plugin, name='filter playlist'):
         super(FilterCommand, self).__init__(
-            name=name,
-            arguments=[
-                PlaylistArgument,
-                PlaylistNameArgument,
-                ],
-            help=self.__doc__, plugin=plugin)
+            name=name, help=self.__doc__, plugin=plugin)
         if not hasattr(self, 'filter'):
             self.arguments.append(
                 Argument(name='filter', type='function', optional=False,
@@ -312,13 +389,14 @@ Function returning `True` for "good" curves.
             filter_fn = params['filter']
         else:
             filter_fn = self.filter
-        p = params['playlist'].filter(filter_fn,
+        p = self._playlist(hooke, params).filter(filter_fn,
             hooke=hooke, inqueue=inqueue, outqueue=outqueue, params=params)
         p.name = params['name']
         if hasattr(p, 'path') and p.path != None:
             p.set_path(os.path.join(os.path.dirname(p.path), p.name))
-        hooke.playlists.append(p)
+        self._set_playlist(hooke, params, p)
         outqueue.put(p)
+
 
 class NoteFilterCommand (FilterCommand):
     """Create a subset playlist of curves with `.info['note'] != None`.

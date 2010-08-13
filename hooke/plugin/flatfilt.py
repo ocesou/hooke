@@ -21,7 +21,7 @@
 # License along with Hooke.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-"""The ``flatfilt`` module provides :class:`~FlatFiltPlugin` and
+"""The ``flatfilt`` module provides :class:`FlatFiltPlugin` and
 several associated :class:`~hooke.command.Command`\s for removing flat
 (featureless) :mod:`~hooke.curve.Curve`\s from
 :class:`~hooke.playlist.Playlist`\s.
@@ -42,13 +42,13 @@ from ..command import Argument, Success, Failure, UncaughtException
 from ..config import Setting
 from ..curve import Data
 from ..experiment import VelocityClamp
-from ..plugin import Plugin, argument_to_setting
-from ..plugin.curve import ColumnAddingCommand
-from ..plugin.playlist import FilterCommand
 from ..util.fit import PoorFit
 from ..util.peak import (find_peaks, peaks_to_mask,
                          find_peaks_arguments, Peak, _kwargs)
 from ..util.si import join_data_label, split_data_label
+from . import Plugin, argument_to_setting
+from .curve import ColumnAddingCommand
+from .playlist import FilterCommand
 
 
 class FlatFiltPlugin (Plugin):
@@ -131,7 +131,7 @@ Name of the column to use as the deflection input.
             new_columns=[
                 ('output peak column', 'flat filter peaks', """
 Name of the column (without units) to use as the peak output.
-""".split()),
+""".strip()),
                 ],
             arguments=[
                 Argument(name='peak info name', type='string',
@@ -144,6 +144,7 @@ dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        self._add_to_command_stack(params)
         params = self.__setup_params(hooke=hooke, params=params)
         block = self._block(hooke=hooke, params=params)
         dist_data = self._get_column(hooke=hooke, params=params,

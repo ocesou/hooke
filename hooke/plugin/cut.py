@@ -25,7 +25,7 @@
 import numpy
 
 from ..command import Command, Argument, Failure
-from ..plugin import Plugin
+from . import Plugin
 
 
 class CutPlugin (Plugin):

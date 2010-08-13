@@ -23,7 +23,7 @@ lists of :class:`hooke.playlist.Playlist` classes.
 
 from ..command import Command, Argument, Failure
 from ..playlist import FilePlaylist
-from ..plugin import Builtin
+from . import Builtin
 from .playlist import PlaylistNameArgument
 
 

@@ -71,6 +71,7 @@ from . import playlist
 from . import plugin as plugin_mod
 from . import driver as driver_mod
 from . import ui
+from .compat import forking as forking  # dynamically patch multiprocessing.forking
 
 
 class Hooke (object):
@@ -90,7 +91,7 @@ class Hooke (object):
         self.load_plugins()
         self.load_drivers()
         self.load_ui()
-        self.command = engine.CommandEngine()
+        self.engine = engine.CommandEngine()
         self.playlists = playlist.NoteIndexList()
 
     def load_log(self):
@@ -107,6 +108,8 @@ class Hooke (object):
         self.commands = []
         for plugin in self.plugins:
             self.commands.extend(plugin.commands())
+        self.command_by_name = dict(
+            [(c.name, c) for c in self.commands])
 
     def load_drivers(self):
         self.drivers = plugin_mod.load_graph(
@@ -115,8 +118,19 @@ class Hooke (object):
     def load_ui(self):
         self.ui = ui.load_ui(self.config)
 
-    def close(self):
-        self.config.write() # Does not preserve original comments
+    def close(self, save_config=False):
+        if save_config == True:
+            self.config.write()  # Does not preserve original comments
+
+    def run_command(self, command, arguments):
+        """Run the command named `command` with `arguments` using
+        :meth:`~hooke.engine.CommandEngine.run_command`.
+
+        Allows for running commands without spawning another process
+        as in :class:`HookeRunner`.
+        """
+        self.engine.run_command(self, command, arguments)
+
 
 class HookeRunner (object):
     def run(self, hooke):
@@ -153,14 +167,15 @@ class HookeRunner (object):
         command_to_ui = multiprocessing.Queue()
         manager = multiprocessing.Manager()
         command = multiprocessing.Process(name='command engine',
-            target=hooke.command.run, args=(hooke, ui_to_command, command_to_ui))
+            target=hooke.engine.run, args=(hooke, ui_to_command, command_to_ui))
         command.start()
+        hooke.engine = None  # no more need for the UI-side version.
         return (ui_to_command, command_to_ui, command)
 
     def _cleanup_run(self, ui_to_command, command_to_ui, command):
         log = logging.getLogger('hooke')
         log.debug('cleanup sending CloseEngine')
-        ui_to_command.put(ui.CloseEngine())
+        ui_to_command.put(engine.CloseEngine())
         hooke = None
         while not isinstance(hooke, Hooke):
             log.debug('cleanup waiting for Hooke instance from the engine.')
@@ -183,9 +198,15 @@ def main():
         action='append', default=[],
         help='Add a command line Hooke command to run.')
     p.add_option(
-        '--command-no-exit', dest='command_exit',
-        action='store_false', default=True,
+        '-p', '--persist', dest='persist', action='store_true', default=False,
         help="Don't exit after running a script or commands.")
+    p.add_option(
+        '--save-config', dest='save_config',
+        action='store_true', default=False,
+        help="Automatically save a changed configuration on exit.")
+    p.add_option(
+        '--debug', dest='debug', action='store_true', default=False,
+        help="Enable debug logging.")
     options,arguments = p.parse_args()
     if len(arguments) > 0:
         print >> sys.stderr, 'More than 0 arguments to %s: %s' \
@@ -199,6 +220,10 @@ def main():
     if options.version == True:
         print version()
         sys.exit(0)
+    if options.debug == True:
+        hooke.config.set(
+            section='handler_hand1', option='level', value='NOTSET')
+        hooke.load_log()
     if options.script != None:
         with open(os.path.expanduser(options.script), 'r') as f:
             options.commands.extend(f.readlines())
@@ -206,11 +231,11 @@ def main():
         try:
             hooke = runner.run_lines(hooke, options.commands)
         finally:
-            if options.command_exit == True:
-                hooke.close()
+            if options.persist == False:
+                hooke.close(save_config=options.save_config)
                 sys.exit(0)
 
     try:
         hooke = runner.run(hooke)
     finally:
-        hooke.close()
+        hooke.close(save_config=options.save_config)

@@ -22,8 +22,8 @@
 """
 
 from ..command import Command, Argument, Failure
-from ..plugin import Builtin
-from ..plugin.curve import current_curve_callback
+from . import Builtin
+from .curve import current_curve_callback
 
 
 class NotePlugin (Builtin):

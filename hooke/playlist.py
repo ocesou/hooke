@@ -88,13 +88,27 @@ class NoteIndexList (list):
     def items(self, reverse=False):
         """Iterate through `self` calling `_setup_item` on each item
         before yielding.
+
+        Notes
+        -----
+        Updates :attr:`_index` during the iteration so
+        :func:`~hooke.plugin.curve.current_curve_callback` works as
+        expected in :class:`~hooke.command.Command`\s called from
+        :class:`~hooke.plugin.playlist.ApplyCommandStack`.  After the
+        iteration completes, :attr:`_index` is restored to its
+        original value.
         """
+        index = self._index
         items = self
         if reverse == True:
-            items = reversed(self)
-        for item in items:
+            items = reversed(enumerate(self))
+        else:
+            items = enumerate(self)
+        for i,item in items:
+            self._index = i
             self._setup_item(item)
             yield item
+        self._index = index
 
     def filter(self, keeper_fn=lambda item:True, *args, **kwargs):
         c = copy.deepcopy(self)
@@ -107,6 +121,7 @@ class NoteIndexList (list):
             c._index = 0
         return c
 
+
 class Playlist (NoteIndexList):
     """A :class:`NoteIndexList` of :class:`hooke.curve.Curve`\s.
 
@@ -118,9 +133,10 @@ class Playlist (NoteIndexList):
         self._loaded = [] # List of loaded curves, see :meth:`._setup_item`.
         self._max_loaded = 100 # curves to hold in memory simultaneously.
 
-    def append_curve_by_path(self, path, info=None, identify=True):
+    def append_curve_by_path(self, path, info=None, identify=True, hooke=None):
         path = os.path.normpath(path)
         c = curve.Curve(path, info=info)
+        c.set_hooke(hooke)
         if identify == True:
             c.identify(self.drivers)
         self.append(c)
@@ -138,6 +154,7 @@ class Playlist (NoteIndexList):
             if len(self._loaded) > self._max_loaded:
                 oldest = self._loaded.pop(0)
                 oldest.unload()
+
 
 class FilePlaylist (Playlist):
     version = '0.1'
@@ -336,14 +353,16 @@ class FilePlaylist (Playlist):
         doc = xml.dom.minidom.parseString(string)
         self._from_xml_doc(doc, identify=identify)
 
-    def load(self, path=None, identify=True):
+    def load(self, path=None, identify=True, hooke=None):
         """Load a playlist from a file.
         """
         self.set_path(path)
         doc = xml.dom.minidom.parse(self.path)
         self._from_xml_doc(doc, identify=identify)
         self._digest = self.digest()
-
+        for curve in self:
+            curve.set_hooke(hooke)
+        
     def save(self, path=None):
         """Saves the playlist in a XML file.
         """

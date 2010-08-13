@@ -46,8 +46,9 @@ import wx.lib.evtmgr as evtmgr
 
 from ...command import CommandExit, Exit, Success, Failure, Command, Argument
 from ...config import Setting
+from ...engine import CommandMessage
 from ...interaction import Request, BooleanRequest, ReloadUserInterfaceConfig
-from ...ui import UserInterface, CommandMessage
+from ...ui import UserInterface
 from .dialog.selection import Selection as SelectionDialog
 from .dialog.save_file import select_save_file
 from . import menu as menu
@@ -334,8 +335,9 @@ class HookeFrame (wx.Frame):
                         args[arg.name].pop()
                     if len(args[arg.name]) == 0:
                         args[arg.name] = arg.default
-        self.log.debug('executing %s with %s' % (command.name, args))
-        self.inqueue.put(CommandMessage(command, args))
+        cm = CommandMessage(self.command.name, args)
+        self.log.debug('executing %s' % cm)
+        self.inqueue.put(cm)
         results = []
         while True:
             msg = self.outqueue.get()

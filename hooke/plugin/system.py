@@ -27,7 +27,7 @@ import subprocess
 import sys
 
 from ..command import Command, Argument
-from ..plugin import Builtin
+from . import Builtin
 
 
 class SystemPlugin (Builtin):

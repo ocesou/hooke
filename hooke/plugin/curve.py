@@ -30,11 +30,12 @@ import numpy
 
 from ..command import Command, Argument, Failure
 from ..curve import Data
-from ..plugin import Builtin
-from ..plugin.playlist import current_playlist_callback
+from ..engine import CommandMessage
 from ..util.calculus import derivative
 from ..util.fft import unitary_avg_power_spectrum
 from ..util.si import ppSI, join_data_label, split_data_label
+from . import Builtin
+from .playlist import current_playlist_callback
 
 
 # Define common or complicated arguments
@@ -85,12 +86,51 @@ class CurveCommand (Command):
         super(CurveCommand, self).__init__(**kwargs)
 
     def _curve(self, hooke, params):
+        """Get the selected curve.
+
+        Notes
+        -----
+        `hooke` is intended to attach the selected curve to the local
+        playlist; the returned curve should not be effected by the
+        state of `hooke`.  This is important for reliable
+        :class:`~hooke.command_stack.CommandStack`\s.
+        """
         # HACK? rely on params['curve'] being bound to the local hooke
         # playlist (i.e. not a copy, as you would get by passing a
         # curve through the queue).  Ugh.  Stupid queues.  As an
         # alternative, we could pass lookup information through the
         # queue...
         return params['curve']
+
+    def _add_to_command_stack(self, params):
+        """Store the command name and current `params` values in the
+        curve's `.command_stack`.
+
+        If this would duplicate the command currently on top of the
+        stack, no action is taken.  Call early on, or watch out for
+        repeated param processing.
+
+        Recommended practice is to *not* lock in argument values that
+        are loaded from the plugin's :attr:`.config`.
+
+        Notes
+        -----
+        Perhaps we should subclass :meth:`_run` and use :func:`super`,
+        or embed this in :meth:`run` to avoid subclasses calling this
+        method explicitly, with all the tedium and brittality that
+        implies.  On the other hand, the current implemtnation allows
+        CurveCommands that don't effect the curve itself
+        (e.g. :class:`GetCommand`) to avoid adding themselves to the
+        stack entirely.
+        """
+        curve = self._curve(hooke=None, params=params)
+        if (len(curve.command_stack) > 0
+            and curve.command_stack[-1].command == self.name
+            and curve.command_stack[-1].arguments == params):
+            pass  # no need to place duplicate calls on the stack.
+        else:
+            curve.command_stack.append(CommandMessage(
+                    self.name, params))
 
 
 class BlockCommand (CurveCommand):
@@ -399,6 +439,7 @@ Name of the new column for storing the difference (without units, defaults to
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        self._add_to_command_stack(params)
         params = self.__setup_params(hooke=hooke, params=params)
         data_A = self._get_column(hooke=hooke, params=params,
                                   block_name='block A',
@@ -473,6 +514,7 @@ central differencing.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        self._add_to_command_stack(params)
         params = self.__setup_params(hooke=hooke, params=params)
         x_data = self._get_column(hooke=hooke, params=params,
                                   column_name='x column')
@@ -537,6 +579,7 @@ Otherwise, the chunks are end-to-end, and not overlapping.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        self._add_to_command_stack(params)
         params = self.__setup_params(hooke=hooke, params=params)
         data = self._get_column(hooke=hooke, params=params)
         bounds = params['bounds']

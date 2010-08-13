@@ -3,9 +3,9 @@
 """Commands and settings panel for Hooke.
 
 This panel handles command generation of
-:class:`hooke.ui.CommandMessage`\s for all of the commands that don't
-have panels of their own.  Actually it can generate
-:class:`hooke.ui.CommandMessage`\s for those as well, but the
+:class:`hooke.engine.CommandMessage`\s for all of the commands that
+don't have panels of their own.  Actually it can generate
+:class:`hooke.engine.CommandMessage`\s for those as well, but the
 command-specific panel will probably have a nicer interface.
 
 # TODO: command arguments.

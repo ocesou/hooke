@@ -20,8 +20,12 @@
 storing force curves.
 """
 
+import logging
 import os.path
+
 import numpy
+
+from .command_stack import CommandStack
 
 
 class NotRecognized (ValueError):
@@ -144,15 +148,19 @@ class Curve (object):
     `experiment`.  These are two strings that can be used by Hooke
     commands/plugins to understand what they are looking at.
 
-    * `.info['filetype']` should contain the name of the exact
+    * :attr:`info['filetype']` should contain the name of the exact
       filetype defined by the driver (so that filetype-speciofic
       commands can know if they're dealing with the correct filetype).
-    * `.info['experiment']` should contain an instance of a
+    * :attr:`info['experiment']` should contain an instance of a
       :class:`hooke.experiment.Experiment` subclass to identify the
       experiment type.  For example, various
       :class:`hooke.driver.Driver`\s can read in force-clamp data, but
       Hooke commands could like to know if they're looking at force
       clamp data, regardless of their origin.
+
+    Another important attribute is :attr:`command_stack`, which holds
+    a :class:`~hooke.command_stack.CommandStack` listing the commands
+    that have been applied to the `Curve` since loading.
     """
     def __init__(self, path, info=None):
         #the data dictionary contains: {name of data: list of data sets [{[x], [y]}]
@@ -163,6 +171,21 @@ class Curve (object):
             info = {}
         self.info = info
         self.name = os.path.basename(path)
+        self.command_stack = CommandStack()
+        self._hooke = None  # Hooke instance for Curve.load()
+
+    def __str__(self):
+        return str(self.__unicode__())
+
+    def __unicode__(self):
+        return u'<%s %s>' % (self.__class__.__name__, self.name)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def set_hooke(self, hooke=None):
+        if hooke != None:
+            self._hooke = hooke
 
     def identify(self, drivers):
         """Identify the appropriate :class:`hooke.driver.Driver` for
@@ -181,15 +204,30 @@ class Curve (object):
                 return
         raise NotRecognized(self)
 
-    def load(self):
+    def load(self, hooke=None):
         """Use the driver to read the curve into memory.
+
+        Also runs any commands in :attr:`command_stack`.  All
+        arguments are passed through to
+        :meth:`hooke.command_stack.CommandStack.execute`.
         """
+        self.set_hooke(hooke)
+        log = logging.getLogger('hooke')
+        log.debug('loading curve %s with driver %s' % (self.name, self.driver))
         data,info = self.driver.read(self.path, self.info)
         self.data = data
         for key,value in info.items():
             self.info[key] = value
+        if self._hooke != None:
+            self.command_stack.execute(self._hooke)
+        elif len(self.command_stack) > 0:
+            log.warn(
+                'could not execute command stack for %s without Hooke instance'
+                % self.name)
 
     def unload(self):
         """Release memory intensive :attr:`.data`.
         """
+        log = logging.getLogger('hooke')
+        log.debug('unloading curve %s' % self.name)
         self.data = None
