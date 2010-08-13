@@ -37,11 +37,11 @@ from scipy.optimize import newton
 from ..command import Command, Argument, Success, Failure
 from ..config import Setting
 from ..curve import Data
-from ..plugin import Plugin, argument_to_setting
 from ..util.callback import is_iterable
 from ..util.fit import PoorFit, ModelFitter
 from ..util.peak import Peak
 from ..util.si import join_data_label, split_data_label
+from . import Plugin, argument_to_setting
 from .curve import CurveArgument
 from .vclamp import scale
 

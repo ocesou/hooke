@@ -26,7 +26,7 @@ import sys
 
 from .. import version
 from ..command import Command, Argument
-from ..plugin import Builtin
+from . import Builtin
 
 
 class DebugPlugin (Builtin):

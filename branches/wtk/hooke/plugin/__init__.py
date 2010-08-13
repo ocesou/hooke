@@ -58,6 +58,7 @@ BUILTIN_MODULES = [
     'config',
     'curve',
     'debug',
+    'engine',
     'license',
     'note',
     'playlist',

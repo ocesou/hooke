@@ -47,25 +47,6 @@ USER_INTERFACE_SETTING_SECTION = 'user interfaces'
 """
 
 
-class QueueMessage (object):
-    def __str__(self):
-        return self.__class__.__name__
-
-class CloseEngine (QueueMessage):
-    pass
-
-class CommandMessage (QueueMessage):
-    """A message storing a command to run, `command` should be a
-    :class:`hooke.command.Command` instance, and `arguments` should be
-    a :class:`dict` with `argname` keys and `value` values to be
-    passed to the command.
-    """
-    def __init__(self, command, arguments=None):
-        self.command = command
-        if arguments == None:
-            arguments = {}
-        self.arguments = arguments
-
 class UserInterface (object):
     """A user interface to drive the :class:`hooke.engine.CommandEngine`.
     """

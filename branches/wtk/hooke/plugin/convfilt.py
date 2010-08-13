@@ -41,12 +41,12 @@ import numpy
 from ..command import Command, Argument, Success, Failure
 from ..config import Setting
 from ..experiment import VelocityClamp
-from ..plugin import Plugin, argument_to_setting
-from ..plugin.curve import CurveArgument
-from ..plugin.playlist import FilterCommand
-from ..plugin.vclamp import scale
 from ..util.fit import PoorFit
 from ..util.peak import find_peaks, find_peaks_arguments, Peak, _kwargs
+from . import Plugin, argument_to_setting
+from .curve import CurveArgument
+from .playlist import FilterCommand
+from .vclamp import scale
 
 
 class ConvFiltPlugin (Plugin):

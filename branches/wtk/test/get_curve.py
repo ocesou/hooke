@@ -20,12 +20,12 @@
 >>> from hooke.hooke import Hooke, HookeRunner
 >>> h = Hooke()
 >>> r = HookeRunner()
->>> h = r.run_lines(h, ['load_playlist test/data/test']) # doctest: +ELLIPSIS
+>>> h = r.run_lines(h, ['load_playlist test/data/test'])
 <FilePlaylist test.hkp>
 Success
 <BLANKLINE>
->>> h = r.run_lines(h, ['get_curve']) # doctest: +ELLIPSIS, +REPORT_UDIFF
-<hooke.curve.Curve object at 0x...>
+>>> h = r.run_lines(h, ['get_curve'])
+<Curve picoforce.000>
 Success
 <BLANKLINE>
 """

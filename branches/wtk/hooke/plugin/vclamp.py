@@ -34,9 +34,9 @@ import scipy
 from ..command import Argument, Failure, NullQueue
 from ..config import Setting
 from ..curve import Data
-from ..plugin import Plugin
 from ..util.fit import PoorFit, ModelFitter
 from ..util.si import join_data_label, split_data_label
+from . import Plugin
 from .curve import ColumnAddingCommand
 
 
@@ -260,6 +260,7 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        self._add_to_command_stack(params)
         params = self.__setup_params(hooke=hooke, params=params)
         block = self._block(hooke=hooke, params=params)
         dist_data = self._get_column(hooke=hooke, params=params,
@@ -474,6 +475,7 @@ Name of the spring constant in the `.info` dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        self._add_to_command_stack(params)
         params = self.__setup_params(hooke=hooke, params=params)
         def_data = self._get_column(hooke=hooke, params=params,
                                     column_name='deflection column')
@@ -531,6 +533,7 @@ Name of the spring constant in the `.info` dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        self._add_to_command_stack(params)
         params = self.__setup_params(hooke=hooke, params=params)
         def_data = self._get_column(hooke=hooke, params=params,
                                     column_name='deflection column')
@@ -607,6 +610,7 @@ Name of the flattening information in the `.info` dictionary.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        self._add_to_command_stack(params)
         params = self.__setup_params(hooke=hooke, params=params)
         block = self._block(hooke=hooke, params=params)
         dist_data = self._get_column(hooke=hooke, params=params,

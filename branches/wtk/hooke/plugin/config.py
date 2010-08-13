@@ -25,7 +25,7 @@ from StringIO import StringIO
 
 from ..command import Command, Argument, Failure
 from ..interaction import ReloadUserInterfaceConfig
-from ..plugin import Builtin
+from . import Builtin
 
 
 class ConfigPlugin (Builtin):

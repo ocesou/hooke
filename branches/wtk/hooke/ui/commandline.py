@@ -32,8 +32,9 @@ except ImportError, e:
 import shlex
 
 from ..command import CommandExit, Exit, Command, Argument, StoreValue
-from ..interaction import Request, BooleanRequest, ReloadUserInterfaceConfig
-from ..ui import UserInterface, CommandMessage
+from ..engine import CommandMessage
+from ..interaction import Request, ReloadUserInterfaceConfig
+from ..ui import UserInterface
 from ..util.convert import from_string
 from ..util.encoding import get_input_encoding, get_output_encoding
 
@@ -128,8 +129,9 @@ class DoCommand (CommandMethod):
             self.cmd.stdout.write(str(e).lstrip()+'\n')
             self.cmd.stdout.write('Failure\n')
             return
-        self.log.debug('executing %s with %s' % (self.command.name, args))
-        self.cmd.inqueue.put(CommandMessage(self.command, args))
+        cm = CommandMessage(self.command.name, args)
+        self.log.debug('executing %s' % cm)
+        self.cmd.inqueue.put(cm)
         while True:
             msg = self.cmd.outqueue.get()
             if isinstance(msg, Exit):
@@ -296,6 +298,8 @@ class DoCommand (CommandMethod):
 
 
 class HelpCommand (CommandMethod):
+    """Supersedes :class:`hooke.plugin.engine.HelpCommand`.
+    """
     def __init__(self, *args, **kwargs):
         super(HelpCommand, self).__init__(*args, **kwargs)
         self.parser = CommandLineParser(self.command, self.name_fn)
@@ -327,63 +331,6 @@ class CompleteCommand (CommandMethod):
         pass
 
 
-# Define some additional commands
-
-class LocalHelpCommand (Command):
-    """Called with an argument, prints that command's documentation.
-
-    With no argument, lists all available help topics as well as any
-    undocumented commands.
-    """
-    def __init__(self):
-        super(LocalHelpCommand, self).__init__(name='help', help=self.__doc__)
-        # We set .arguments now (vs. using th arguments option to __init__),
-        # to overwrite the default help argument.  We don't override
-        # :meth:`cmd.Cmd.do_help`, so `help --help` is not a valid command.
-        self.arguments = [
-            Argument(name='command', type='string', optional=True,
-                     help='The name of the command you want help with.')
-            ]
-
-    def _run(self, hooke, inqueue, outqueue, params):
-        raise NotImplementedError # cmd.Cmd already implements .do_help()
-
-class LocalExitCommand (Command):
-    """Exit Hooke cleanly.
-    """
-    def __init__(self):
-        super(LocalExitCommand, self).__init__(
-            name='exit', aliases=['quit', 'EOF'], help=self.__doc__,
-            arguments = [
-                Argument(name='force', type='bool', default=False,
-                         help="""
-Exit without prompting the user.  Use if you save often or don't make
-typing mistakes ;).
-""".strip()),
-                ])
-
-    def _run(self, hooke, inqueue, outqueue, params):
-        """The guts of the `do_exit/_quit/_EOF` commands.
-
-        A `True` return stops :meth:`.cmdloop` execution.
-        """
-        _exit = True
-        if params['force'] == False:
-            not_saved = [p.name for p in hooke.playlists
-                         if p.is_saved() == False]
-            msg = 'Exit?'
-            default = True
-            if len(not_saved) > 0:
-                msg = 'Unsaved playlists (%s).  %s' \
-                    % (', '.join([str(p) for p in not_saved]), msg)
-                default = False
-            outqueue.put(BooleanRequest(msg, default))
-            result = inqueue.get()
-            assert result.type == 'boolean'
-            _exit = result.value
-        if _exit == True:
-            raise Exit()
-
 
 # Now onto the main attraction.
 
@@ -392,7 +339,6 @@ class HookeCmd (cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.ui = ui
         self.commands = commands
-        self.local_commands = [LocalExitCommand(), LocalHelpCommand()]
         self.prompt = 'hooke> '
         self._add_command_methods()
         self.inqueue = inqueue
@@ -402,7 +348,9 @@ class HookeCmd (cmd.Cmd):
         return name.replace(' ', '_')
 
     def _add_command_methods(self):
-        for command in self.commands + self.local_commands:
+        for command in self.commands:
+            if command.name == 'exit':
+                command.aliases.extend(['quit', 'EOF'])
             for name in [command.name] + command.aliases:
                 name = self._name_fn(name)
                 setattr(self.__class__, 'help_%s' % name,
