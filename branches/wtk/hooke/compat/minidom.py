@@ -27,6 +27,7 @@ Importing this module applies the suggested patch dynamically.
   http://www.w3.org/TR/2000/WD-xml-c14n-20000119.html#charescaping
 """
 
+import logging
 import xml.dom.minidom
 
 
@@ -64,3 +65,6 @@ def writexml(self, writer, indent="", addindent="", newl=""):
 instancemethod = type(xml.dom.minidom.Element.writexml)
 xml.dom.minidom.Element.writexml = instancemethod(
     writexml, None, xml.dom.minidom.Element)
+
+logging.warn(
+    'monkey patched xml.dom.minidom.Element and ._write_data for issue5752')

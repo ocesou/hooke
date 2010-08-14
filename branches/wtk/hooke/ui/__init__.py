@@ -82,6 +82,11 @@ class UserInterface (object):
 
     # Assorted useful tidbits for subclasses
 
+    def _submit_command(self, command_message, ui_to_command_queue):
+        log = logging.getLogger('hooke')
+        log.debug('executing %s' % command_message)
+        ui_to_command_queue.put(command_message)
+
     def _splash_text(self, extra_info, **kwargs):
         return ("""
 Hooke version %s

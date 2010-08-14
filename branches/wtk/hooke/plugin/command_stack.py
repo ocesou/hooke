@@ -23,220 +23,193 @@ and several associated :class:`~hooke.command.Command`\s exposing
 :mod`hooke.command_stack`'s functionality.
 """
 
-from ..command import Command, Argument, Failure
+import logging
+from Queue import Queue
+
+from ..command import Command, Argument, Success, Failure
+from ..command_stack import CommandStack
+from ..engine import CloseEngine, CommandMessage
 from . import Builtin
-from .curve import CurveCommand
 
-class macroCommands(object):
 
-	currentmacro=[]
-	pause=0
-	auxprompt=[]
-	macrodir=None
-	
+# Define useful command subclasses
 
-	def _plug_init(self):
-		self.currentmacro=[]
-		self.auxprompt=self.prompt
-		self.macrodir=self.config['workdir']
-		if not os.path.exists(os.path.join(self.macrodir,'macros')):
-                    try:
-                        os.mkdir('macros')
-                    except:
-                        print 'Warning: cannot create macros folder.'
-                        print 'Probably you do not have permissions in your Hooke folder, use macro at your own risk.'
-                self.macrodir=os.path.join(self.macrodir,'macros')
+class CommandStackCommand (Command):
+    """Subclass to avoid pushing control commands to the stack.
+    """
+    def _set_state(self, state):
+        try:
+            self.plugin.set_state(state)
+        except ValueError, e:
+            self.plugin.log('raising error: %s' % e)
+            raise Failure('invalid state change: %s' % e.state_change)
 
-	def collect(self):
-				
-		print 'Enter STOP / PAUSE to go back to normal mode\nUNDO to remove last command'
-		line=[]
-		while not(line=='STOP' or line=='PAUSE'):
-			line=raw_input('hooke (macroREC): ')
-			if line=='PAUSE':
-				self.pause=1
-				self.prompt='hooke (macroPAUSE): '
-				break
-			if line=='STOP':
-				self.prompt=self.auxprompt
-				self.do_recordmacro('stop')
-				break
-			if line=='UNDO':
-				self.currentmacro.pop()
-				continue
-			param=line.split()
 
-			#FIXME check if accessing param[2] when it doesnt exist breaks something
-			if param[0] =='export':
-				exportline=param[0]+' __curve__ '
-				if len(param)==3:
-					exportline=exportline+param[2]
-				self.currentmacro.append(exportline)
-				self.onecmd(line)
-				continue
-			
-			if param[0] =='txt':
-				exportline=param[0]
-				if len(param)==3:
-					exportline=exportline+' '+param[2]
-				exportline=exportline+'__curve__'
-				self.currentmacro.append(exportline)
-				self.onecmd(line)
-				continue
+class CaptureCommand (CommandStackCommand):
+    """Run a mock-engine and save the incoming commands.
 
-			self.onecmd(line)
-			
-			self.currentmacro.append(line)
-		
+    Notes
+    -----
+    Due to limitations in the --script and --command option
+    implementations in ./bin/hooke, capture sessions will die at the
+    end of the script and command execution before entering
+    --persist's interactive session.
+    """
+    def __init__(self, name, plugin):
+        super(CaptureCommand, self).__init__(
+            name=name, help=self.__doc__, plugin=plugin)
 
-	def do_recordmacro(self, args):
-		'''RECORDMACRO
-		Stores input commands to create script files
-		-------
-		Syntax: recordmacro [start / stop]
-		If a macro is currently paused start resumes recording
-		'''
-		
-		
-		if len(args)==0:
-			args='start'
+    def _run(self, hooke, inqueue, outqueue, params):
+        # TODO: possibly merge code with CommandEngine.run()
 
-		if args=='stop':
-			self.pause=0
-			self.prompt=self.auxprompt
-			if len(self.currentmacro) != 0:
-				answer=linput.safeinput('Do you want to save this macro? ',['y'])
-				if answer[0].lower() == 'y':
-					self.do_savemacro('')
-				else:
-					print 'Macro discarded'
-					self.currentmacro=[]
-			else:
-				print 'Macro was empty'	
+        # Fake successful completion so UI continues sending commands.
+        outqueue.put(Success())
 
-		if args=='start':	
+        while True:
+            msg = inqueue.get()
+            if isinstance(msg, CloseEngine):
+                outqueue.put('CloseEngine')
+                inqueue.put(msg)  # Put CloseEngine back for CommandEngine.
+                self._set_state('inactive')
+                return
+            assert isinstance(msg, CommandMessage), type(msg)
+            cmd = hooke.command_by_name[msg.command]
+            if isinstance(cmd, CommandStackCommand):
+                if isinstance(cmd, StopCaptureCommand):
+                    outqueue = Queue()  # Grab StopCaptureCommand's completion.
+                cmd.run(hooke, inqueue, outqueue, **msg.arguments)
+                if isinstance(cmd, StopCaptureCommand):
+                    assert self.plugin.state == 'inactive', self.plugin.state
+                    # Return the stolen completion as our own.
+                    raise outqueue.get(block=False)
+            else:
+                self.plugin.log('appending %s' % msg)
+                self.plugin.command_stack.append(msg)
+                # Fake successful completion so UI continues sending commands.
+                outqueue.put(Success())
 
-			if self.pause==1:
-				self.pause=0	
-				self.collect()	
-			else:
-				if len(self.currentmacro) != 0:
-					answer=linput.safeinput('Another macro is already beign recorded\nDo you want to save it?',['y'])
-					if answer[0].lower() == 'y':
-						self.do_savemacro('')
-					else:
-						print 'Old macro discarded, you can start recording the new one'
-			
-				self.currentmacro=[]
-				self.collect()
-		
 
-	def do_savemacro(self, macroname):
+# The plugin itself
 
-		'''SAVEMACRO
-		Saves previously recorded macro into a script file for future use
-		-------
-		Syntax: savemacro [macroname]
-		If no macroname is supplied one will be interactively asked
-		'''
+class CommandStackPlugin (Builtin):
+    def __init__(self):
+        super(CommandStackPlugin, self).__init__(name='command_stack')
+        self._commands = [
+            StartCaptureCommand(self), StopCaptureCommand(self),
+	    ReStartCaptureCommand(self),
+            PopCommand(self), GetCommand(self), GetStateCommand(self),
+	    SaveCommand(self), LoadCommand(self),
+	    ]
+	self.command_stack = CommandStack()
+	self.path = None
+        self.state = 'inactive'
+        # inactive <-> active.
+        self._valid_transitions = {
+            'inactive': ['active'],
+            'active': ['inactive'],
+            }
 
-		saved_ok=0
-		if self.currentmacro==None:
-			print 'No macro is being recorded!'
-			return 0
-		if len(macroname)==0:
-			macroname=linput.safeinput('Enter new macro name: ')
-			if len(macroname) == 0:
-				print 'Invalid name'
-				
-		macroname=os.path.join(self.macrodir,macroname+'.hkm')
-		if os.path.exists(macroname):
-			overwrite=linput.safeinput('That name is in use, overwrite?',['n'])
-			if overwrite[0].lower()!='y':
-				print 'Cancelled save'
-				return 0
-		txtfile=open(macroname,'w+')
-		self.currentmacro='\n'.join(self.currentmacro)
-		txtfile.write(self.currentmacro)
-		txtfile.close()
-		print 'Saved on '+macroname
-		self.currentmacro=[]
+    def log(self, msg):
+        log = logging.getLogger('hooke')
+        log.debug('%s %s' % (self.name, msg))
 
-	def do_execmacro (self, args):
-		
-		'''EXECMACRO
-		Loads a macro and executes it over current curve / playlist
-		-----
-		Syntax: execmacro macroname [playlist] [v]
+    def set_state(self, state):
+        state_change = '%s -> %s' % (self.state, state)
+        self.log('changing state: %s' % state_change)
+        if state not in self._valid_transitions[self.state]:
+            e = ValueError(state)
+            e.state_change = state_change
+            raise e
+        self.state = state
 
-		macroname.hkm should be present at [hooke]/macros directory
-		By default the macro will be executed over current curve
-		passing 'playlist' word as second argument executes macroname
-		over all curves
-		By default curve(s) will be processed silently, passing 'v'
-		as second/third argument will print each command that is
-		executed
 
-		Note that macros applied to playlists should end by export
-		commands so the processed curves are not lost
-		'''
-		verbose=0
-		cycle=0
-		curve=None		
+# Define commands
 
-		if len(self.currentmacro) != 0:
-			print 'Warning!: you are calling a macro while recording other'
-		if len(args) == 0:
-			print 'You must provide a macro name'
-			return 0
-		args=args.split()
+class StartCaptureCommand (CaptureCommand):
+    """Clear any previous stack and run the mock-engine.
+    """
+    def __init__(self, plugin):
+        super(StartCaptureCommand, self).__init__(
+            name='start command capture', plugin=plugin)
 
-		#print 'args ' + ' '.join(args)
-		
-		if len(args)>1:
-			if args[1] == 'playlist':
-				cycle=1
-				print 'Remember! macros applied over playlists should include export orders'
-				if len(args)>2 and args[2] == 'v':
-					verbose=1
-			else:
-				if args[1] == 'v':
-					verbose=1	
-		#print cycle
-		#print verbose	
+    def _run(self, hooke, inqueue, outqueue, params):
+        self._set_state('active')
+        self.plugin.command_stack = CommandStack()  # clear command stack
+        super(StartCaptureCommand, self)._run(hooke, inqueue, outqueue, params)
 
-		macropath=os.path.join(self.macrodir,args[0]+'.hkm')
-		if not os.path.exists(macropath):
-			print 'Could not find a macro named '+macropath
-			return 0
-		txtfile=open(macropath)
-		if cycle ==1:
-			#print self.current_list
-			for item in self.current_list:
-				self.current=item
-				self.do_plot(0)
 
-				for command in txtfile:
+class ReStartCaptureCommand (CaptureCommand):
+    """Run the mock-engine.
+    """
+    def __init__(self, plugin):
+        super(ReStartCaptureCommand, self).__init__(
+            name='restart command capture', plugin=plugin)
 
-					if verbose==1:
-						print 'Executing command '+command
-					testcmd=command.split()
-					w=0
-					for word in testcmd:
-						if word=='__curve__':
-							testcmd[w]=os.path.splitext(os.path.basename(item.path))[0]
-						w=w+1
-					self.onecmd(' '.join(testcmd))
-				self.current.curve.close_all()
-				txtfile.seek(0)
-		else:
-			for command in txtfile:
-					testcmd=command.split()
-					w=0
-					for word in testcmd:
-						if word=='__curve__':
-							w=w+1
-							testcmd[w]=os.path.splitext(os.path.basename(self.current.path))[0]+'-'+string.lstrip(os.path.splitext(os.path.basename(self.current.path))[1],'.')
-					if verbose==1:
-						print 'Executing command '+' '.join(testcmd)
-					self.onecmd(' '.join(testcmd))
+    def _run(self, hooke, inqueue, outqueue, params):
+        self._set_state('active')
+        super(ReStartCaptureCommand, self)._run(hooke, inqueue, outqueue, params)
+
+
+class StopCaptureCommand (CommandStackCommand):
+    """Stop the mock-engine.
+    """
+    def __init__(self, plugin):
+        super(StopCaptureCommand, self).__init__(
+            name='stop command capture', help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        self._set_state('inactive')
+
+
+class PopCommand (CommandStackCommand):
+    """Pop the top command off the stack.
+    """
+    def __init__(self, plugin):
+        super(PopCommand, self).__init__(
+            name='pop command from stack', help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        outqueue.put(self.plugin.command_stack.pop())
+
+
+class GetCommand (CommandStackCommand):
+    """Return the command stack.
+    """
+    def __init__(self, plugin):
+        super(GetCommand, self).__init__(
+            name='get command stack', help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        outqueue.put(self.plugin.command_stack)
+
+class GetStateCommand (CommandStackCommand):
+    """Return the mock-engine state.
+    """
+    def __init__(self, plugin):
+        super(GetStateCommand, self).__init__(
+            name='get command capture state', help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        outqueue.put(self.plugin.state)
+
+
+class SaveCommand (CommandStackCommand):
+    """Save the command stack.
+    """
+    def __init__(self, plugin):
+        super(SaveCommand, self).__init__(
+            name='save command stack', help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        pass
+
+
+class LoadCommand (CommandStackCommand):
+    """Load the command stack.
+    """
+    def __init__(self, plugin):
+        super(LoadCommand, self).__init__(
+            name='load command stack', help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        pass

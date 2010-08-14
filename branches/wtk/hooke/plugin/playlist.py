@@ -247,6 +247,9 @@ Drivers for loading curves.
     def _run(self, hooke, inqueue, outqueue, params):
         p = FilePlaylist(drivers=params['drivers'], path=params['input'])
         p.load(hooke=hooke)
+        playlist_names = [p.name for p in hooke.playlists]
+        if p.name not in playlist_names:
+            params['output playlist'] = p.name  # HACK: override input name.  How to tell if it is callback-generated?
         self._set_playlist(hooke, params, p)
 	outqueue.put(p)
 

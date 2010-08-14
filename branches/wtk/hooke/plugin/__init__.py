@@ -55,6 +55,7 @@ default.  TODO: autodiscovery
 """
 
 BUILTIN_MODULES = [
+    'command_stack',
     'config',
     'curve',
     'debug',

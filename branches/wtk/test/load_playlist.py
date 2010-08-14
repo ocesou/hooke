@@ -20,7 +20,7 @@
 >>> from hooke.hooke import Hooke, HookeRunner
 >>> h = Hooke()
 >>> r = HookeRunner()
->>> h = r.run_lines(h, ['load_playlist test/data/test']) # doctest: +ELLIPSIS
+>>> h = r.run_lines(h, ['load_playlist test/data/test'])
 <FilePlaylist test.hkp>
 Success
 <BLANKLINE>
