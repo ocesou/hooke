@@ -156,7 +156,7 @@ class PlotPanel (Panel, wx.Panel):
         elif wx.Platform == '__WXMSW__':
             # On Windows platform, default window size is incorrect, so set
             # toolbar width to figure width.
-            tw, th = toolbar.GetSizeTuple()
+            tw, th = self._c['toolbar'].GetSizeTuple()
             fw, fh = self._c['canvas'].GetSizeTuple()
             # By adding toolbar in sizer, we are able to put it at the bottom
             # of the frame - so appearance is closer to GTK version.

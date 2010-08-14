@@ -321,6 +321,8 @@ class HookeFrame (wx.Frame):
                 index = int(name[len(arg.name):])
                 args[arg.name][index] = value
             for arg in command.arguments:
+                if arg.name not in args:
+                    continue  # undisplayed argument, e.g. 'driver' types.
                 count = arg.count
                 if hasattr(arg, '_display_count'):  # support HACK in props_from_argument()
                     count = arg._display_count
@@ -335,7 +337,7 @@ class HookeFrame (wx.Frame):
                         args[arg.name].pop()
                     if len(args[arg.name]) == 0:
                         args[arg.name] = arg.default
-        cm = CommandMessage(self.command.name, args)
+        cm = CommandMessage(command.name, args)
         self.gui._submit_command(cm, self.inqueue)
         results = []
         while True:
@@ -408,10 +410,9 @@ class HookeFrame (wx.Frame):
             return
         assert len(results) == 2, results
         playlists = results[0]
-        loaded_playlists = []  # TODO
         if 'playlist' in self._c:
             for playlist in playlists:
-                if playlist in loaded_playlists:
+                if self._c['playlist'].is_playlist_loaded(playlist):
                     self._c['playlist'].update_playlist(playlist)
                 else:
                     self._c['playlist'].add_playlist(playlist)

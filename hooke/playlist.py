@@ -23,6 +23,7 @@
 
 import copy
 import hashlib
+import os
 import os.path
 import types
 import xml.dom.minidom
@@ -157,6 +158,8 @@ class Playlist (NoteIndexList):
 
 
 class FilePlaylist (Playlist):
+    """A file-backed :class:`Playlist`.
+    """
     version = '0.1'
 
     def __init__(self, drivers, name=None, path=None):
@@ -240,7 +243,7 @@ class FilePlaylist (Playlist):
 
         Relative paths are interpreted relative to the location of the
         playlist file.
-        
+
         Examples
         --------
 
@@ -362,11 +365,14 @@ class FilePlaylist (Playlist):
         self._digest = self.digest()
         for curve in self:
             curve.set_hooke(hooke)
-        
-    def save(self, path=None):
+
+    def save(self, path=None, makedirs=True):
         """Saves the playlist in a XML file.
         """
         self.set_path(path)
+        dirname = os.path.dirname(self.path)
+        if makedirs == True and not os.path.isdir(dirname):
+            os.makedirs(dirname)
         with open(self.path, 'w') as f:
             f.write(self.flatten())
             self._digest = self.digest()

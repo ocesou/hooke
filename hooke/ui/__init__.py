@@ -20,6 +20,7 @@
 """
 
 import ConfigParser as configparser
+import logging
 
 from .. import version
 from ..config import Setting
@@ -28,7 +29,6 @@ from ..util.pluggable import IsSubclass, construct_odict
 try:
     from ..license import short_license
 except ImportError, e:
-    import logging
     logging.warn('Could not load short_license from hooke.license')
     from .. import __license__
     def short_license(extra_info, **kwargs):
