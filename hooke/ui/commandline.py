@@ -28,7 +28,7 @@ try:
     import readline # including readline makes cmd.Cmd.cmdloop() smarter
 except ImportError, e:
     import logging
-    logging.warn('Could not import readline, bash-like line editing disabled.')
+    logging.warn('could not import readline, bash-like line editing disabled.')
 import shlex
 
 from ..command import CommandExit, Exit, Command, Argument, StoreValue
@@ -120,7 +120,6 @@ class DoCommand (CommandMethod):
     def __init__(self, *args, **kwargs):
         super(DoCommand, self).__init__(*args, **kwargs)
         self.parser = CommandLineParser(self.command, self.name_fn)
-        self.log = logging.getLogger('hooke')
 
     def __call__(self, args):
         try:
@@ -130,8 +129,7 @@ class DoCommand (CommandMethod):
             self.cmd.stdout.write('Failure\n')
             return
         cm = CommandMessage(self.command.name, args)
-        self.log.debug('executing %s' % cm)
-        self.cmd.inqueue.put(cm)
+        self.cmd.ui._submit_command(cm, self.cmd.inqueue)
         while True:
             msg = self.cmd.outqueue.get()
             if isinstance(msg, Exit):

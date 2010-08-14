@@ -30,7 +30,7 @@ try:
     from .license import LICENSE as __license__
 except ImportError, e:
     import logging
-    logging.warn('Could not load LICENSE from hooke.license')
+    logging.warn('could not load LICENSE from hooke.license')
     __license__ = 'All rights reserved.' 
 
 

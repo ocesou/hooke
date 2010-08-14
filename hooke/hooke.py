@@ -71,7 +71,6 @@ from . import playlist
 from . import plugin as plugin_mod
 from . import driver as driver_mod
 from . import ui
-from .compat import forking as forking  # dynamically patch multiprocessing.forking
 
 
 class Hooke (object):

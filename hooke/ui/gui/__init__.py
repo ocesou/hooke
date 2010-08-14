@@ -336,8 +336,7 @@ class HookeFrame (wx.Frame):
                     if len(args[arg.name]) == 0:
                         args[arg.name] = arg.default
         cm = CommandMessage(self.command.name, args)
-        self.log.debug('executing %s' % cm)
-        self.inqueue.put(cm)
+        self.gui._submit_command(cm, self.inqueue)
         results = []
         while True:
             msg = self.outqueue.get()
