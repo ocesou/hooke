@@ -24,10 +24,12 @@ and several associated :class:`~hooke.command.Command`\s exposing
 """
 
 import logging
+import os.path
 from Queue import Queue
 
 from ..command import Command, Argument, Success, Failure
-from ..command_stack import CommandStack
+from ..command_stack import FileCommandStack
+from ..config import Setting
 from ..engine import CloseEngine, CommandMessage
 from . import Builtin
 
@@ -92,6 +94,8 @@ class CaptureCommand (CommandStackCommand):
 # The plugin itself
 
 class CommandStackPlugin (Builtin):
+    """Commands for managing a command stack (similar to macros).
+    """
     def __init__(self):
         super(CommandStackPlugin, self).__init__(name='command_stack')
         self._commands = [
@@ -100,14 +104,22 @@ class CommandStackPlugin (Builtin):
             PopCommand(self), GetCommand(self), GetStateCommand(self),
 	    SaveCommand(self), LoadCommand(self),
 	    ]
-	self.command_stack = CommandStack()
-	self.path = None
+        self._settings = [
+            Setting(section=self.setting_section, help=self.__doc__),
+            Setting(section=self.setting_section, option='path',
+                    value=os.path.join('resources', 'command_stack'),
+                    help='Directory containing command stack files.'), # TODO: allow colon separated list, like $PATH.
+            ]
+	self.command_stack = FileCommandStack()
         self.state = 'inactive'
         # inactive <-> active.
         self._valid_transitions = {
             'inactive': ['active'],
             'active': ['inactive'],
             }
+
+    def default_settings(self):
+        return self._settings
 
     def log(self, msg):
         log = logging.getLogger('hooke')
@@ -134,7 +146,7 @@ class StartCaptureCommand (CaptureCommand):
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._set_state('active')
-        self.plugin.command_stack = CommandStack()  # clear command stack
+        self.plugin.command_stack = FileCommandStack()  # clear command stack
         super(StartCaptureCommand, self)._run(hooke, inqueue, outqueue, params)
 
 
@@ -198,18 +210,54 @@ class SaveCommand (CommandStackCommand):
     """
     def __init__(self, plugin):
         super(SaveCommand, self).__init__(
-            name='save command stack', help=self.__doc__, plugin=plugin)
+            name='save command stack',
+            arguments=[
+                Argument(name='output', type='file',
+                         help="""
+File name for the output command stack.  Defaults to overwriting the
+input command stack.  If the command stack does not have an input file
+(e.g. it is the default) then the file name defaults to `default`.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        pass
+        params = self.__setup_params(hooke, params)
+        self.plugin.command_stack.save(params['output'])
 
+    def __setup_params(self, hooke, params):
+        if params['output'] == None and self.plugin.command_stack.path == None:
+            params['output'] = 'default'
+        if params['output'] != None:
+            params['output'] = os.path.join(
+                self.plugin.config['path'], params['output'])
+        return params
 
 class LoadCommand (CommandStackCommand):
     """Load the command stack.
+
+    .. warning:: This is *not safe* with untrusted input.
     """
     def __init__(self, plugin):
         super(LoadCommand, self).__init__(
-            name='load command stack', help=self.__doc__, plugin=plugin)
+            name='load command stack',
+            arguments=[
+                Argument(name='input', type='file',
+                         help="""
+File name for the input command stack.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        pass
+        params = self.__setup_params(hooke, params)
+        self.plugin.command_stack.clear()
+        self.plugin.command_stack.load(params['input'])
+
+    def __setup_params(self, hooke, params):
+        if params['input'] == None and self.plugin.command_stack.path == None:
+            params['input'] = 'default'
+        if params['input'] != None:
+            params['input'] = os.path.join(
+                self.plugin.config['path'], params['input'])
+        return params

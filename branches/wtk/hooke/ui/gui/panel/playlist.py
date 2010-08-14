@@ -335,6 +335,11 @@ class Tree (wx.TreeCtrl):
         """
         self._playlists[playlist.name] = playlist
 
+    def is_playlist_loaded(self, playlist):
+        """Return `True` if a playlist is loaded, `False` otherwise.
+        """
+        return playlist.name in self._playlists
+
 
 class Playlist (Panel, wx.Panel):
     """:class:`wx.Panel` subclass wrapper for :class:`Tree`.

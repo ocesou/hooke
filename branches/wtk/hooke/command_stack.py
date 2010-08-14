@@ -20,13 +20,19 @@
 executing stacks of :class:`~hooke.engine.CommandMessage`\s.
 """
 
+import os
+import os.path
+
+import yaml
+
+from .engine import CommandMessage
+
 
 class CommandStack (list):
     """Store a stack of commands.
 
     Examples
     --------
-    >>> from .engine import CommandMessage
     >>> c = CommandStack([CommandMessage('CommandA', {'param':'A'})])
     >>> c.append(CommandMessage('CommandB', {'param':'B'}))
     >>> c.append(CommandMessage('CommandA', {'param':'C'}))
@@ -68,11 +74,17 @@ class CommandStack (list):
     EXECUTE CommandC {'param': 'E'}
     >>> c.append(cm)
     >>> print [repr(cm) for cm in c]  # doctest: +NORMALIZE_WHITESPACE
-    ["<CommandMessage CommandA {'param': 'A'}>",
-     "<CommandMessage CommandB {'param': 'B'}>",
-     "<CommandMessage CommandA {'param': 'C'}>",
-     "<CommandMessage CommandB {'param': 'D'}>",
-     "<CommandMessage CommandC {'param': 'E'}>"]
+    ['<CommandMessage CommandA {param: A}>',
+     '<CommandMessage CommandB {param: B}>',
+     '<CommandMessage CommandA {param: C}>',
+     '<CommandMessage CommandB {param: D}>',
+     '<CommandMessage CommandC {param: E}>']
+
+    There is also a convenience function for clearing the stack.
+
+    >>> c.clear()
+    >>> print [repr(cm) for cm in c]
+    []
     """
     def execute(self, hooke):
         """Execute a stack of commands.
@@ -96,3 +108,122 @@ class CommandStack (list):
     def execute_command(self, hooke, command_message):
         hooke.run_command(command=command_message.command,
                           arguments=command_message.arguments)
+
+    def clear(self):
+        while len(self) > 0:
+            self.pop()
+
+
+class FileCommandStack (CommandStack):
+    """A file-backed :class:`CommandStack`.
+    """
+    version = '0.1'
+
+    def __init__(self, *args, **kwargs):
+        super(FileCommandStack, self).__init__(*args, **kwargs)
+        self.name = None
+        self.path = None
+
+    def set_path(self, path):
+        """Set the path (and possibly the name) of the command  stack.
+
+        Examples
+        --------
+        >>> c = FileCommandStack([CommandMessage('CommandA', {'param':'A'})])
+
+        :attr:`name` is set only if it starts out equal to `None`.
+        >>> c.name == None
+        True
+        >>> c.set_path(os.path.join('path', 'to', 'my', 'command', 'stack'))
+        >>> c.path
+        'path/to/my/command/stack'
+        >>> c.name
+        'stack'
+        >>> c.set_path(os.path.join('another', 'path'))
+        >>> c.path
+        'another/path'
+        >>> c.name
+        'stack'
+        """
+        if path != None:
+            self.path = path
+            if self.name == None:
+                self.name = os.path.basename(path)
+
+    def save(self, path=None, makedirs=True):
+        """Saves the command stack to `path`.
+        """
+        self.set_path(path)
+        dirname = os.path.dirname(self.path)
+        if makedirs == True and not os.path.isdir(dirname):
+            os.makedirs(dirname)
+        with open(self.path, 'w') as f:
+            f.write(self.flatten())
+
+    def load(self, path=None):
+        """Load a command stack from `path`.
+        """
+        self.set_path(path)
+        with open(self.path, 'r') as f:
+            text = f.read()
+        self.from_string(text)
+
+    def flatten(self):
+        """Create a string representation of the command stack.
+
+        A playlist is a YAML document with the following syntax::
+
+            - arguments: {param: A}
+              command: CommandA
+            - arguments: {param: B, ...}
+              command: CommandB
+            ...
+
+        Examples
+        --------
+        >>> c = FileCommandStack([CommandMessage('CommandA', {'param':'A'})])
+        >>> c.append(CommandMessage('CommandB', {'param':'B'}))
+        >>> c.append(CommandMessage('CommandA', {'param':'C'}))
+        >>> c.append(CommandMessage('CommandB', {'param':'D'}))
+        >>> print c.flatten()
+        - arguments: {param: A}
+          command: CommandA
+        - arguments: {param: B}
+          command: CommandB
+        - arguments: {param: C}
+          command: CommandA
+        - arguments: {param: D}
+          command: CommandB
+        <BLANKLINE>
+        """
+        return yaml.dump([{'command':cm.command,'arguments':cm.arguments}
+                          for cm in self])
+
+    def from_string(self, string):
+        """Load a playlist from a string.
+
+        .. warning:: This is *not safe* with untrusted input.
+
+        Examples
+        --------
+
+        >>> string = '''- arguments: {param: A}
+        ...   command: CommandA
+        ... - arguments: {param: B}
+        ...   command: CommandB
+        ... - arguments: {param: C}
+        ...   command: CommandA
+        ... - arguments: {param: D}
+        ...   command: CommandB
+        ... '''
+        >>> c = FileCommandStack()
+        >>> c.from_string(string)
+        >>> print [repr(cm) for cm in c]  # doctest: +NORMALIZE_WHITESPACE
+        ['<CommandMessage CommandA {param: A}>',
+         '<CommandMessage CommandB {param: B}>',
+         '<CommandMessage CommandA {param: C}>',
+         '<CommandMessage CommandB {param: D}>']
+        """
+        for x in yaml.load(string):
+            self.append(CommandMessage(command=x['command'],
+                                       arguments=x['arguments']))

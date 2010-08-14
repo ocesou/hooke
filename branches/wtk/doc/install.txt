@@ -74,7 +74,7 @@ it's source directory::
      $ wget -O hooke.zip http://www.physics.drexel.edu/~wking/code/hg/hgwebdir.cgi/hooke/archive/tip.zip
      $ unzip hooke.zip
      $ cd hooke
-     $ python bin/hooke
+     $ python bin/hk.py
 
 You may need to give the full path for Python on Windows systems, and
 also check that the current working directory (`.`) is in your

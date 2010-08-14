@@ -42,7 +42,7 @@ to run the Hooke shell.::
 If you are running hooke from the source directory (see
 :doc:`install`), the equivalent command is::
 
-    $ python bin/hooke
+    $ python bin/hk.py
 
 You may need to give the full path for Python on Windows systems, and
 also check that the current working directory (`.`) is in your

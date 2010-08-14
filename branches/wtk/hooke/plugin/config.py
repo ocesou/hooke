@@ -88,9 +88,9 @@ class SetCommand (Command):
 	hooke.config.set(params['section'], params['option'], params['value'])
         # push config changes
         hooke.load_log()
-        hooke.load_plugins()
-        hooke.load_drivers()
-        hooke.load_ui()  # for post-HookeRunner Hooke return.
+        hooke.configure_plugins()
+        hooke.configure_drivers()
+        hooke.configure_ui()  # for post-HookeRunner Hooke return.
         # notify UI to update config
         outqueue.put(ReloadUserInterfaceConfig(hooke.config))
 

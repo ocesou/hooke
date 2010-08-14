@@ -54,6 +54,7 @@ if False: # Queue pickle error debugging code
         feed(buffer, notempty, s, writelock, close)
     multiprocessing.queues.Queue._feed = staticmethod(new_feed)
 
+from ConfigParser import NoSectionError
 import logging
 import logging.config
 import multiprocessing
@@ -104,6 +105,7 @@ class Hooke (object):
     def load_plugins(self):
         self.plugins = plugin_mod.load_graph(
             plugin_mod.PLUGIN_GRAPH, self.config, include_section='plugins')
+        self.configure_plugins()
         self.commands = []
         for plugin in self.plugins:
             self.commands.extend(plugin.commands())
@@ -113,9 +115,32 @@ class Hooke (object):
     def load_drivers(self):
         self.drivers = plugin_mod.load_graph(
             driver_mod.DRIVER_GRAPH, self.config, include_section='drivers')
+        self.configure_drivers()
 
     def load_ui(self):
         self.ui = ui.load_ui(self.config)
+        self.configure_ui()
+
+    def configure_plugins(self):
+        for plugin in self.plugins:
+            self._configure_item(plugin)
+
+    def configure_drivers(self):
+        for driver in self.drivers:
+            self._configure_item(driver)
+
+    def configure_ui(self):
+        self._configure_item(self.ui)
+
+    def _configure_item(self, item):
+        conditions = self.config.items('conditions')
+        try:
+            item.config = dict(self.config.items(item.setting_section))
+        except NoSectionError:
+            item.config = {}
+        for key,value in conditions:
+            if key not in item.config:
+                item.config[key] = value
 
     def close(self, save_config=False):
         if save_config == True:

@@ -171,7 +171,6 @@ def default_settings():
 def load_graph(graph, config, include_section):
     enabled = {}
     items = []
-    conditions = config.items('conditions')
     for node in graph:
         item = node.data
         try:
@@ -188,12 +187,5 @@ def load_graph(graph, config, include_section):
                      % (item.name, dependency.data.name))
                     enabled[item.name] = False
                     continue
-            try:
-                item.config = dict(config.items(item.setting_section))
-            except configparser.NoSectionError:
-                item.config = {}
-            for key,value in conditions:
-                if key not in item.config:
-                    item.config[key] = value
             items.append(item)
     return items
