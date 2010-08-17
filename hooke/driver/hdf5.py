@@ -21,6 +21,8 @@
 """Driver for text-exported HDF5 files from Igor pro
 """
 
+import os.path
+
 from .. import curve as lhc
 from .. import libhooke as lh
 
@@ -40,6 +42,8 @@ class hdf5Driver(lhc.Driver):
         self.filedata.close()
         
     def is_me(self):
+        if os.path.isdir(path):
+            return False
         self.raw_header=self.lines[0]      
 	        
         if 'IGP-HDF5-Hooke' in self.raw_header:

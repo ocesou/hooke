@@ -30,6 +30,7 @@ import xml.dom.minidom
 
 from . import curve as curve
 from .compat import minidom as minidom  # dynamically patch xml.sax.minidom
+from .util.itertools import reverse_enumerate
 
 
 class NoteIndexList (list):
@@ -102,7 +103,7 @@ class NoteIndexList (list):
         index = self._index
         items = self
         if reverse == True:
-            items = reversed(enumerate(self))
+            items = reverse_enumerate(self)
         else:
             items = enumerate(self)
         for i,item in items:
@@ -370,7 +371,7 @@ class FilePlaylist (Playlist):
         """Saves the playlist in a XML file.
         """
         self.set_path(path)
-        dirname = os.path.dirname(self.path)
+        dirname = os.path.dirname(self.path) or '.'
         if makedirs == True and not os.path.isdir(dirname):
             os.makedirs(dirname)
         with open(self.path, 'w') as f:

@@ -37,7 +37,7 @@ Success
 <BLANKLINE>
 >>> curve = h.playlists.current().current()
 >>> retract = curve.data[-1]
->>> retract.info['flat filter peaks (m)']  # doctest: +ELLIPSIS
+>>> retract.info['flat filter peaks']  # doctest: +ELLIPSIS
 [<Peak flat filter peak 0 of surface deflection 610 [ -1.156...e-09  -8.840...e-10  -3.173...e-10  -7.480...e-10]>]
 >>> retract.info['columns']
 ['z piezo (m)', 'deflection (m)', 'surface distance (m)', 'surface deflection (m)', 'flat filter peaks (m)']

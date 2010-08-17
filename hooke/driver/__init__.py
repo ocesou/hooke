@@ -25,6 +25,7 @@ to write your own to handle your lab's specific format.
 """
 
 import logging
+import os.path
 
 from ..config import Setting
 from ..util.pluggable import IsSubclass, construct_graph

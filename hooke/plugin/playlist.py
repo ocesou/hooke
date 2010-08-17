@@ -22,10 +22,12 @@ several associated :class:`hooke.command.Command`\s for handling
 """
 
 import glob
+import logging
 import os.path
 
 from ..command import Command, Argument, Failure
 from ..playlist import FilePlaylist
+from ..curve import NotRecognized
 from . import Builtin
 
 
@@ -38,7 +40,7 @@ class PlaylistPlugin (Builtin):
             SaveCommand(self), LoadCommand(self),
             AddCommand(self), AddGlobCommand(self),
             RemoveCommand(self), ApplyCommandStack(self),
-            FilterCommand(self), NoteFilterCommand(self),
+            FilterCommand(self),
             ]
 
 
@@ -125,7 +127,9 @@ class PlaylistAddingCommand (Command):
     def _set_playlist(self, hooke, params, playlist):
         """Attach a new playlist.
         """
-        playlist.name = params['output playlist']
+        playlist_names = [p.name for p in hooke.playlists]
+        if playlist.name in playlist_names or playlist.name == None:
+            playlist.name = params['output playlist']  # HACK: override input name.  How to tell if it is callback-generated?
         hooke.playlists.append(playlist)
 
 
@@ -247,9 +251,6 @@ Drivers for loading curves.
     def _run(self, hooke, inqueue, outqueue, params):
         p = FilePlaylist(drivers=params['drivers'], path=params['input'])
         p.load(hooke=hooke)
-        playlist_names = [playlist.name for playlist in hooke.playlists]
-        if p.name not in playlist_names:
-            params['output playlist'] = p.name  # HACK: override input name.  How to tell if it is callback-generated?
         self._set_playlist(hooke, params, p)
 	outqueue.put(p)
 
@@ -300,10 +301,15 @@ Additional information for the input :class:`hooke.curve.Curve`.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
+        p = self._playlist(hooke, params)
         for path in sorted(glob.glob(params['input'])):
-            self._playlist(hooke, params).append_curve_by_path(
-                path, params['info'], hooke=hooke)
-
+            try:
+                p.append_curve_by_path(path, params['info'], hooke=hooke)
+            except NotRecognized, e:
+                log = logging.getLogger('hooke')
+                log.warn(unicode(e))
+                continue
+            outqueue.put(p[-1])
 
 class RemoveCommand (PlaylistCommand):
     """Remove a curve from a playlist.
@@ -394,19 +400,7 @@ Function returning `True` for "good" curves.
             filter_fn = self.filter
         p = self._playlist(hooke, params).filter(filter_fn,
             hooke=hooke, inqueue=inqueue, outqueue=outqueue, params=params)
-        p.name = params['name']
+        self._set_playlist(hooke, params, p)
         if hasattr(p, 'path') and p.path != None:
             p.set_path(os.path.join(os.path.dirname(p.path), p.name))
-        self._set_playlist(hooke, params, p)
         outqueue.put(p)
-
-
-class NoteFilterCommand (FilterCommand):
-    """Create a subset playlist of curves with `.info['note'] != None`.
-    """
-    def __init__(self, plugin):
-        super(NoteFilterCommand, self).__init__(
-            plugin, name='note filter playlist')
-
-    def filter(self, curve, hooke, inqueue, outqueue, params):
-        return 'note' in curve.info and curve.info['note'] != None

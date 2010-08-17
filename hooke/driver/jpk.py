@@ -39,6 +39,8 @@ class JPKDriver (Driver):
         super(JPKDriver, self).__init__(name='jpk')
 
     def is_me(self, path):
+        if os.path.isdir(path):
+            return False
         if zipfile.is_zipfile(path):  # JPK file versions since at least 0.5
             with Closing(zipfile.ZipFile(path, 'r')) as f:
                 if 'header.properties' not in f.namelist():
@@ -72,14 +74,18 @@ class JPKDriver (Driver):
             for i in range(len([p for p in f.namelist()
                                 if p.endswith('segment-header.properties')])):
                 segments.append(self._zip_segment(f, path, info, zip_info, i))
-            for name in ['approach', 'retract']:
-                if len([s for s in segments if s.info['name'] == name]) == 0:
-                    raise ValueError(
-                        'No segment for %s in %s, only %s'
-                        % (name, path, [s.info['name'] for s in segments]))
-            return (segments,
-                    self._zip_translate_params(zip_info,
-                                               segments[0].info['raw info']))
+        if zip_info['file-format-version'] not in ['0.5']:
+            raise NotImplementedError(
+                'JPK file version %s not supported (yet).'
+                % zip_info['file-format-version'])
+        for name in ['approach', 'retract']:
+            if len([s for s in segments if s.info['name'] == name]) == 0:
+                raise ValueError(
+                    'No segment for %s in %s, only %s'
+                    % (name, path, [s.info['name'] for s in segments]))
+        return (segments,
+                self._zip_translate_params(zip_info,
+                                           segments[0].info['raw info']))
 
     def _zip_info(self, zipfile):
         with Closing(zipfile.open('header.properties')) as f:
@@ -119,14 +125,16 @@ class JPKDriver (Driver):
             'Non-float data format:\n%s' % pprint.pformat(chan_info)
         data = numpy.frombuffer(
             buffer(f.read()),
-            dtype=numpy.dtype(numpy.float32).newbyteorder('>'),
-            # Is JPK data always big endian?  I can't find a config
-            # setting.  The ForceRobot brochure
-            #   http://www.jpk.com/forcerobot300-1.download.6d694150f14773dc76bc0c3a8a6dd0e8.pdf
-            # lists a PowerPC chip on page 4, under Control
-            # electronics, and PPCs are usually big endian.
-            #   http://en.wikipedia.org/wiki/PowerPC#Endian_modes
-            )
+            dtype=numpy.dtype(numpy.float32).newbyteorder('>'))
+        # '>' (big endian) byte order.
+        # From version 0.3 of JPKForceSpec.txt in the "Binary data" section:
+        #    All forms of raw data are stored in chronological order
+        #    (the order in which they were collected), and the
+        #    individual values are stored in network byte order
+        #    (big-endian). The data type used to store the data is
+        #    specified by the "channel.*.data.type" property, and is
+        #    either short (2 bytes per value), integer (4 bytes), or
+        #    float (4 bytes, IEEE format).
         f.close()
         return data
 
@@ -200,40 +208,17 @@ class JPKDriver (Driver):
             # the previous conversion first.
             segment = self._zip_scale_channel(
                 segment, channel, conversion_info['base-calibration-slot'],
-                info, path)
+                path=path, info=info)
         if conversion_info['type'] == 'file':
-            key = ('%s_%s_to_%s_calibration_file'
-                   % (channel_name,
-                      conversion_info['base-calibration-slot'],
-                      conversion))
-            calib_path = conversion_info['file']
-            if key in info:
-                calib_path = os.path.join(os.path.dirname(path), info[key])
-                self.logger().debug(
-                    'Overriding %s -> %s calibration for %s channel: %s'
-                    % (conversion_info['base-calibration-slot'],
-                       conversion, channel_name, calib_path))
-            if os.path.exists(calib_path):
-                with file(calib_path, 'r') as f:
-                    lines = [x.strip() for x in f.readlines()]
-                    f.close()
-                calib = {  # I've emailed JPK to confirm this file format.
-                    'title':lines[0],
-                    'multiplier':float(lines[1]),
-                    'offset':float(lines[2]),
-                    'unit':lines[3],
-                    'note':'\n'.join(lines[4:]),
-                    }
-                segment[:,channel] = (segment[:,channel] * calib['multiplier']
-                                      + calib['offset'])
-                segment.info['columns'][channel] = (
-                    '%s (%s)' % (channel_name, calib['unit']))
-                return segment
-            else:
-                self.logger().warn(
-                    'Skipping %s -> %s calibration for %s channel.  Calibration file %s not found'
-                    % (conversion_info['base-calibration-slot'],
-                       conversion, channel_name, calib_path))
+            # Michael Haggerty at JPK points out that the conversion
+            # information stored in the external file is reproduced in
+            # the force curve file.  So there is no need to actually
+            # read `conversion_info['file']`.  In fact, the data there
+            # may have changed with future calibrations, while the
+            # information stored directly in conversion_info retains
+            # the calibration information as it was when the experiment
+            # was performed.
+            pass  # Fall through to 'simple' conversion processing.
         else:
             assert conversion_info['type'] == 'simple', conversion_info['type']
         assert conversion_info['scaling']['type'] == 'linear', \

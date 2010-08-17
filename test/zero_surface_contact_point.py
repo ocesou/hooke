@@ -24,8 +24,7 @@
 <FilePlaylist test.hkp>
 Success
 <BLANKLINE>
->>> h = r.run_lines(h,
-...     ['zero_surface_contact_point --block retract']
+>>> h = r.run_lines(h, ['zero_surface_contact_point --block retract']
 ...     ) # doctest: +ELLIPSIS, +REPORT_UDIFF
 {'info':...'fitted parameters': [8.413...e-08, 2.812...e-10, 158.581...],...}
 Success

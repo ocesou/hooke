@@ -61,6 +61,8 @@ file format is as following::
 that is, two plots with two datasets each.
 """
 
+import os.path
+
 # The following are relative imports.  See PEP 328 for details
 #   http://www.python.org/dev/peps/pep-0328/
 from .. import curve as curve # this module defines data containers.
@@ -105,6 +107,8 @@ class TutorialDriver (Driver):
         Hooke to understand what kind of files we're looking at
         automatically.
         """
+        if os.path.isdir(path):
+            return False
 
         f = open(path, 'r')
         header = f.readline() # we only need the first line

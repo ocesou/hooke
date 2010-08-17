@@ -99,6 +99,8 @@ class mcsDriver(lib.driver.Driver):
         return plot
 
     def is_me(self):
+        if os.path.isdir(path):
+            return False
         if self.filename[-3:].lower()=='mcs':
             return True
         else:

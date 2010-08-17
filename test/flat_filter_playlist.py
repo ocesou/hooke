@@ -24,7 +24,7 @@
 <FilePlaylist playlist.hkp>
 Success
 <BLANKLINE>
->>> h = r.run_lines(h, ['flat_filter_playlist']) # doctest: +ELLIPSIS
+>>> h = r.run_lines(h, ['flat_filter_playlist --distance_column "z piezo (m)" --deflection_column "deflection (m)"']) # doctest: +ELLIPSIS
 <FilePlaylist playlist-0>
 Success
 <BLANKLINE>
@@ -32,7 +32,7 @@ Success
 >>> h.playlists.current().name
 'playlist-0'
 >>> h.playlists.current().path
-'test/data/vclamp_picoforce/playlist-0.hkp'
+u'test/data/vclamp_picoforce/playlist-0.hkp'
 >>> len(h.playlists.current())
 0
 

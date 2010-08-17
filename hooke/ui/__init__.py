@@ -29,7 +29,7 @@ from ..util.pluggable import IsSubclass, construct_odict
 try:
     from ..license import short_license
 except ImportError, e:
-    logging.warn('Could not load short_license from hooke.license')
+    logging.warn('could not load short_license from hooke.license')
     from .. import __license__
     def short_license(extra_info, **kwargs):
         return __license__

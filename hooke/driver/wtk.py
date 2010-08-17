@@ -74,6 +74,8 @@ class WTKDriver (Driver):
             ]
 
     def is_me(self, path):
+        if os.path.isdir(path):
+            return False
         if not path.endswith('_unfold'):
             return False
         for p in self._paths(path):

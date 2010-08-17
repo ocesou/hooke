@@ -22,9 +22,13 @@ Examples
 
 Run::
 
-    $ hooke --example-config-file
+    $ ./bin/hk.py --save-config -c ''
 
-To print a well commented example config file to stdout.
+or::
+
+    $ ./bin/hk.py -c 'save_config --output .hooke.cfg'
+
+To write a well commented example config file to :file:`.hooke.cfg`.
 
 
 Finding configuration files
@@ -43,3 +47,10 @@ but alternatives can be specified from the command line launching
 Hooke.
 
 .. _Filesystem Hierarchy Standard: http://www.pathname.com/fhs/
+
+.. todo:: Implement command-line specified config file.
+
+.. warning:: Any changes you make to the configuration during a Hooke
+  run will *not be saved* when Hooke exits.  To save the changes,
+  either run the `save config` command before closing Hooke, or start
+  Hooke with the ``--save-config`` option.

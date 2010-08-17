@@ -24,13 +24,15 @@
 from ..command import Command, Argument, Failure
 from . import Builtin
 from .curve import current_curve_callback
-
+from .playlist import FilterCommand
 
 class NotePlugin (Builtin):
     def __init__(self):
         super(NotePlugin, self).__init__(name='note')
         self._commands = [
-            SetNoteCommand(self), GetNoteCommand(self)]
+            SetNoteCommand(self), GetNoteCommand(self),
+            NoteFilterCommand(self),
+            ]
 
 
 class SetNoteCommand (Command):
@@ -76,3 +78,14 @@ Target object for the note.  Defaults to the current curve.
 
     def _run(self, hooke, inqueue, outqueue, params):
         outqueue.put(params['target'].info['note'])
+
+
+class NoteFilterCommand (FilterCommand):
+    """Create a subset playlist of curves with `.info['note'] != None`.
+    """
+    def __init__(self, plugin):
+        super(NoteFilterCommand, self).__init__(
+            plugin, name='note filter playlist')
+
+    def filter(self, curve, hooke, inqueue, outqueue, params):
+        return 'note' in curve.info and curve.info['note'] != None

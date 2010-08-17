@@ -41,6 +41,7 @@ class NotRecognized (ValueError):
             super(NotRecognized, self).__init__(msg)
             self.curve = data
 
+
 class Data (numpy.ndarray):
     """Stores a single, continuous data set.
 
@@ -182,6 +183,16 @@ class Curve (object):
 
     def __repr__(self):
         return self.__str__()
+
+    def __getstate__(self):
+        data = dict(self.__dict__)
+        del(data['_hooke'])
+        return data
+
+    def __setstate__(self, data):
+        self._hooke = None
+        for key,value in data.items():
+            setattr(self, key, value)
 
     def set_hooke(self, hooke=None):
         if hooke != None:

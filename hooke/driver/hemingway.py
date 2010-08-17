@@ -20,6 +20,7 @@
 """Library for interpreting Hemingway force spectroscopy files.
 """
 
+import os.path
 import numpy
 
 from .. import curve as curve
@@ -35,6 +36,8 @@ class HemingwayDriver (Driver):
         super(HemingwayDriver, self).__init__(name='hemingway')
 
     def is_me(self, path):
+        if os.path.isdir(path):
+            return False
         headlines = []
         with Closing(file(path, 'r')) as f:
             for i in range(2):
