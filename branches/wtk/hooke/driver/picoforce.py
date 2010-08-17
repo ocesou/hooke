@@ -21,6 +21,7 @@
 """Driver for Veeco PicoForce force spectroscopy files.
 """
 
+import os.path
 import pprint
 import re
 import time
@@ -41,6 +42,8 @@ class PicoForceDriver (Driver):
         super(PicoForceDriver, self).__init__(name='picoforce')
 
     def is_me(self, path):
+        if os.path.isdir(path):
+            return False
         f = file(path, 'r')
         header = f.read(30)
         f.close()

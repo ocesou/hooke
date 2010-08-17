@@ -21,6 +21,7 @@
 """
 
 import os
+import os.path
 
 from .. import libhooke as lh
 from .. import curve as lhc
@@ -48,6 +49,8 @@ class mfp1dexportDriver(lhc.Driver):
         self.filedata.close()
 
     def is_me(self):
+        if os.path.isdir(path):
+            return False
         try:
             self.raw_header = self.lines[0:38]
         except:

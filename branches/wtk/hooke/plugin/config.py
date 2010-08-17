@@ -32,7 +32,7 @@ class ConfigPlugin (Builtin):
     def __init__(self):
         super(ConfigPlugin, self).__init__(name='config')
         self._commands = [GetCommand(self), SetCommand(self),
-                          PrintCommand(self)]
+                          PrintCommand(self), SaveCommand(self),]
 
 
 # Define common or complicated arguments
@@ -95,7 +95,7 @@ class SetCommand (Command):
         outqueue.put(ReloadUserInterfaceConfig(hooke.config))
 
 class PrintCommand (Command):
-    """Get the current value of all configuration options.
+    """Get the current configuration file text.
     """
     def __init__(self, plugin):
         super(PrintCommand, self).__init__(
@@ -105,3 +105,29 @@ class PrintCommand (Command):
         out = StringIO()
         hooke.config.write(out)
         outqueue.put(out.getvalue())
+
+
+class SaveCommand (Command):
+    """Save the current configuration options.
+    """
+    def __init__(self, plugin):
+        super(SaveCommand, self).__init__(
+            name='save config',
+            arguments=[
+                Argument(name='output', type='file',
+                         help="""
+File name for the output configuration.  Defaults to overwriting the
+most local loaded config file.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        f = None
+        try:
+            if params['output'] != None:
+                f = open(params['output'], 'w')
+            hooke.config.write(fp=f)
+        finally:
+            if f != None:
+                f.close()

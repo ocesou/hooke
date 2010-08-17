@@ -210,6 +210,8 @@ class mfp1dDriver(lib.driver.Driver):
         self.filedata.close()
 
     def is_me(self):
+        if os.path.isdir(path):
+            return False
         if len(self.lines) < 34:
             return False
 

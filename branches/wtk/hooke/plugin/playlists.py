@@ -24,7 +24,7 @@ lists of :class:`hooke.playlist.Playlist` classes.
 from ..command import Command, Argument, Failure
 from ..playlist import FilePlaylist
 from . import Builtin
-from .playlist import PlaylistNameArgument
+from .playlist import PlaylistNameArgument, PlaylistAddingCommand
 
 
 class PlaylistsPlugin (Builtin):
@@ -100,14 +100,13 @@ class PlaylistListCommand (Command):
 	outqueue.put(list(hooke.playlists))
 
 
-class NewCommand (Command):
+class NewCommand (PlaylistAddingCommand):
     """Create a new playlist.
     """
     def __init__(self, plugin):
         super(NewCommand, self).__init__(
             name='new playlist',
             arguments=[
-                PlaylistNameArgument,
                 Argument(name='file', type='file', optional=True,
                          help="""
 Default filename for future saves.
@@ -116,10 +115,8 @@ Default filename for future saves.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        print 'PP', params['name']
-        hooke.playlists.append(
-            FilePlaylist(
-                drivers=hooke.drivers,
-                name=params['name'],
-                path=params['file'],
-                ))
+        p = FilePlaylist(
+            drivers=hooke.drivers,
+            path=params['file'],
+            )
+        self._set_playlist(hooke, params, p)

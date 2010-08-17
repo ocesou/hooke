@@ -154,7 +154,7 @@ class FileCommandStack (CommandStack):
         """Saves the command stack to `path`.
         """
         self.set_path(path)
-        dirname = os.path.dirname(self.path)
+        dirname = os.path.dirname(self.path) or '.'
         if makedirs == True and not os.path.isdir(dirname):
             os.makedirs(dirname)
         with open(self.path, 'w') as f:

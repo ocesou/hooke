@@ -34,8 +34,8 @@ Success
 >>> approach.info['columns']
 ['z piezo (m)', 'deflection (m)', 'flattened deflection (m)']
 >>> approach[:5,-1]  # doctest: +ELLIPSIS
-Data([  9.094...e-08,   9.130...e-08,   9.157...e-08,
-         9.189...e-08,   9.221...e-08])
+Data([ -3.603...e-08,  -3.566...e-08,  -3.539...e-08,
+        -3.508...e-08,  -3.476...e-08])
 >>> approach[-5:,-1]  # doctest: +ELLIPSIS
 Data([  3.624...e-10,   5.884...e-10,   2.257...e-10,
         -9.157...e-11,  -9.027...e-13])

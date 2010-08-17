@@ -46,7 +46,6 @@ from ..util.peak import find_peaks, find_peaks_arguments, Peak, _kwargs
 from . import Plugin, argument_to_setting
 from .curve import CurveArgument
 from .playlist import FilterCommand
-from .vclamp import scale
 
 
 class ConvFiltPlugin (Plugin):
@@ -153,9 +152,6 @@ class ConvolutionPeaksCommand (Command):
         if curve.info['experiment'] != VelocityClamp:
             raise Failure('%s operates on VelocityClamp experiments, not %s'
                           % (self.name, curve.info['experiment']))
-        for col in ['surface distance (m)', 'deflection (N)']:
-            if col not in curve.data[0].info['columns']:
-                scale(hooke, curve)
         data = None
         for block in curve.data:
             if block.info['name'].startswith('retract'):

@@ -31,6 +31,7 @@ Hooke submission: Rolf Schmidt, Alberto Gomez-Casado 2009
 """
 
 import copy
+import os.path
 import pprint
 
 import numpy
@@ -53,6 +54,8 @@ class MFP3DDriver (Driver):
     def is_me(self, path):
         """Look for identifying fields in the IBW note.
         """
+        if os.path.isdir(path):
+            return False
         if not path.endswith('.ibw'):
             return False
         targets = ['Version:', 'XOPVersion:', 'ForceNote:']

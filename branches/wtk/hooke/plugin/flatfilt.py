@@ -137,8 +137,7 @@ Name of the column (without units) to use as the peak output.
                 Argument(name='peak info name', type='string',
                          default='flat filter peaks',
                          help="""
-Name (without units) for storing the list of peaks in the `.info`
-dictionary.
+Name for storing the list of peaks in the `.info` dictionary.
 """.strip()),
                 ] + plugin_arguments,
             help=self.__doc__, plugin=plugin)
@@ -182,8 +181,6 @@ dictionary.
         name,def_unit = split_data_label(params['deflection column'])
         params['output peak column'] = join_data_label(
             params['output peak column'], def_unit)
-        params['peak info name'] = join_data_label(
-            params['peak info name'], def_unit)
         return params
 
     def _peak_name(self, params, index):

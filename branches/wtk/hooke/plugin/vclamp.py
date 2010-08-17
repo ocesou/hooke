@@ -638,7 +638,9 @@ Name of the flattening information in the `.info` dictionary.
             'degree':degree,
             'polynomial values':poly_values,
             }
-        out = def_data - mask*scipy.polyval(poly_values, dist_data)
+        out = (def_data
+               - numpy.invert(mask)*scipy.polyval(poly_values[-1:], dist_data)
+               - mask*scipy.polyval(poly_values, dist_data))
         self._set_column(hooke=hooke, params=params,
                          column_name='output deflection column',
                          values=out)
