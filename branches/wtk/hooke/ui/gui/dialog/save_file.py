@@ -48,7 +48,7 @@ def select_save_file(directory, name, extension=None, *args, **kwargs):
         dialog.SetValue(name)
         if dialog.ShowModal() != wx.ID_OK:
             return  # abort
-        name = dialog.GetValue()    
+        name = dialog.GetValue()
         if not name_exists(name):
             return name
         dialogConfirm = wx.MessageDialog(

@@ -41,7 +41,7 @@ def props_from_argument(argument, curves=None, playlists=None):
     :class:`Property`\s.
     """
     type = argument.type
-    if type in ['driver']:  # intentionally not handled (yet)
+    if type in ['driver', 'dict']:  # intentionally not handled (yet)
         return None
     count = argument.count
     if count == -1:

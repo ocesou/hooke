@@ -39,6 +39,11 @@ from . import Builtin
 class CommandStackCommand (Command):
     """Subclass to avoid pushing control commands to the stack.
     """
+    def __init__(self, *args, **kwargs):
+        super(CommandStackCommand, self).__init__(*args, **kwargs)
+        stack = [a for a in self.arguments if a.name == 'stack'][0]
+        stack.default = False
+
     def _set_state(self, state):
         try:
             self.plugin.set_state(state)
@@ -102,7 +107,7 @@ class CommandStackPlugin (Builtin):
             StartCaptureCommand(self), StopCaptureCommand(self),
 	    ReStartCaptureCommand(self),
             PopCommand(self), GetCommand(self), GetStateCommand(self),
-	    SaveCommand(self), LoadCommand(self),
+	    SaveCommand(self), LoadCommand(self), ExecuteCommand(self),
 	    ]
         self._settings = [
             Setting(section=self.setting_section, help=self.__doc__),
@@ -260,4 +265,33 @@ File name for the input command stack.
         if params['input'] != None:
             params['input'] = os.path.join(
                 self.plugin.config['path'], params['input'])
+        return params
+
+
+class ExecuteCommand (Command):
+    """Execute a :class:`~hooke.command_stack.CommandStack`.
+    """
+    def __init__(self, plugin):
+        super(ExecuteCommand, self).__init__(
+            name='execute command stack',
+            arguments=[
+                Argument(name='commands', type='command stack',
+                         help="""
+Command stack to apply to each curve.  Defaults to the plugin's
+current stack.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
+        stack = [a for a in self.arguments if a.name == 'stack'][0]
+        stack.default = False
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        params = self.__setup_params(hooke=hooke, params=params)
+        if len(params['commands']) == 0:
+            return
+        params['commands'].execute(hooke=hooke, stack=params['stack'])
+
+    def __setup_params(self, hooke, params):
+        if params['commands'] == None:
+            params['commands'] = self.plugin.command_stack
         return params

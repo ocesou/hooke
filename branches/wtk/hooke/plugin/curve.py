@@ -1,5 +1,5 @@
-# Copyright (C) 2008-2010 Alberto Gomez-Kasai
-#                         Fabiano's Benedetti
+# Copyright (C) 2008-2010 Alberto Gomez-Casado
+#                         Fabrizio Benedetti
 #                         Massimo Sandal <devicerandom@gmail.com>
 #                         W. Trevor King <wking@drexel.edu>
 #
@@ -29,6 +29,7 @@ import copy
 import numpy
 
 from ..command import Command, Argument, Failure
+from ..command_stack import CommandStack
 from ..curve import Data
 from ..engine import CommandMessage
 from ..util.calculus import derivative
@@ -123,14 +124,15 @@ class CurveCommand (Command):
         (e.g. :class:`GetCommand`) to avoid adding themselves to the
         stack entirely.
         """
-        curve = self._curve(hooke=None, params=params)
-        if (len(curve.command_stack) > 0
-            and curve.command_stack[-1].command == self.name
-            and curve.command_stack[-1].arguments == params):
-            pass  # no need to place duplicate calls on the stack.
-        else:
-            curve.command_stack.append(CommandMessage(
-                    self.name, params))
+        if params['stack'] == True:
+            curve = self._curve(hooke=None, params=params)
+            if (len(curve.command_stack) > 0
+                and curve.command_stack[-1].command == self.name
+                and curve.command_stack[-1].arguments == params):
+                pass  # no need to place duplicate calls on the stack.
+            else:
+                curve.command_stack.append(CommandMessage(
+                        self.name, params))
 
 
 class BlockCommand (CurveCommand):
@@ -258,7 +260,8 @@ class CurvePlugin (Builtin):
         self._commands = [
             GetCommand(self), InfoCommand(self), DeltaCommand(self),
             ExportCommand(self), DifferenceCommand(self),
-            DerivativeCommand(self), PowerSpectrumCommand(self)]
+            DerivativeCommand(self), PowerSpectrumCommand(self),
+            ClearStackCommand(self)]
 
 
 # Define commands
@@ -619,6 +622,19 @@ Otherwise, the chunks are end-to-end, and not overlapping.
         self.params['output power column'] = join_data_label(
             'power density', '%s^2/%s' % (data_units, params['freq units']))
         return params
+
+
+class ClearStackCommand (CurveCommand):
+    """Empty a curve's command stack.
+    """
+    def __init__(self, plugin):
+        super(ClearStackCommand, self).__init__(
+            name='clear curve command stack',
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        curve = self._curve(hooke, params)
+        curve.command_stack = CommandStack()
 
 
 class OldCruft (object):

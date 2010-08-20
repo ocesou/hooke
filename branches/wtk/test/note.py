@@ -22,6 +22,7 @@
 >>> r = HookeRunner()
 
 >>> h = r.run_lines(h, ['new_playlist --output_playlist mylist'])
+<FilePlaylist mylist>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['glob_curves_to_playlist test/data/vclamp_picoforce/*']

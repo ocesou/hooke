@@ -120,3 +120,4 @@ Default filename for future saves.
             path=params['file'],
             )
         self._set_playlist(hooke, params, p)
+        outqueue.put(p)

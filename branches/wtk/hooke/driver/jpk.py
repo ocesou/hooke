@@ -83,9 +83,12 @@ class JPKDriver (Driver):
                 raise ValueError(
                     'No segment for %s in %s, only %s'
                     % (name, path, [s.info['name'] for s in segments]))
-        return (segments,
-                self._zip_translate_params(zip_info,
-                                           segments[0].info['raw info']))
+        curve_info = self._zip_translate_params(zip_info,
+                                                segments[0].info['raw info'])
+        for segment in segments:
+            segment.info['spring constant (N/m)'] = \
+                curve_info['spring constant (N/m)']
+        return (segments,curve_info)
 
     def _zip_info(self, zipfile):
         with Closing(zipfile.open('header.properties')) as f:

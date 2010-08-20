@@ -269,11 +269,10 @@ class HookeFrame (wx.Frame):
     def _on_close(self, *args):
         self.log.info('closing GUI framework')
         # apply changes
-        self.gui.config['main height'] = str(self.GetSize().GetHeight())
-        self.gui.config['main left'] = str(self.GetPosition()[0])
-        self.gui.config['main top'] = str(self.GetPosition()[1])
-        self.gui.config['main width'] = str(self.GetSize().GetWidth())
-        # push changes back to Hooke.config?
+        self._set_config('main height', self.GetSize().GetHeight())
+        self._set_config('main left', self.GetPosition()[0])
+        self._set_config('main top', self.GetPosition()[1])
+        self._set_config('main width', self.GetSize().GetWidth())
         self._c['manager'].UnInit()
         del self._c['manager']
         self.Destroy()
@@ -306,7 +305,7 @@ class HookeFrame (wx.Frame):
         if args == None:
             args = {}
         if ('property editor' in self._c
-            and self.gui.config['selected command'] == command):
+            and self.gui.config['selected command'] == command.name):
             for name,value in self._c['property editor'].get_values().items():
                 arg = self._c['property editor']._argument_from_label.get(
                     name, None)
@@ -339,6 +338,9 @@ class HookeFrame (wx.Frame):
                         args[arg.name] = arg.default
         cm = CommandMessage(command.name, args)
         self.gui._submit_command(cm, self.inqueue)
+        return self._handle_response(command_message=cm)
+
+    def _handle_response(self, command_message):
         results = []
         while True:
             msg = self.outqueue.get()
@@ -357,9 +359,11 @@ class HookeFrame (wx.Frame):
                 h.run(self, msg)  # TODO: pause for response?
                 continue
         pp = getattr(
-            self, '_postprocess_%s' % command.name.replace(' ', '_'),
-            self._postprocess_text)
-        pp(command=command, args=args, results=results)
+           self, '_postprocess_%s' % command_message.command.replace(' ', '_'),
+           self._postprocess_text)
+        pp(command=command_message.command,
+           args=command_message.arguments,
+           results=results)
         return results
 
     def _handle_request(self, msg):
@@ -385,6 +389,10 @@ class HookeFrame (wx.Frame):
                 continue
         self.inqueue.put(response)
 
+    def _set_config(self, option, value, section=None):
+        self.gui._set_config(section=section, option=option, value=value,
+                             ui_to_command_queue=self.inqueue,
+                             response_handler=self._handle_response)
 
 
     # Command-specific postprocessing
@@ -417,6 +425,19 @@ class HookeFrame (wx.Frame):
                 else:
                     self._c['playlist'].add_playlist(playlist)
 
+    def _postprocess_new_playlist(self, command, args={}, results=None):
+        """Update `self` to show the new playlist.
+        """
+        if not isinstance(results[-1], Success):
+            self._postprocess_text(command, results=results)
+            return
+        assert len(results) == 2, results
+        playlist = results[0]
+        if 'playlist' in self._c:
+            loaded = self._c['playlist'].is_playlist_loaded(playlist)
+            assert loaded == False, loaded
+            self._c['playlist'].add_playlist(playlist)
+
     def _postprocess_load_playlist(self, command, args={}, results=None):
         """Update `self` to show the playlist.
         """
@@ -433,7 +454,10 @@ class HookeFrame (wx.Frame):
             return
         assert len(results) == 2, results
         playlist = results[0]
-        self._c['playlist'].update_playlist(playlist)
+        if 'playlist' in self._c:
+            loaded = self._c['playlist'].is_playlist_loaded(playlist)
+            assert loaded == True, loaded
+            self._c['playlist'].update_playlist(playlist)
 
     def _postprocess_get_curve(self, command, args={}, results=[]):
         """Update `self` to show the curve.
@@ -451,7 +475,7 @@ class HookeFrame (wx.Frame):
         else:
             raise NotImplementedError()
         if 'note' in self._c:
-            self._c['note'].set_text(curve.info['note'])
+            self._c['note'].set_text(curve.info.get('note', ''))
         if 'playlist' in self._c:
             self._c['playlist'].set_selected_curve(
                 playlist, curve)
@@ -467,6 +491,25 @@ class HookeFrame (wx.Frame):
         """No-op.  Only call 'previous curve' via `self._previous_curve()`.
         """
         pass
+
+    def _postprocess_glob_curves_to_playlist(
+        self, command, args={}, results=[]):
+        """Update `self` to show new curves.
+        """
+        if not isinstance(results[-1], Success):
+            self._postprocess_text(command, results=results)
+            return
+        if 'playlist' in self._c:
+            if args.get('playlist', None) != None:
+                playlist = args['playlist']
+                pname = playlist.name
+                loaded = self._c['playlist'].is_playlist_name_loaded(pname)
+                assert loaded == True, loaded
+                for curve in results[:-1]:
+                    self._c['playlist']._add_curve(pname, curve)
+            else:
+                self.execute_command(
+                    command=self._command_by_name('get playlist'))
 
     def _postprocess_zero_block_surface_contact_point(
         self, command, args={}, results=[]):
@@ -716,7 +759,7 @@ class HookeFrame (wx.Frame):
                 self._c['property editor']._argument_from_label[label] = (
                     argument)
 
-        self.gui.config['selected command'] = command  # TODO: push to engine
+        self._set_config('selected command', command.name)
 
 
 
@@ -847,7 +890,7 @@ class HookeFrame (wx.Frame):
 
         selected_perspective = self.gui.config['active perspective']
         if not self._perspectives.has_key(selected_perspective):
-            self.gui.config['active perspective'] = 'Default'  # TODO: push to engine's Hooke
+            self._set_config('active perspective', 'Default')
 
         self._restore_perspective(selected_perspective, force=True)
         self._update_perspective_menu()
@@ -892,7 +935,7 @@ class HookeFrame (wx.Frame):
     def _restore_perspective(self, name, force=False):
         if name != self.gui.config['active perspective'] or force == True:
             self.log.debug('restore perspective %s' % name)
-            self.gui.config['active perspective'] = name  # TODO: push to engine's Hooke
+            self._set_config('active perspective', name)
             self._c['manager'].LoadPerspective(self._perspectives[name])
             self._c['manager'].Update()
             for pane in self._c['manager'].GetAllPanes():

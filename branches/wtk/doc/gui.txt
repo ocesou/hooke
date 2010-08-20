@@ -43,11 +43,34 @@ the `y column(s)` button and checking interesting columns.  We suggest
 you stick to columns with a single unit, and not try and dispay, for
 example, both meters and newtons on the same y axis.
 
+You can move about the plot using its navigation toolbar.  See the
+`Matplotlib manual`_ for details.
+
+.. _Matplotlib manual:
+  http://matplotlib.sourceforge.net/users/navigation_toolbar.html
+
+You can measure distances and forces directly in the plot.  If you
+want to know the coordinates of a single point, left click on it.  The
+index and coordinates of the nearest data point will be displayed in
+the status bar along with the x and y coordinates of your click.
+
+To find the distance between two points, just issue the command
+``delta``.  You will be asked to click two points.  When you click a
+point, a blue dot should appear.  When you click the second point, the
+distances will appear in the output panel.  Hooke automatically
+adjusts the position of the clicked point to the nearest point in the
+graph, so you will be always measuring distances and forces between
+points in the graph.
+
+.. todo:: Implement blue dots and click handler.
+
 Folders
 =======
 Here you can navigate your file system and double click on a saved
 playlist to open it.  You can change the initial folder by modifying
 `workdir` in the `preferences` (core plugin).
+
+.. todo:: Implement folders panel.
 
 Playlists
 =========
@@ -128,8 +151,6 @@ Hooke's GUI will remember the size and position of the main window
 (stored in the config file, see :doc:`config`).  You can arrange the
 panels any which way you like and save this arrangement as a
 perspective.
-
-.. todo:: Actually write new properties to the config file on GUI exit.
 
 .. image:: img/gui_perspective.jpg
 

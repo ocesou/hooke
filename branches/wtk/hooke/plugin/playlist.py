@@ -26,8 +26,9 @@ import logging
 import os.path
 
 from ..command import Command, Argument, Failure
-from ..playlist import FilePlaylist
 from ..curve import NotRecognized
+from ..playlist import FilePlaylist
+from ..util.itertools import reverse_enumerate
 from . import Builtin
 
 
@@ -39,7 +40,7 @@ class PlaylistPlugin (Builtin):
             GetCommand(self), IndexCommand(self), CurveListCommand(self),
             SaveCommand(self), LoadCommand(self),
             AddCommand(self), AddGlobCommand(self),
-            RemoveCommand(self), ApplyCommandStack(self),
+            RemoveCommand(self), ApplyCommand(self),
             FilterCommand(self),
             ]
 
@@ -329,19 +330,20 @@ Index of target curve.
         self._playlist(hooke, params).jump(params.index())
 
 
-class ApplyCommandStack (PlaylistCommand):
+class ApplyCommand (PlaylistCommand):
     """Apply a :class:`~hooke.command_stack.CommandStack` to each
     curve in a playlist.
 
     TODO: discuss `evaluate`.
     """
     def __init__(self, plugin):
-        super(ApplyCommandStack, self).__init__(
-            name='apply command stack',
+        super(ApplyCommand, self).__init__(
+            name='apply command stack to playlist',
             arguments=[
-                Argument(name='commands', type='command stack', optional=False,
+                Argument(name='commands', type='command stack',
                          help="""
-Command stack to apply to each curve.
+Command stack to apply to each curve.  Defaults to the `command_stack`
+plugin's current stack.
 """.strip()),
                 Argument(name='evaluate', type='bool', default=False,
                          help="""
@@ -351,18 +353,27 @@ Evaluate the applied command stack immediately.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        if len(params['commands']) == 0:
-            return
+        params = self.__setup_params(hooke=hooke, params=params)
         p = self._playlist(hooke, params)
         if params['evaluate'] == True:
+            exec_cmd = hooke.command_by_name['execute command stack']
             for curve in p.items():
-                for command in params['commands']:
-                    curve.command_stack.execute_command(hooke, command)
-                    curve.command_stack.append(command)
+                hooke.run_command(exec_cmd.name,
+                                  {'commands':params['commands'],
+                                   'stack':True})
         else:
             for curve in p:
-                curve.command_stack.extend(params['commands'])
-                curve.unload()  # force command stack execution on next access.
+                for command in params['commands']:
+                    curve.command_stack.append(command)
+                curve.set_hooke(hooke)
+                curve.unload()
+
+    def __setup_params(self, hooke, params):
+        if params['commands'] == None:
+            cstack_plugin = [p for p in hooke.plugins
+                             if p.name == 'command_stack'][0]
+            params['commands'] = cstack_plugin.command_stack
+        return params
 
 
 class FilterCommand (PlaylistAddingCommand, PlaylistCommand):
