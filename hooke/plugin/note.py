@@ -77,7 +77,7 @@ Target object for the note.  Defaults to the current curve.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        outqueue.put(params['target'].info['note'])
+        outqueue.put(params['target'].info.get('note', None))
 
 
 class NoteFilterCommand (FilterCommand):

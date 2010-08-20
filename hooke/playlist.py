@@ -96,7 +96,7 @@ class NoteIndexList (list):
         Updates :attr:`_index` during the iteration so
         :func:`~hooke.plugin.curve.current_curve_callback` works as
         expected in :class:`~hooke.command.Command`\s called from
-        :class:`~hooke.plugin.playlist.ApplyCommandStack`.  After the
+        :class:`~hooke.plugin.playlist.ApplyCommand`.  After the
         iteration completes, :attr:`_index` is restored to its
         original value.
         """
@@ -285,6 +285,11 @@ class FilePlaylist (Playlist):
                 or not isinstance(value, types.StringTypes)):
                 continue
             root.setAttribute(self._clean_key(key), str(value))
+        if self.path == None:
+            base_path = os.getcwd()
+        else:
+            base_path = os.path.abspath(
+                os.path.expanduser(self.path))
         for curve in self: # save curves and their attributes
             curve_element = doc.createElement('curve')
             root.appendChild(curve_element)
@@ -292,9 +297,7 @@ class FilePlaylist (Playlist):
             if absolute_paths == False:
                 path = os.path.relpath(
                     path,
-                    os.path.dirname(
-                        os.path.abspath(
-                            os.path.expanduser(self.path))))
+                    os.path.dirname(base_path))
             curve_element.setAttribute('path', path)
             for key,value in curve.info.items():
                 if (key in self._ignored_keys

@@ -86,7 +86,7 @@ class CommandStack (list):
     >>> print [repr(cm) for cm in c]
     []
     """
-    def execute(self, hooke):
+    def execute(self, hooke, stack=False):
         """Execute a stack of commands.
 
         See Also
@@ -96,7 +96,7 @@ class CommandStack (list):
         for command_message in self:
             if self.filter(hooke, command_message) == True:
                 self.execute_command(
-                    hooke=hooke, command_message=command_message)
+                    hooke=hooke, command_message=command_message, stack=stack)
 
     def filter(self, hooke, command_message):
         """Return `True` to execute `command_message`, `False` otherwise.
@@ -105,9 +105,11 @@ class CommandStack (list):
         """
         return True
 
-    def execute_command(self, hooke, command_message):
+    def execute_command(self, hooke, command_message, stack=False):
+        arguments = dict(command_message.arguments)
+        arguments['stack'] = stack
         hooke.run_command(command=command_message.command,
-                          arguments=command_message.arguments)
+                          arguments=arguments)
 
     def clear(self):
         while len(self) > 0:

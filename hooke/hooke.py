@@ -206,6 +206,9 @@ class HookeRunner (object):
             hooke = command_to_ui.get(block=True)
             log.debug('cleanup got %s instance' % type(hooke))
         command.join()
+        for playlist in hooke.playlists:  # Curve._hooke is not pickled.
+            for curve in playlist:
+                curve.set_hooke(hooke)
         return hooke
 
 

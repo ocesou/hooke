@@ -17,6 +17,8 @@
 # <http://www.gnu.org/licenses/>.
 
 """
+>>> import logging
+>>> import sys
 >>> from hooke.hooke import Hooke, HookeRunner
 >>> h = Hooke()
 >>> r = HookeRunner()
@@ -158,4 +160,45 @@ Success
 []
 Success
 <BLANKLINE>
+
+Building command stacks is fun, but its useless if you can't execute
+them.  First, lets repopulate the in-memory stack.
+
+>>> h = r.run_lines(h, ['start_command_capture',
+...                     'debug --attribute config',
+...                     'version',
+...                     'stop_command_capture']
+...     )  # doctest: +REPORT_UDIFF
+Success
+<BLANKLINE>
+Success
+<BLANKLINE>
+Success
+<BLANKLINE>
+Success
+<BLANKLINE>
+
+Setup logging so we can check command output in the doctest.
+
+>>> log = logging.getLogger('hooke')
+>>> stdout_handler = logging.StreamHandler(sys.stdout)
+>>> log.addHandler(stdout_handler)
+
+Execute the stack.  We use `h.run_command` because `sys.stdout` is
+replaced by a `doctest._SpoofOut`, and doctest has no way to collect
+those results from `run_lines`'s engine subprocess.
+
+>>> h.run_command('execute command stack', arguments={}
+...     )  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_UDIFF
+engine running internal <CommandMessage execute command stack>
+engine running internal <CommandMessage debug {attribute: config, ...}>
+engine message from debug (<type 'instance'>):
+ <hooke.config.HookeConfigParser instance at 0x...>
+engine message from debug (<class 'hooke.command.Success'>):
+engine running internal <CommandMessage version {stack: False}>
+engine message from version (<type 'str'>): Hooke 1.0.0.alpha (Ninken)
+----
+...
+engine message from version (<class 'hooke.command.Success'>):
+engine message from execute command stack (<class 'hooke.command.Success'>):
 """

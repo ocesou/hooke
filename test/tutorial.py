@@ -38,6 +38,7 @@ Command: load_playlist
 Arguments:
 <BLANKLINE>
 help BOOL (bool) Print a help message.
+stack BOOL (bool) Add this command to appropriate command stacks.
 output_playlist STRING (string) Name of the new playlist (defaults to
     an auto-generated name).
 input FILE (file) File name for the input playlist.
@@ -69,6 +70,7 @@ hooke
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['new_playlist --output_playlist mylist'])
+<FilePlaylist mylist>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['jump_to_playlist -- -1'])
@@ -223,56 +225,27 @@ See :file:`note.py`.
 
 *Exporting curves*
 
->>> export_already_exists = os.path.exists('mycurve.dat')
->>> export_already_exists
-False
->>> h = r.run_lines(h, ['export_block --output mycurve.dat'])
-Success
-<BLANKLINE>
->>> os.path.isfile('mycurve.dat')
-True
->>> if export_already_exists == False:
-...    os.remove('mycurve.dat')
+See :file:`export_block.py`.
 
 *Measuring distances and forces*
 
->>> h = r.run_lines(h, ['delta 300 500'])  # doctest: +ELLIPSIS
-[('z piezo (m)', -4.913...e-08), ('deflection (m)', -2.834...e-08)]
-Success
-<BLANKLINE>
+See :file:`delta.py`.
 
 *Worm like chain and freely jointed chain fitting*
 
-*Multiple curve fitting and measuring*
+*Command stacks*
+
+See :file:`command_stack.py`,
+:file:`apply_command_stack_to_playlist.py`, and
+:file:`command_stack_save_load.py`.
+
+*Multiple curve analysis*
+
+See :file:`multiple_curve_analysis`.
 
 *Fast curve reviewing and saving*
 
 *Configuring Hooke*
 
->>> h = r.run_lines(h, ['set_config conditions temperature 300.0'])
-Success
-<BLANKLINE>
->>> h = r.run_lines(h, ['get_config conditions temperature'])
-300.0
-Success
-<BLANKLINE>
->>> h = r.run_lines(h, ['set_config conditions temperature 295.3'])
-Success
-<BLANKLINE>
->>> h = r.run_lines(h, ['get_config conditions temperature'])
-295.3
-Success
-<BLANKLINE>
->>> h = r.run_lines(h, ['print_config'])  # doctest: +ELLIPSIS
-# Default environmental conditions in case they are not specified in
-# the force curve data.  Configuration options in this section are
-# available to every plugin.
-[conditions]
-# Temperature in Kelvin
-temperature = 295.3
-<BLANKLINE>
-...
->>> h = r.run_lines(h, ['save_config'])
-Success
-<BLANKLINE>
+See :file:`config.py`.
 """

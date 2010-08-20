@@ -334,11 +334,36 @@ class Tree (wx.TreeCtrl):
         """Absorb changed `.index()`, etc.
         """
         self._playlists[playlist.name] = playlist
+        cnames = []
+        for curve in playlist:
+            if (playlist.name, curve.name) not in self._id_for_name:
+                self._add_curve(playlist.name, curve)
+            cnames.append(curve.name)
+        dc = self._callbacks['delete_curve']
+        _dc = self._callbacks['_delete_curve']
+        self._callbacks['delete_curve'] = None
+        self._callbacks['_delete_curve'] = None
+        for name in self._id_for_name.keys():
+            if not self._is_curve(name):
+                continue
+            pname,cname = name
+            if pname != playlist.name:
+                continue
+            if cname not in cnames:
+                self.delete_curve(playlist.name, cname)
+        self._callbacks['delete_curve'] = dc
+        self._callbacks['_delete_curve'] = _dc
 
     def is_playlist_loaded(self, playlist):
-        """Return `True` if a playlist is loaded, `False` otherwise.
+        """Return `True` if `playlist` is loaded, `False` otherwise.
         """
-        return playlist.name in self._playlists
+        return self.is_playlist_name_loaded(playlist.name)
+
+    def is_playlist_name_loaded(self, name):
+        """Return `True` if a playlist named `name` is loaded, `False`
+        otherwise.
+        """
+        return name in self._playlists
 
 
 class Playlist (Panel, wx.Panel):

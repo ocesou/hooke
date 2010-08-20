@@ -95,9 +95,9 @@ the end of the stdin stream, which is Ctrl-d in many shells).
 Creating a playlist
 -------------------
 
-To start analyzing your curves, you first have to build a playlist. The
-playlist is just an index of the force curve files you want to
-analyze. Imagine it as a music playlist (that’s why it is called a
+To start analyzing your curves, you first have to build a playlist.
+The playlist is just an index of the force curve files you want to
+analyze.  Imagine it as a music playlist (that’s why it is called a
 playlist), but with data files instead of audio files.
 
 Suppose you have 100 PicoForce curve files in your curves directory,
@@ -234,7 +234,7 @@ blank note string with ``set_note ''``.
 Exporting curves
 ----------------
 
-You can export Hooke curves as images and as text columns. To export
+You can export Hooke curves as images and as text columns.  To export
 as images or text, use the ``export_block`` command.  Supported
 formats are PNG (Portable Network Graphic, raster) and EPS
 (Encapsulated Postscript, vector).  The export format is determined by
@@ -252,60 +252,119 @@ respectively.
 
 If you don't want the entire block, try the ``cut`` command.
 
-Interacting with the plot
--------------------------
+Analysis
+--------
 
-(no plots in command line mode...)
+The commands we have covered so far allow basic bookkeeping.  The
+point of Hooke, though, is to allow you to easily analyze force
+spectroscopy data.  We cover those analysis commands in this section.
 
 Measuring distances and forces
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can move about the plot using its navigation toolbar.  See the
-`Matplotlib manual`_ for details.
+To measure the distance between points, use the ``delta`` command.
+For example,::
 
-.. _Matplotlib manual:
-  http://matplotlib.sourceforge.net/users/navigation_toolbar.html
+    hooke> delta 300 500
 
-You can measure distances and forces directly in the plot. Just issue
-the command ``delta``.  You will be asked to click two points.  When
-you click a point, a blue dot should appear.  When you click the
-second point, the distances will appear in the output panel.  If you
-want to know the coordinates of a single point, left click on it.
+will measure the distance between the 300th point and the 500th point.
+One difficulty with the command line interface is that is difficult
+to know which points you're interested without seeing the plot.  The
+two ways around this are:
 
-.. todo:: Add description of ``delta``'s command line interface.
+1) Export the block (with ``export_block``), and graph the exported
+   file with a program of your choice (e.g. Gnuplot_).  Use the
+   resulting graph to determine the indices of the points you are
+   interested in.
+2) Run Hooke's GUI instead of the command line when you need to make
+   manual measurements.  See :doc:`gui` for details.
 
-Hooke automatically adjusts the position of the clicked point to the
-nearest point in the graph, so you will be always measuring distances
-and forces between points in the graph.
+.. _Gnuplot: http://gnuplot.sourceforge.net/
 
 Worm like chain and freely jointed chain fitting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. todo:: Update WLC fitting tutorial section.
+Polymer model fitting is a complicated beast.  To correctly fit your
+chosen model (WLC, FJC, etc.), you need to execute a multi-step
+analysis.  Hooke provides a flexible chain of curve analyisis commands
+that create new data columns (e.g. `deflection (N)`) or store
+information in a curve's `info` dictionary (e.g. `flat filter peaks`).
+You can, if necessary, adjust the names of input and output columns
+and `info` values to combine the available commands in new and useful
+ways.::
 
-You can measure by hand the parameters relative to a force peak using
-a worm-like chain fitting with the ``fit`` command.  The command by
-default automatically finds the contact point, asks for two points
-delimiting the portion to fit, and performs a two-variable fit, with
-contour length, persistence length, and their relative errors as
-output.  If desired, one can use the ``noauto`` option to manually
-click the contact point, and/or the ``pl=NUMBER`` options to impose a
-specific persistence or Kuhn length (in nanometers). You can choose
-which model to use with ``set fit_function wlc`` or ``set fit_function
-fjc``.  See the help of the ``fit`` command from the Hooke command
-line for details.
+    hooke> zero_surface_contact_point --block retract
+    hooke> flat_filter_peaks --block retract --min_points 1
+    hooke> zero_surface_contact_point --block retract
+    ...        --ignore_after_last_peak_info_name 'flat filter peaks'
+    hooke> convert_distance_to_force --block retract
+    ...        --deflection_column 'surface deflection (m)'
+    hooke> remove_cantilever_from_extension --block retract
+    hooke> flat_peaks_to_polymer_peaks --block retract
+    hooke> polymer_fit_peaks --block retract
+    hooke> export_block --block retract --output myblock.dat
 
-Multiple curve fitting and measuring
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. todo:: Update multiple curve fitting tutorial section.
+See each command's `Help`_ for details.
 
-You can cycle through all your current playlist obtaining WLC fit, FJC
-fit, rupture force and slope (loading rate) information from each
-curve using the ``multifit`` command.  The collected data can be saved
-in a text file for further analysis in your favourite spreadsheet or
-statistical program.  If you want to check your parameters on the
-current curve before fitting all the files in your playlist, use
-``multifit justone``.  See the ``multifit`` help for more options.
+Command stacks
+~~~~~~~~~~~~~~
+
+Since you are likely to apply similar analysis to several curves,
+Hooke provides :mod:`command stacks <hooke.command_stack>` for
+bundling groups of commands.::
+
+    hooke> start_command_capture
+    hooke> zero_surface_contact_point --block retract
+    hooke> flat_filter_peaks --block retract --min_points 1
+    ...
+    hooke> stop_command_capture
+
+You can check the state of the command stack with
+``get_command_stack`` and the state of capture with
+``get_command_capture_state``.  If you make mistakes, you can pop
+commands from the stack with ``pop_command_from_stack``.  If you stop
+capturing a command stack (e.g. to test a complicated command before
+continuing), you can continue adding to the same stack with
+``restart_command_capture.``
+
+To execute a command stack, run::
+
+    hooke> execute_command_stack
+
+To execute a command stack on every curve in a playlist, run::
+
+    hooke> apply_command_stack_to_playlist
+
+If you decide that there are commands in a curve's stack that you
+don't want, you can clear the stack with::
+
+    hooke> clear_curve_command_stack
+
+You can also save command stacks to disk (and reload them later,
+potentially in a different Hooke session).::
+
+    hooke> save_command_stack --output my_stack
+    hooke> load_command_stack --input my_stack
+
+Multiple curve analysis
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You can analyze multiple curves by combining `Worm like chain and
+freely jointed chain fitting`_ and `Command stacks`_.::
+
+    hooke> start_command_capture
+    hooke> zero_surface_contact_point --block retract
+    hooke> flat_filter_peaks --block retract --min_points 1
+    hooke> zero_surface_contact_point --block retract
+    ...        --ignore_after_last_peak_info_name 'flat filter peaks'
+    hooke> convert_distance_to_force --block retract
+    ...        --deflection_column 'surface deflection (m)'
+    hooke> remove_cantilever_from_extension --block retract
+    hooke> flat_peaks_to_polymer_peaks --block retract
+    hooke> polymer_fit_peaks --block retract
+    hooke> export_block --block retract --output myblock.dat
+    hooke> stop_command_capture
+    hooke> apply_command_stack_to_playlist
 
 Fast curve reviewing and saving
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -321,9 +380,9 @@ directory.
 Configuring Hooke
 -----------------
 
-You can set environment variables to influence the behaviour of
-Hooke. The command to use is ``set_config``.  Use ``get_config`` to
-read a particular option and ``print_config`` to display the entire
+You can set environment variables to influence the behaviour of Hooke.
+The command to use is ``set_config``.  Use ``get_config`` to read a
+particular option and ``print_config`` to display the entire
 configuration file.  To save changes, either run ``save_config`` or
 start Hooke with the ``--save-config`` option.  See :doc:`config` for
 details.

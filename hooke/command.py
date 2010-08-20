@@ -109,6 +109,8 @@ class Command (object):
         self.arguments = [
             Argument(name='help', type='bool', default=False, count=1,
                      help='Print a help message.'),
+            Argument(name='stack', type='bool', default=True, count=1,
+                     help='Add this command to appropriate command stacks.'),
             ] + arguments
         self._help = help
         self.plugin = plugin

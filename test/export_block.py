@@ -29,12 +29,16 @@
 Success
 <BLANKLINE>
 >>> file_name = '%s.dat' % uuid4()
+>>> export_already_exists = os.path.exists(file_name)
+>>> export_already_exists
+False
 >>> h = r.run_lines(h, ['export_block --output %s' % file_name])
 Success
 <BLANKLINE>
 >>> with open(file_name, 'r') as f:
 ...     lines = f.readlines()
->>> os.remove(file_name)
+>>> if export_already_exists == False:
+...    os.remove(file_name)
 >>> print len(lines)
 2049
 >>> print ''.join(lines[:5]),  # doctest: +ELLIPSIS, +REPORT_UDIFF +NORMALIZE_WHITESPACE

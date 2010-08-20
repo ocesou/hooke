@@ -24,6 +24,7 @@ import logging
 
 from .. import version
 from ..config import Setting
+from ..engine import CommandMessage
 from ..util.pluggable import IsSubclass, construct_odict
 
 try:
@@ -86,6 +87,21 @@ class UserInterface (object):
         log = logging.getLogger('hooke')
         log.debug('executing %s' % command_message)
         ui_to_command_queue.put(command_message)
+
+    def _set_config(self, option, value, ui_to_command_queue, response_handler,
+                     section=None):
+        if section == None:
+            section = self.setting_section
+        if section in [self.setting_section, 'conditions']:
+            if self.config[option] == value:
+                return  # No change, so no need to push the new value.
+            self.config[option] = value
+        cm = CommandMessage(
+            command='set config',
+            arguments={'section': section, 'option': option, 'value': value})
+        self._submit_command(command_message=cm,
+                             ui_to_command_queue=ui_to_command_queue)
+        response_handler(command_message=cm)
 
     def _splash_text(self, extra_info, **kwargs):
         return ("""

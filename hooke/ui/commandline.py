@@ -63,15 +63,23 @@ class CommandLineParser (optparse.OptionParser):
                 type = a.type
                 if type == 'bool':
                     if a.default == True:
-                        self.add_option(
-                            '--disable-%s' % name, dest=name, default=Default,
-                            action='store_false')
+                        try:
+                            self.add_option(
+                                '--disable-%s' % name, dest=name,
+                                default=Default, action='store_false')
+                        except optparse.OptionConflictError, e:
+                            logging.warn('error in %s: %s' % (command, e))
+                            raise
                         self.command_opts.append(a)
                         continue
                     elif a.default == False:
-                        self.add_option(
-                            '--enable-%s' % name, dest=name, default=Default,
-                            action='store_true')
+                        try:
+                            self.add_option(
+                                '--enable-%s' % name, dest=name,
+                                default=Default, action='store_true')
+                        except optparse.OptionConflictError, e:
+                            logging.warn('error in %s: %s' % (command, e))
+                            raise
                         self.command_opts.append(a)
                         continue
                     else:
@@ -79,8 +87,12 @@ class CommandLineParser (optparse.OptionParser):
                 elif type not in ['string', 'int', 'long', 'choice', 'float',
                                   'complex']:
                     type = 'string'
-                self.add_option(
-                    '--%s' % name, dest=name, type=type, default=Default)
+                try:
+                    self.add_option(
+                        '--%s' % name, dest=name, type=type, default=Default)
+                except optparse.OptionConflictError, e:
+                    logging.warn('error in %s: %s' % (command, e))
+                    raise
                 self.command_opts.append(a)
             else:
                 self.command_args.append(a)

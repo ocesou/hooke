@@ -213,10 +213,12 @@ class FlatFilterCommand (FilterCommand):
     def __init__(self, plugin):
         flat_peaks = [c for c in plugin._commands
                       if c.name == 'flat filter peaks'][0]
-        flat_peaks_arg_names = [a.name for a in flat_peaks.arguments]
+        flat_peaks_arguments = [a for a in flat_peaks.arguments
+                                if a.name not in ['help', 'stack']]
+        flat_peaks_arg_names = [a.name for a in flat_peaks_arguments]
         plugin_arguments = [a for a in plugin._arguments
                             if a.name not in flat_peaks_arg_names]
-        arguments = flat_peaks.arguments + plugin_arguments
+        arguments = flat_peaks_arguments + plugin_arguments
         super(FlatFilterCommand, self).__init__(
             plugin, name='flat filter playlist')
         self.arguments.extend(arguments)
