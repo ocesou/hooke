@@ -285,8 +285,8 @@ class InfoCommand (CurveCommand):
             Argument(name='all', type='bool', default=False, count=1,
                      help='Get all curve information.'),
             ]
-        self.fields = ['name', 'path', 'experiment', 'driver', 'filetype', 'note',
-                       'blocks', 'block sizes']
+        self.fields = ['name', 'path', 'experiment', 'driver', 'filetype',
+                       'note', 'command stack', 'blocks', 'block sizes']
         for field in self.fields:
             args.append(Argument(
                     name=field, type='bool', default=False, count=1,
@@ -300,7 +300,7 @@ class InfoCommand (CurveCommand):
         fields = {}
         for key in self.fields:
             fields[key] = params[key]
-        if reduce(lambda x,y: x and y, fields.values()) == False:
+        if reduce(lambda x,y: x or y, fields.values()) == False:
             params['all'] = True # No specific fields set, default to 'all'
         if params['all'] == True:
             for key in self.fields:
@@ -330,6 +330,9 @@ class InfoCommand (CurveCommand):
     def _get_note(self, curve):
         return curve.info.get('note', None)
                               
+    def _get_command_stack(self, curve):
+        return curve.command_stack
+
     def _get_blocks(self, curve):
         return len(curve.data)
 

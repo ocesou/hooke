@@ -22,7 +22,10 @@ This allows :class:`hooke.plugin.Plugin`\s to specify the types of
 experiments they can handle.
 """
 
-class Experiment (object):
+from .util.singleton import Singleton
+
+
+class Experiment (Singleton):
     """Base class for experiment classification.
     """
     pass

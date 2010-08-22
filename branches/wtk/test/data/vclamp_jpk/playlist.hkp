@@ -1,6 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<playlist index="0" version="0.1">
-  <curve note="" path="2009.04.23-15.15.47.jpk"/>
-  <curve note="" height_nominal_to_calibrated_calibration_file="default.cal"
-	 path="2009.04.23-15.21.39.jpk"/>
-</playlist>
+# Hooke playlist version 0.2
+!!python/object/new:hooke.playlist.FilePlaylist
+state:
+  version: '0.2'
+  name: JPK
+listitems:
+- !!python/object:hooke.curve.Curve
+  path: 2009.04.23-15.15.47.jpk
+- !!python/object:hooke.curve.Curve
+  path: 2009.04.23-15.21.39.jpk

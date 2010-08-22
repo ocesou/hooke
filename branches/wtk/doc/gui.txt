@@ -193,3 +193,13 @@ The :doc:`autopeak` tutorial is also applicable.  You need to setup the
 type of fit you want to use: in the Properties of the autopeak command
 (autopeak plugin) select `WLC`, `FJC` or `FJC_PEG` from the dropdown
 list for the `polymer model` argument of `polymer fit`.
+
+Fast curve reviewing and saving
+===============================
+.. todo:: Update curve review tutorial section.
+
+When automatic routines are not good enough to filter your data, use
+``review`` command to cycle through your playlist presenting ten
+curves in the same graph.  You can then enter the numbers of the
+interesting curves and automatically save a copy of them into another
+directory.

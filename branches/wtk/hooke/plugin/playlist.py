@@ -27,7 +27,7 @@ import os.path
 
 from ..command import Command, Argument, Failure
 from ..curve import NotRecognized
-from ..playlist import FilePlaylist
+from ..playlist import load
 from ..util.itertools import reverse_enumerate
 from . import Builtin
 
@@ -38,7 +38,7 @@ class PlaylistPlugin (Builtin):
         self._commands = [
             NextCommand(self), PreviousCommand(self), JumpCommand(self),
             GetCommand(self), IndexCommand(self), CurveListCommand(self),
-            SaveCommand(self), LoadCommand(self),
+            NameCommand(self), SaveCommand(self), LoadCommand(self),
             AddCommand(self), AddGlobCommand(self),
             RemoveCommand(self), ApplyCommand(self),
             FilterCommand(self),
@@ -210,6 +210,26 @@ class CurveListCommand (PlaylistCommand):
 	outqueue.put(list(self._playlist(hooke, params)))
 
 
+class NameCommand (PlaylistCommand):
+    """(Re)name a playlist.
+    """
+    def __init__(self, plugin):
+        super(NameCommand, self).__init__(
+            name='name playlist',
+            arguments=[
+                Argument(name='name', type='string', optional=False,
+                         help="""
+Name for the playlist.
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+	p = self._playlist(hooke, params)
+        p.name = params['name']
+        outqueue.put(p)
+
+
 class SaveCommand (PlaylistCommand):
     """Save a playlist.
     """
@@ -250,8 +270,7 @@ Drivers for loading curves.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        p = FilePlaylist(drivers=params['drivers'], path=params['input'])
-        p.load(hooke=hooke)
+        p = load(path=params['input'], drivers=params['drivers'], hooke=hooke)
         self._set_playlist(hooke, params, p)
 	outqueue.put(p)
 
@@ -393,9 +412,10 @@ class FilterCommand (PlaylistAddingCommand, PlaylistCommand):
     method of their subclass.  See, for example,
     :meth:`NoteFilterCommand.filter`.
     """
-    def __init__(self, plugin, name='filter playlist'):
+    def __init__(self, plugin, name='filter playlist', load_curves=True):
         super(FilterCommand, self).__init__(
             name=name, help=self.__doc__, plugin=plugin)
+        self._load_curves = load_curves
         if not hasattr(self, 'filter'):
             self.arguments.append(
                 Argument(name='filter', type='function', optional=False,
@@ -409,7 +429,8 @@ Function returning `True` for "good" curves.
             filter_fn = params['filter']
         else:
             filter_fn = self.filter
-        p = self._playlist(hooke, params).filter(filter_fn,
+        p = self._playlist(hooke, params).filter(
+            filter_fn, load_curves=self._load_curves,
             hooke=hooke, inqueue=inqueue, outqueue=outqueue, params=params)
         self._set_playlist(hooke, params, p)
         if hasattr(p, 'path') and p.path != None:

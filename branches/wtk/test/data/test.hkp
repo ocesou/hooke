@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
-<playlist index="0" version="0.1">
-  <curve note="" path="picoforce.000"/>
-</playlist>
+# Hooke playlist version 0.2
+!!python/object/new:hooke.playlist.FilePlaylist
+state:
+  version: '0.2'
+listitems:
+- !!python/object:hooke.curve.Curve
+  path: picoforce.000

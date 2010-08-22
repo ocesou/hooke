@@ -29,6 +29,7 @@ import numpy
 from .. import curve as curve
 from .. import experiment as experiment
 from ..util.util import Closing as Closing
+from ..util.si import join_data_label, split_data_label
 from . import Driver as Driver
 
 
@@ -88,7 +89,7 @@ class JPKDriver (Driver):
         for segment in segments:
             segment.info['spring constant (N/m)'] = \
                 curve_info['spring constant (N/m)']
-        return (segments,curve_info)
+        return (segments, curve_info)
 
     def _zip_info(self, zipfile):
         with Closing(zipfile.open('header.properties')) as f:
@@ -144,8 +145,16 @@ class JPKDriver (Driver):
     def _zip_translate_params(self, params, chan_info):
         info = {
             'raw info':params,
+            'filetype':self.name,
             #'time':self._time_from_TODO(raw_info[]),
             }
+        # TODO: distinguish between force clamp and velocity clamp
+        # experiments.  Note that the JPK file format is flexible
+        # enough to support mixed experiments (i.e. both force clamp
+        # and velocity clamp segments in a single experiment), but I
+        # have no idea what sort of analysis such experiments would
+        # require ;).
+        info['experiment'] = experiment.VelocityClamp()
         force_unit = chan_info['channel']['vDeflection']['conversion-set']['conversion']['force']['scaling']['unit']['unit']
         assert force_unit == 'N', force_unit
         force_base = chan_info['channel']['vDeflection']['conversion-set']['conversion']['force']['base-calibration-slot']
@@ -182,35 +191,49 @@ class JPKDriver (Driver):
 
         # raw column indices
         channels = segment.info['raw info']['channels']['list']
-        z_col = channels.index('height')
-        d_col = channels.index('vDeflection')
-        
-        segment = self._zip_scale_channel(
-            segment, z_col, 'calibrated', path, info)
-        segment = self._zip_scale_channel(
-            segment, d_col, 'distance', path, info)
-
-        assert segment.info['columns'][z_col] == 'height (m)', \
-            segment.info['columns'][z_col]
-        assert segment.info['columns'][d_col] == 'vDeflection (m)', \
-            segment.info['columns'][d_col]
-
-        # scaled column indices same as raw column indices,
-        # because columns is a copy of channels.list
-        segment.info['columns'][z_col] = 'z piezo (m)'
-        segment.info['columns'][d_col] = 'deflection (m)'
+        for i,channel in enumerate(channels):
+            conversion = None
+            if channel == 'vDeflection':
+                conversion = 'distance'
+            segment = self._zip_scale_channel(
+                segment, channel, conversion=conversion, path=path, info=info)
+            name,unit = split_data_label(segment.info['columns'][i])
+            if name == 'vDeflection':
+                assert unit == 'm', segment.info['columns'][i]
+                segment.info['columns'][i] = join_data_label('deflection', 'm')
+                # Invert because deflection voltage increases as the
+                # tip moves away from the surface, but it makes more
+                # sense to me to have it increase as it moves toward
+                # the surface (positive tension on the protein chain).
+                segment[:,i] *= -1
+            elif name == 'height':
+                assert unit == 'm', segment.info['columns'][i]
+                segment.info['columns'][i] = join_data_label('z piezo', 'm')
         return segment
 
-    def _zip_scale_channel(self, segment, channel, conversion, path, info):
-        channel_name = segment.info['raw info']['channels']['list'][channel]
+    def _zip_scale_channel(self, segment, channel_name, conversion=None,
+                           path=None, info={}):
+        channel = segment.info['raw info']['channels']['list'].index(
+            channel_name)
         conversion_set = segment.info['raw info']['channel'][channel_name]['conversion-set']
+        if conversion == None:
+            conversion = conversion_set['conversions']['default']
+        if conversion == conversion_set['conversions']['base']:
+            # Our conversion is the base data.
+            if conversion != 'volts':
+                raise NotImplementedError(
+                    'unknown units for base channel: %s' % conversion)
+            segment.info['columns'][channel] = join_data_label(
+                channel_name, 'V')
+            return segment
         conversion_info = conversion_set['conversion'][conversion]
         if conversion_info['base-calibration-slot'] \
                 != conversion_set['conversions']['base']:
             # Our conversion is stacked on a previous conversion.  Do
             # the previous conversion first.
             segment = self._zip_scale_channel(
-                segment, channel, conversion_info['base-calibration-slot'],
+                segment, channel_name,
+                conversion_info['base-calibration-slot'],
                 path=path, info=info)
         if conversion_info['type'] == 'file':
             # Michael Haggerty at JPK points out that the conversion
@@ -232,7 +255,7 @@ class JPKDriver (Driver):
         offset = float(conversion_info['scaling']['offset'])
         unit = conversion_info['scaling']['unit']['unit']
         segment[:,channel] = segment[:,channel] * multiplier + offset
-        segment.info['columns'][channel] = '%s (%s)' % (channel_name, unit)
+        segment.info['columns'][channel] = join_data_label(channel_name, unit)
         return segment
 
     def _parse_params(self, lines):

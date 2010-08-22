@@ -38,16 +38,17 @@ Proceed with the test itself.
 >>> r = HookeRunner()
 >>> playlist = os.path.join('test', 'data', 'vclamp_wtk', 'playlist')
 >>> h = r.run_lines(h, ['load_playlist ' + playlist])
-<FilePlaylist playlist.hkp>
+<FilePlaylist WTK>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: 20100504144209_unfold
-path: test/data/vclamp_wtk/unfold/20100504/20100504144209_unfold
-experiment: <class 'hooke.experiment.VelocityClamp'>
+path: .../test/data/vclamp_wtk/unfold/20100504/20100504144209_unfold
+experiment: <hooke.experiment.VelocityClamp object at 0x...>
 driver: <hooke.driver.wtk.WTKDriver object at 0x...>
 filetype: wtk
-note: 
+note: None
+command stack: []
 blocks: 2
 block sizes: [(810, 2), (8001, 2)]
 Success

@@ -55,7 +55,7 @@ class PicoForceDriver (Driver):
         self._check_version(info)
         data = self._read_data_path(path, info)
         info['filetype'] = self.name
-        info['experiment'] = experiment.VelocityClamp
+        info['experiment'] = experiment.VelocityClamp()
         return (data, info)
 
     def _read_header_path(self, path):

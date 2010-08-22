@@ -136,5 +136,5 @@ class TutorialDriver (Driver):
         f.close() # remember to close the file
 
         data = curve.Data()
-        info = {'filetype':'tutorial', 'experiment':experiment.Experiment}
+        info = {'filetype':'tutorial', 'experiment':experiment.Experiment()}
         return (data, info)

@@ -26,11 +26,12 @@ Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: picoforce.000
-path: test/data/picoforce.000
-experiment: <class 'hooke.experiment.VelocityClamp'>
+path: .../test/data/picoforce.000
+experiment: <hooke.experiment.VelocityClamp object at 0x...>
 driver: <hooke.driver.picoforce.PicoForceDriver object at 0x...>
 filetype: picoforce
-note: 
+note: None
+command stack: []
 blocks: 2
 block sizes: [(2048, 2), (2048, 2)]
 Success

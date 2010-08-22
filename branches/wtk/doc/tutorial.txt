@@ -200,6 +200,12 @@ will jump to the 14th curve in the zero-indexed playlist.
 Replace ``curve`` with ``playlist`` in the above commands to navigate
 around through the list of loaded playlists.
 
+Because the playlist name is usually saved in the playlist file
+itself, there is a ``name_playlist`` command that allows you to rename
+playlists on the fly.
+
+    hooke> name_playlist 'my old playlist'
+
 Taking notes
 ------------
 
@@ -365,17 +371,6 @@ freely jointed chain fitting`_ and `Command stacks`_.::
     hooke> export_block --block retract --output myblock.dat
     hooke> stop_command_capture
     hooke> apply_command_stack_to_playlist
-
-Fast curve reviewing and saving
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. todo:: Update curve review tutorial section.
-
-When automatic routines are not good enough to filter your data, use
-``review`` command to cycle through your playlist presenting ten
-curves in the same graph.  You can then enter the numbers of the
-interesting curves and automatically save a copy of them into another
-directory.
 
 Configuring Hooke
 -----------------

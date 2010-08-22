@@ -69,9 +69,10 @@ class HemingwayDriver (Driver):
             'deflection (N)',
             'imposed (N)',
             ]
+        ret.info['name'] = 'force clamp'
         # assume 1 ms timestep
         ret[:,0] = numpy.arange(0, 1e-3*data.shape[0], 1e-3, dtype=ret.dtype)
         
         file_info['filetype'] = self.name
-        file_info['experiment'] = experiment.ForceClamp
+        file_info['experiment'] = experiment.ForceClamp()
         return ([ret,], file_info)

@@ -85,7 +85,7 @@ class NoteFilterCommand (FilterCommand):
     """
     def __init__(self, plugin):
         super(NoteFilterCommand, self).__init__(
-            plugin, name='note filter playlist')
+            plugin, name='note filter playlist', load_curves=False)
 
     def filter(self, curve, hooke, inqueue, outqueue, params):
         return 'note' in curve.info and curve.info['note'] != None

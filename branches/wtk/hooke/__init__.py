@@ -33,6 +33,7 @@ except ImportError, e:
     logging.warn('could not load LICENSE from hooke.license')
     __license__ = 'All rights reserved.' 
 
+from .util import yaml  # extend YAML to parse Hooke-specific items.
 
 __version__ = (1, 0, 0, 'alpha', None, 'Ninken')
 """Version tuple::
