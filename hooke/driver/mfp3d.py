@@ -71,10 +71,10 @@ class MFP3DDriver (Driver):
     
     def read(self, path, info=None):
         data,bin_info,wave_info = loadibw(path)
-        approach,retract = self._translate_ibw(data, bin_info, wave_info)
-
-        info = {'filetype':self.name, 'experiment':experiment.VelocityClamp}
-        return ([approach, retract], info)
+        blocks,info = self._translate_ibw(data, bin_info, wave_info)
+        info['filetype'] = self.name
+        info['experiment'] = experiment.VelocityClamp()
+        return (blocks, info)
      
     def _translate_ibw(self, data, bin_info, wave_info):
         if bin_info['version'] != 5:
@@ -93,27 +93,38 @@ class MFP3DDriver (Driver):
                 value = None
             note[key] = value
         bin_info['note'] = note
+
+        # Ensure a valid MFP3D file version.
         if note['VerDate'] not in ['80501.041', '80501.0207']:
             raise Exception(note['VerDate'])
             raise NotImplementedError(
                 '%s file version %s not supported (yet!)\n%s'
                 % (self.name, note['VerDate'], pprint.pformat(note)))
 
+        # Parse known parameters into standard Hooke format.
         info = {
             'raw info':{'bin':bin_info,
                         'wave':wave_info},
-            'time':wave_info['creationDate'],
-            'spring constant (N/m)':note['SpringConstant'],
+            'time':note['Seconds'],
+            'spring constant (N/m)':float(note['SpringConstant']),
+            'temperature (K)':self._temperature(note),
             }
-        # MFP3D's native data dimensions match Hooke's (<point>, <column>) layout.
-        approach = self._scale_block(data[:wave_info['npnts']/2,:], info, 'approach')
-        retract = self._scale_block(data[wave_info['npnts']/2:,:], info, 'retract')
-        return (approach, retract)
 
-    def _scale_block(self, data, info, name):
+        # Extract data blocks
+        blocks = []
+        indexes = [int(i) for i in note['Indexes'].split(',')]
+        assert indexes[0] == 0, indexes
+        for i,start in enumerate(indexes[:-1]):
+            stop = indexes[i+1]
+            blocks.append(self._scale_block(data[start:stop+1,:], info, i))
+
+        return (blocks, info)
+
+    def _scale_block(self, data, info, index):
         """Convert the block from its native format to a `numpy.float`
         array in SI units.
         """
+        # MFP3D's native data dimensions match Hooke's (<point>, <column>) layout.
         shape = 3
         # raw column indices
         columns = info['raw info']['bin']['dimLabels'][1]
@@ -129,6 +140,14 @@ class MFP3DDriver (Driver):
             dtype=numpy.float,
             info=copy.deepcopy(info)
             )
+
+        version = info['raw info']['bin']['note']['VerDate']
+        if version == '80501.041':
+            name = ['approach', 'retract', 'pause'][index]
+        elif version == '80501.0207':
+            name = ['approach', 'pause', 'retract'][index]
+        else:
+            raise NotImplementedError()
         ret.info['name'] = name
         ret.info['raw data'] = data # store the raw data
 
@@ -159,3 +178,41 @@ class MFP3DDriver (Driver):
             ret[:,t_scol] = data[:,t_rcol]
 
         return ret
+
+    def _temperature(self, note):
+        # I'm not sure which field we should be using here.  Options are:
+        #   StartHeadTemp
+        #   StartScannerTemp
+        #   StartBioHeaterTemp
+        #   EndScannerTemp
+        #   EndHeadTemp
+        # I imagine the 'Start*Temp' fields were measured at
+        # 'StartTempSeconds' at the beginning of a series of curves,
+        # while our particular curve was initiated at 'Seconds'.
+        #   python -c "from hooke.hooke import Hooke;
+        #              h=Hooke();
+        #              h.run_command('load playlist',
+        #                  {'input':'test/data/vclamp_mfp3d/playlist'});
+        #              x = [(int(c.info['raw info']['bin']['note']['Seconds'])
+        #                    - int(c.info['raw info']['bin']['note']['StartTempSeconds']))
+        #                   for c in h.playlists.current().items()];
+        #              print 'average', float(sum(x))/len(x);
+        #              print 'range', min(x), max(x);
+        #              print x"
+        # For the Line*Point*.ibw series, the difference increases slowly
+        #   46, 46, 47, 47, 48, 49, 49, 50, 50, 51, 51, 52, 52, 53, 53, 54,...
+        # However, for the Image*.ibw series, the difference increase
+        # is much faster:
+        #   21, 38, 145, 150, 171, 181
+        # This makes the 'Start*Temp' fields less and less relevant as
+        # the experiment continues.  Still, I suppose it's better than
+        # nothing.
+        #
+        # The 'Thermal' fields seem to be related to cantilever calibration.
+        celsius = unicode(note['StartHeadTemp'], 'latin-1')
+        if celsius.endswith(u' \u00b0C'):
+            number = celsius.split(None, 1)[0]
+            return float(number) + 273.15  # Convert to Kelvin.
+        else:
+            raise NotImplementedError(
+                'unkown temperature format: %s' % repr(celsius))

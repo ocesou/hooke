@@ -22,7 +22,7 @@ associated :class:`hooke.command.Command`\s for basic
 interaction.
 """
 
-from ..command import CommandExit, Exit, Command, Argument
+from ..command import Exit, Command, Argument
 from ..interaction import BooleanRequest
 from . import Builtin
 

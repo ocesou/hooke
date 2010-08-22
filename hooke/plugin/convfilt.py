@@ -149,7 +149,7 @@ class ConvolutionPeaksCommand (Command):
         deflection arrays.
         """
         curve = params['curve']
-        if curve.info['experiment'] != VelocityClamp:
+        if not isinstance(curve.info['experiment'], VelocityClamp):
             raise Failure('%s operates on VelocityClamp experiments, not %s'
                           % (self.name, curve.info['experiment']))
         data = None

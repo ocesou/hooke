@@ -26,10 +26,12 @@ import hashlib
 import os
 import os.path
 import types
-import xml.dom.minidom
 
-from . import curve as curve
-from .compat import minidom as minidom  # dynamically patch xml.sax.minidom
+import yaml
+from yaml.representer import RepresenterError
+
+from .command_stack import CommandStack
+from .curve import Curve
 from .util.itertools import reverse_enumerate
 
 
@@ -42,9 +44,8 @@ class NoteIndexList (list):
     """
     def __init__(self, name=None):
         super(NoteIndexList, self).__init__()
-        self.name = name
-        self.info = {}
-        self._index = 0
+        self._set_default_attrs()
+        self.__setstate__({'name': name})
 
     def __str__(self):
         return str(self.__unicode__())
@@ -54,6 +55,28 @@ class NoteIndexList (list):
 
     def __repr__(self):
         return self.__str__()
+
+    def _set_default_attrs(self):
+        self._default_attrs = {
+            'info': {},
+            'name': None,
+            '_index': 0,
+            }
+
+    def __getstate__(self):
+        return self.__dict__.copy()
+
+    def __setstate__(self, state):
+        self._set_default_attrs()
+        if state == True:
+            return
+        self.__dict__.update(self._default_attrs)
+        try:
+            self.__dict__.update(state)
+        except TypeError, e:
+            print state, type(state), e
+        if self.info in [None, {}]:
+            self.info = {}
 
     def _setup_item(self, item):
         """Perform any required initialization before returning an item.
@@ -112,9 +135,14 @@ class NoteIndexList (list):
             yield item
         self._index = index
 
-    def filter(self, keeper_fn=lambda item:True, *args, **kwargs):
+    def filter(self, keeper_fn=lambda item:True, load_curves=True,
+               *args, **kwargs):
         c = copy.deepcopy(self)
-        for item in c.items(reverse=True):
+        if load_curves == True:
+            items = c.items(reverse=True)
+        else:
+            items = reversed(c)
+        for item in items: 
             if keeper_fn(item, *args, **kwargs) != True:
                 c.remove(item)
         try: # attempt to maintain the same current item
@@ -125,19 +153,35 @@ class NoteIndexList (list):
 
 
 class Playlist (NoteIndexList):
-    """A :class:`NoteIndexList` of :class:`hooke.curve.Curve`\s.
+    """A :class:`NoteIndexList` of :class:`hooke.Curve`\s.
 
     Keeps a list of :attr:`drivers` for loading curves.
     """
     def __init__(self, drivers, name=None):
         super(Playlist, self).__init__(name=name)
         self.drivers = drivers
-        self._loaded = [] # List of loaded curves, see :meth:`._setup_item`.
         self._max_loaded = 100 # curves to hold in memory simultaneously.
+
+    def _set_default_attrs(self):
+        super(Playlist, self)._set_default_attrs()
+        self._default_attrs['drivers'] = []
+        # List of loaded curves, see :meth:`._setup_item`.
+        self._default_attrs['_loaded'] = []
+        self._default_attrs['_max_loaded'] = 100
+
+    def __setstate__(self, state):
+        super(Playlist, self).__setstate__(state)
+        if self.drivers in [None, {}]:
+            self.drivers = []
+        if self._loaded in [None, {}]:
+            self._loaded = []
+
+    def append_curve(self, curve):
+        self.append(curve)
 
     def append_curve_by_path(self, path, info=None, identify=True, hooke=None):
         path = os.path.normpath(path)
-        c = curve.Curve(path, info=info)
+        c = Curve(path, info=info)
         c.set_hooke(hooke)
         if identify == True:
             c.identify(self.drivers)
@@ -157,32 +201,122 @@ class Playlist (NoteIndexList):
                 oldest = self._loaded.pop(0)
                 oldest.unload()
 
+def playlist_path(path):
+    """Normalize playlist path extensions.
+
+    Examples
+    --------
+    >>> print playlist_path('playlist')
+    playlist.hkp
+    >>> print playlist_path('playlist.hkp')
+    playlist.hkp
+    >>> print playlist_path(None)
+    None
+    """
+    if path == None:
+        return None
+    if not path.endswith('.hkp'):
+        path += '.hkp'
+    return path
+
 
 class FilePlaylist (Playlist):
     """A file-backed :class:`Playlist`.
+
+    Examples
+    --------
+
+    >>> p = FilePlaylist(drivers=['Driver A', 'Driver B'])
+    >>> p.append(Curve('dummy/path/A'))
+    >>> p.append(Curve('dummy/path/B'))
+
+    The data-type is pickleable, to ensure we can move it between
+    processes with :class:`multiprocessing.Queue`\s.
+
+    >>> import pickle
+    >>> s = pickle.dumps(p)
+    >>> z = pickle.loads(s)
+    >>> for curve in z:
+    ...     print curve
+    <Curve A>
+    <Curve B>
+    >>> print z.drivers
+    ['Driver A', 'Driver B']
+
+    The data-type is also YAMLable (see :mod:`hooke.util.yaml`).
+
+    >>> s = yaml.dump(p)
+    >>> z = yaml.load(s)
+    >>> for curve in z:
+    ...     print curve
+    <Curve A>
+    <Curve B>
+    >>> print z.drivers
+    ['Driver A', 'Driver B']
     """
-    version = '0.1'
+    version = '0.2'
 
     def __init__(self, drivers, name=None, path=None):
         super(FilePlaylist, self).__init__(drivers, name)
-        self.path = None
+        self.path = self._base_path = None
         self.set_path(path)
-        self._digest = None
-        self._ignored_keys = [
-            'experiment',  # class instance, not very exciting.
-            ]
+        self.relative_curve_paths = True
+        self._relative_curve_paths = False
+
+    def _set_default_attrs(self):
+        super(FilePlaylist, self)._set_default_attrs()
+        self._default_attrs['relative_curve_paths'] = True
+        self._default_attrs['_relative_curve_paths'] = False
+        self._default_attrs['_digest'] = None
+
+    def __getstate__(self):
+        state = super(FilePlaylist, self).__getstate__()
+        assert 'version' not in state, state
+        state['version'] = self.version
+        return state
+
+    def __setstate__(self, state):
+        if 'version' in state:
+            version = state.pop('version')
+            assert version == FilePlaylist.version, (
+                'invalid version %s (%s) != %s (%s)'
+                % (version, type(version),
+                   FilePlaylist.version, type(FilePlaylist.version)))
+        super(FilePlaylist, self).__setstate__(state)
 
     def set_path(self, path):
-        if path != None:
-            if not path.endswith('.hkp'):
-                path += '.hkp'
+        orig_base_path = getattr(self, '_base_path', None)
+        if path == None:
+            if self._base_path == None:
+                self._base_path = os.getcwd()
+        else:
+            path = playlist_path(path)
             self.path = path
+            self._base_path = os.path.dirname(os.path.abspath(
+                os.path.expanduser(self.path)))
             if self.name == None:
                 self.name = os.path.basename(path)
+        if self._base_path != orig_base_path:
+            self.update_curve_paths()
+
+    def update_curve_paths(self):
+        for curve in self:
+            curve.set_path(self._curve_path(curve.path))
+
+    def _curve_path(self, path):
+        if self._base_path == None:
+            self._base_path = os.getcwd()
+        path = os.path.join(self._base_path, path)
+        if self._relative_curve_paths == True:
+            path = os.path.relpath(path, self._base_path)
+        return path
+
+    def append_curve(self, curve):
+        curve.set_path(self._curve_path(curve.path))
+        super(FilePlaylist, self).append_curve(curve)
 
     def append_curve_by_path(self, path, *args, **kwargs):
-        if self.path != None:
-            path = os.path.join(os.path.dirname(self.path), path)
+        path = self._curve_path(path)
         super(FilePlaylist, self).append_curve_by_path(path, *args, **kwargs)
 
     def is_saved(self):
@@ -199,48 +333,31 @@ class FilePlaylist (Playlist):
         >>> p = FilePlaylist(drivers=[],
         ...                  path=os.path.join(root_path, 'to','playlist'))
         >>> p.info['note'] = 'An example playlist'
-        >>> c = curve.Curve(os.path.join(root_path, 'to', 'curve', 'one'))
+        >>> c = Curve(os.path.join(root_path, 'to', 'curve', 'one'))
         >>> c.info['note'] = 'The first curve'
-        >>> p.append(c)
-        >>> c = curve.Curve(os.path.join(root_path, 'to', 'curve', 'two'))
+        >>> p.append_curve(c)
+        >>> c = Curve(os.path.join(root_path, 'to', 'curve', 'two'))
         >>> c.info['note'] = 'The second curve'
-        >>> p.append(c)
+        >>> p.append_curve(c)
         >>> p.digest()
-        '\\\x14\x87\x88*q\xf8\xaa\xa7\x84f\x82\xa1S>\xfd3+\xd0o'
+        'f\xe26i\xb98i\x1f\xb61J7:\xf2\x8e\x1d\xde\xc3}g'
         """
         string = self.flatten()
         return hashlib.sha1(string).digest()
 
-    def _clean_key(self, key):
-        """Replace spaces in keys with \\u00B7 (middle dot).
-
-        This character is deemed unlikely to occur in keys to our
-        playlist and curve info dictionaries, while many keys have
-        spaces in them.
-
-        \\u00B7 is allowed in XML 1.0 as of the 5th edition.  See
-        the `4th edition errata`_ for details.
-
-        .. _4th edition errata:
-          http://www.w3.org/XML/xml-V10-4e-errata#E09
-        """
-        return key.replace(' ', u'\u00B7')
-
-    def _restore_key(self, key):
-        """Restore keys encoded with :meth:`_clean_key`.
-        """
-        return key.replace(u'\u00B7', ' ')
-
-    def flatten(self, absolute_paths=False):
+    def flatten(self):
         """Create a string representation of the playlist.
 
-        A playlist is an XML document with the following syntax::
+        A playlist is a YAML document with the following minimal syntax::
 
-            <?xml version="1.0" encoding="utf-8"?>
-            <playlist attribute="value">
-              <curve path="/my/file/path/"/ attribute="value" ...>
-              <curve path="...">
-            </playlist>
+            !!python/object/new:hooke.playlist.FilePlaylist
+            state:
+              version: '0.2'
+            listitems:
+            - !!python/object:hooke.curve.Curve
+              path: /path/to/curve/one
+            - !!python/object:hooke.curve.Curve
+              path: /path/to/curve/two
 
         Relative paths are interpreted relative to the location of the
         playlist file.
@@ -248,130 +365,98 @@ class FilePlaylist (Playlist):
         Examples
         --------
 
+        >>> from .engine import CommandMessage
+
         >>> root_path = os.path.sep + 'path'
         >>> p = FilePlaylist(drivers=[],
         ...                  path=os.path.join(root_path, 'to','playlist'))
         >>> p.info['note'] = 'An example playlist'
-        >>> c = curve.Curve(os.path.join(root_path, 'to', 'curve', 'one'))
+        >>> c = Curve(os.path.join(root_path, 'to', 'curve', 'one'))
         >>> c.info['note'] = 'The first curve'
-        >>> p.append(c)
-        >>> c = curve.Curve(os.path.join(root_path, 'to', 'curve', 'two'))
+        >>> p.append_curve(c)
+        >>> c = Curve(os.path.join(root_path, 'to', 'curve', 'two'))
         >>> c.info['attr with spaces'] = 'The second curve\\nwith endlines'
-        >>> p.append(c)
-        >>> def _print(string):
-        ...     escaped_string = unicode(string, 'utf-8').encode('unicode escape')
-        ...     print escaped_string.replace('\\\\n', '\\n').replace('\\\\t', '\\t'),
-        >>> _print(p.flatten())  # doctest: +NORMALIZE_WHITESPACE +REPORT_UDIFF
-        <?xml version="1.0" encoding="utf-8"?>
-        <playlist index="0" note="An example playlist" version="0.1">
-           <curve note="The first curve" path="curve/one"/>
-           <curve attr\\xb7with\\xb7spaces="The second curve&#xA;with endlines" path="curve/two"/>
-        </playlist>
-        >>> _print(p.flatten(absolute_paths=True))  # doctest: +NORMALIZE_WHITESPACE +REPORT_UDIFF
-        <?xml version="1.0" encoding="utf-8"?>
-        <playlist index="0" note="An example playlist" version="0.1">
-           <curve note="The first curve" path="/path/to/curve/one"/>
-           <curve attr\\xb7with\\xb7spaces="The second curve&#xA;with endlines" path="/path/to/curve/two"/>
-        </playlist>
+        >>> c.command_stack.extend([
+        ...         CommandMessage('command A', {'arg 0':0, 'arg 1':'X'}),
+        ...         CommandMessage('command B', {'arg 0':1, 'curve':c}),
+        ...         ])
+        >>> p.append_curve(c)
+        >>> print p.flatten()  # doctest: +REPORT_UDIFF
+        # Hooke playlist version 0.2
+        !!python/object/new:hooke.playlist.FilePlaylist
+        listitems:
+        - !!python/object:hooke.curve.Curve
+          info: {note: The first curve}
+          name: one
+          path: curve/one
+        - &id001 !!python/object:hooke.curve.Curve
+          command_stack: !!python/object/new:hooke.command_stack.CommandStack
+            listitems:
+            - !!python/object:hooke.engine.CommandMessage
+              arguments: {arg 0: 0, arg 1: X}
+              command: command A
+            - !!python/object:hooke.engine.CommandMessage
+              arguments:
+                arg 0: 1
+                curve: *id001
+              command: command B
+          info: {attr with spaces: 'The second curve
+        <BLANKLINE>
+              with endlines'}
+          name: two
+          path: curve/two
+        state:
+          _base_path: /path/to
+          info: {note: An example playlist}
+          name: playlist.hkp
+          path: /path/to/playlist.hkp
+          version: '0.2'
+        <BLANKLINE>
+        >>> p.relative_curve_paths = False
+        >>> print p.flatten()  # doctest: +REPORT_UDIFF
+        # Hooke playlist version 0.2
+        !!python/object/new:hooke.playlist.FilePlaylist
+        listitems:
+        - !!python/object:hooke.curve.Curve
+          info: {note: The first curve}
+          name: one
+          path: /path/to/curve/one
+        - &id001 !!python/object:hooke.curve.Curve
+          command_stack: !!python/object/new:hooke.command_stack.CommandStack
+            listitems:
+            - !!python/object:hooke.engine.CommandMessage
+              arguments: {arg 0: 0, arg 1: X}
+              command: command A
+            - !!python/object:hooke.engine.CommandMessage
+              arguments:
+                arg 0: 1
+                curve: *id001
+              command: command B
+          info: {attr with spaces: 'The second curve
+        <BLANKLINE>
+              with endlines'}
+          name: two
+          path: /path/to/curve/two
+        state:
+          _base_path: /path/to
+          info: {note: An example playlist}
+          name: playlist.hkp
+          path: /path/to/playlist.hkp
+          relative_curve_paths: false
+          version: '0.2'
+        <BLANKLINE>
         """
-        implementation = xml.dom.minidom.getDOMImplementation()
-        # create the document DOM object and the root element
-        doc = implementation.createDocument(None, 'playlist', None)
-        root = doc.documentElement
-        root.setAttribute('version', self.version) # store playlist version
-        root.setAttribute('index', str(self._index))
-        for key,value in self.info.items(): # save info variables
-            if (key in self._ignored_keys
-                or not isinstance(value, types.StringTypes)):
-                continue
-            root.setAttribute(self._clean_key(key), str(value))
-        if self.path == None:
-            base_path = os.getcwd()
-        else:
-            base_path = os.path.abspath(
-                os.path.expanduser(self.path))
-        for curve in self: # save curves and their attributes
-            curve_element = doc.createElement('curve')
-            root.appendChild(curve_element)
-            path = os.path.abspath(os.path.expanduser(curve.path))
-            if absolute_paths == False:
-                path = os.path.relpath(
-                    path,
-                    os.path.dirname(base_path))
-            curve_element.setAttribute('path', path)
-            for key,value in curve.info.items():
-                if (key in self._ignored_keys
-                    or not isinstance(value, types.StringTypes)):
-                    continue
-                curve_element.setAttribute(self._clean_key(key), str(value))
-        string = doc.toprettyxml(encoding='utf-8')
-        root.unlink() # break circular references for garbage collection
-        return string
+        rcp = self._relative_curve_paths
+        self._relative_curve_paths = self.relative_curve_paths
+        self.update_curve_paths()
+        self._relative_curve_paths = rcp
 
-    def _from_xml_doc(self, doc, identify=True):
-        """Load a playlist from an :class:`xml.dom.minidom.Document`
-        instance.
-        """
-        root = doc.documentElement
-        for attribute,value in root.attributes.items():
-            attribute = self._restore_key(attribute)
-            if attribute == 'version':
-                assert value == self.version, \
-                    'Cannot read v%s playlist with a v%s reader' \
-                    % (value, self.version)
-            elif attribute == 'index':
-                self._index = int(value)
-            else:
-                self.info[attribute] = value
-        for curve_element in doc.getElementsByTagName('curve'):
-            path = curve_element.getAttribute('path')
-            info = dict([(self._restore_key(key), value)
-                         for key,value in curve_element.attributes.items()])
-            info.pop('path')
-            self.append_curve_by_path(path, info, identify=identify)
-        self.jump(self._index) # ensure valid index
-
-    def from_string(self, string, identify=True):
-        u"""Load a playlist from a string.
-
-        Examples
-        --------
-
-        >>> string = '''<?xml version="1.0" encoding="utf-8"?>
-        ... <playlist index="1" note="An example playlist" version="0.1">
-        ...     <curve note="The first curve" path="../curve/one"/>
-        ...     <curve attr\xb7with\xb7spaces="The second curve&#xA;with endlines" path="../curve/two"/>
-        ... </playlist>
-        ... '''
-        >>> p = FilePlaylist(drivers=[],
-        ...                  path=os.path.join('path', 'to', 'my', 'playlist'))
-        >>> p.from_string(string, identify=False)
-        >>> p._index
-        1
-        >>> p.info
-        {u'note': u'An example playlist'}
-        >>> for curve in p:
-        ...     print curve.path
-        path/to/curve/one
-        path/to/curve/two
-        >>> p[-1].info['attr with spaces']
-        u'The second curve\\nwith endlines'
-        """
-        doc = xml.dom.minidom.parseString(string)
-        self._from_xml_doc(doc, identify=identify)
-
-    def load(self, path=None, identify=True, hooke=None):
-        """Load a playlist from a file.
-        """
-        self.set_path(path)
-        doc = xml.dom.minidom.parse(self.path)
-        self._from_xml_doc(doc, identify=identify)
-        self._digest = self.digest()
-        for curve in self:
-            curve.set_hooke(hooke)
+        yaml_string = yaml.dump(self, allow_unicode=True)
+        self.update_curve_paths()
+        return ('# Hooke playlist version %s\n' % self.version) + yaml_string
 
     def save(self, path=None, makedirs=True):
-        """Saves the playlist in a XML file.
+        """Saves the playlist to a YAML file.
         """
         self.set_path(path)
         dirname = os.path.dirname(self.path) or '.'
@@ -380,3 +465,115 @@ class FilePlaylist (Playlist):
         with open(self.path, 'w') as f:
             f.write(self.flatten())
             self._digest = self.digest()
+
+
+def from_string(string):
+    u"""Load a playlist from a string.
+
+    Examples
+    --------
+
+    Minimal example.
+
+    >>> string = '''# Hooke playlist version 0.2
+    ... !!python/object/new:hooke.playlist.FilePlaylist
+    ... state:
+    ...   version: '0.2'
+    ... listitems:
+    ... - !!python/object:hooke.curve.Curve
+    ...   path: curve/one
+    ... - !!python/object:hooke.curve.Curve
+    ...   path: curve/two
+    ... '''
+    >>> p = from_string(string)
+    >>> p.set_path('/path/to/playlist')
+    >>> for curve in p:
+    ...     print curve.name, curve.path
+    one /path/to/curve/one
+    two /path/to/curve/two
+
+    More complicated example.
+
+    >>> string = '''# Hooke playlist version 0.2
+    ... !!python/object/new:hooke.playlist.FilePlaylist
+    ... listitems:
+    ... - !!python/object:hooke.curve.Curve
+    ...   info: {note: The first curve}
+    ...   name: one
+    ...   path: /path/to/curve/one
+    ... - &id001 !!python/object:hooke.curve.Curve
+    ...   command_stack: !!python/object/new:hooke.command_stack.CommandStack
+    ...     listitems:
+    ...     - !!python/object:hooke.engine.CommandMessage
+    ...       arguments: {arg 0: 0, arg 1: X}
+    ...       command: command A
+    ...     - !!python/object:hooke.engine.CommandMessage
+    ...       arguments:
+    ...         arg 0: 1
+    ...         curve: *id001
+    ...       command: command B
+    ...   info: {attr with spaces: 'The second curve
+    ... 
+    ...       with endlines'}
+    ...   name: two
+    ...   path: /path/to/curve/two
+    ... state:
+    ...   _base_path: /path/to
+    ...   _index: 1
+    ...   info: {note: An example playlist}
+    ...   name: playlist.hkp
+    ...   path: /path/to/playlist.hkp
+    ...   version: '0.2'
+    ... '''
+    >>> p = from_string(string)
+    >>> p.set_path('/path/to/playlist')
+    >>> p._index
+    1
+    >>> p.info
+    {'note': 'An example playlist'}
+    >>> for curve in p:
+    ...     print curve.name, curve.path
+    one /path/to/curve/one
+    two /path/to/curve/two
+    >>> p[-1].info['attr with spaces']
+    'The second curve\\nwith endlines'
+    >>> type(p[-1].command_stack)
+    <class 'hooke.command_stack.CommandStack'>
+    >>> p[0].command_stack
+    []
+    >>> type(p[0].command_stack)
+    <class 'hooke.command_stack.CommandStack'>
+    >>> p[-1].command_stack  # doctest: +NORMALIZE_WHITESPACE
+    [<CommandMessage command A {arg 0: 0, arg 1: X}>,
+     <CommandMessage command B {arg 0: 1, curve: <Curve two>}>]
+    >>> type(p[1].command_stack)
+    <class 'hooke.command_stack.CommandStack'>
+    >>> c2 = p[-1]
+    >>> c2.command_stack[-1].arguments['curve'] == c2
+    True
+    """
+    return yaml.load(string)
+
+def load(path=None, drivers=None, identify=True, hooke=None):
+    """Load a playlist from a file.
+    """
+    path = playlist_path(path)
+    with open(path, 'r') as f:
+        text = f.read()
+    playlist = from_string(text)
+    playlist.set_path(path)
+    playlist._digest = playlist.digest()
+    if drivers != None:
+        playlist.drivers = drivers
+    playlist.set_path(path)
+    for curve in playlist:
+        curve.set_hooke(hooke)
+        if identify == True:
+            curve.identify(playlist.drivers)
+    return playlist
+
+
+class Playlists (NoteIndexList):
+    """A :class:`NoteIndexList` of :class:`FilePlaylist`\s.
+    """
+    pass

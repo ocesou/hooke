@@ -92,7 +92,7 @@ class Hooke (object):
         self.load_drivers()
         self.load_ui()
         self.engine = engine.CommandEngine()
-        self.playlists = playlist.NoteIndexList()
+        self.playlists = playlist.Playlists()
 
     def load_log(self):
         config_file = StringIO.StringIO()

@@ -170,7 +170,7 @@ Name for storing the list of peaks in the `.info` dictionary.
         deflection arrays.
         """
         curve = self._curve(hooke=hooke, params=params)
-        if curve.info['experiment'] != VelocityClamp:
+        if not isinstance(curve.info['experiment'], VelocityClamp):
             raise Failure('%s operates on VelocityClamp experiments, not %s'
                           % (self.name, curve.info['experiment']))
         for key,value in params.items():

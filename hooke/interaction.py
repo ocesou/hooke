@@ -86,6 +86,14 @@ class Response (Interaction):
         super(Response, self).__init__(type)
         self.value = value
 
+class EOFResponse (Response):
+    """End of user input.
+
+    After this point, no more user interaction is possible.
+    """
+    def __init__(self):
+        super(EOFResponse, self).__init__('EOF', None)
+
 class BooleanRequest (Request):
     def __init__(self, msg, default=None):
         super(BooleanRequest, self).__init__(

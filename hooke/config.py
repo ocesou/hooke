@@ -137,7 +137,8 @@ class HookeConfigParser (configparser.RawConfigParser):
     >>> c = HookeConfigParser(default_settings=DEFAULT_SETTINGS)
     >>> c.write(sys.stdout) # doctest: +ELLIPSIS
     # Default environmental conditions in case they are not specified in
-    # the force curve data.
+    # the force curve data.  Configuration options in this section are
+    # available to every plugin.
     [conditions]
     # Temperature in Kelvin
     temperature = 301
@@ -161,7 +162,7 @@ class HookeConfigParser (configparser.RawConfigParser):
     ...         Setting(section, option='my float', value=3.14159, type='float'),
     ...         ])
     >>> pprint.pprint(c.items(section))  # doctest: +ELLIPSIS
-    [('my string', 'Lorem ipsum'),
+    [('my string', u'Lorem ipsum'),
      ('my bool', True),
      ('my int', 13),
      ('my float', 3.1415...)]
@@ -170,7 +171,7 @@ class HookeConfigParser (configparser.RawConfigParser):
     to use the standard `.get*()` methods.
 
     >>> c.get('test conversion', 'my bool')
-    'True'
+    u'True'
     >>> c.getboolean('test conversion', 'my bool')
     True
     """

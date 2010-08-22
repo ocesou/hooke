@@ -21,7 +21,7 @@
 >>> h = Hooke()
 >>> r = HookeRunner()
 >>> h = r.run_lines(h, ['load_playlist test/data/vclamp_picoforce/playlist']) # doctest: +ELLIPSIS
-<FilePlaylist playlist.hkp>
+<FilePlaylist PicoForce>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['flat_filter_playlist --distance_column "z piezo (m)" --deflection_column "deflection (m)"']) # doctest: +ELLIPSIS

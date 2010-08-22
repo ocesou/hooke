@@ -182,7 +182,7 @@ def join_data_label(name, unit):
     >>> join_data_label('z piezo', 'm')
     'z piezo (m)'
     >>> join_data_label('deflection', 'N')
-    'deflection N'
+    'deflection (N)'
     """
     return '%s (%s)' % (name, unit)
 

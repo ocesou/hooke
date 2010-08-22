@@ -1,29 +1,58 @@
-<?xml version="1.0" encoding="utf-8"?>
-<playlist index="0" version="0.1">
-  <curve note="" path="Line0004Point0000.ibw"/>
-  <curve note="" path="Line0004Point0001.ibw"/>
-  <curve note="" path="Line0004Point0002.ibw"/>
-  <curve note="" path="Line0004Point0003.ibw"/>
-  <curve note="" path="Line0004Point0004.ibw"/>
-  <curve note="" path="Line0004Point0005.ibw"/>
-  <curve note="" path="Line0004Point0006.ibw"/>
-  <curve note="" path="Line0004Point0007.ibw"/>
-  <curve note="" path="Line0004Point0008.ibw"/>
-  <curve note="" path="Line0004Point0009.ibw"/>
-  <curve note="" path="Line0004Point0010.ibw"/>
-  <curve note="" path="Line0004Point0011.ibw"/>
-  <curve note="" path="Line0004Point0012.ibw"/>
-  <curve note="" path="Line0004Point0013.ibw"/>
-  <curve note="" path="Line0004Point0014.ibw"/>
-  <curve note="" path="Line0004Point0015.ibw"/>
-  <curve note="" path="Line0004Point0016.ibw"/>
-  <curve note="" path="Line0004Point0017.ibw"/>
-  <curve note="" path="Line0004Point0018.ibw"/>
-  <curve note="" path="Line0004Point0019.ibw"/>
-  <curve note="" path="Image0238.ibw"/>
-  <curve note="" path="Image0255.ibw"/>
-  <curve note="" path="Image0360.ibw"/>
-  <curve note="" path="Image0365.ibw"/>
-  <curve note="" path="Image0386.ibw"/>
-  <curve note="" path="Image0396.ibw"/>
-</playlist>
+# Hooke playlist version 0.2
+!!python/object/new:hooke.playlist.FilePlaylist
+state:
+  version: '0.2'
+  name: MFP3D
+listitems:
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0000.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0001.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0002.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0003.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0004.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0005.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0006.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0007.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0008.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0009.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0010.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0011.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0012.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0013.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0014.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0015.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0016.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0017.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0018.ibw
+- !!python/object:hooke.curve.Curve
+  path: Line0004Point0019.ibw
+- !!python/object:hooke.curve.Curve
+  path: Image0238.ibw
+- !!python/object:hooke.curve.Curve
+  path: Image0255.ibw
+- !!python/object:hooke.curve.Curve
+  path: Image0360.ibw
+- !!python/object:hooke.curve.Curve
+  path: Image0365.ibw
+- !!python/object:hooke.curve.Curve
+  path: Image0386.ibw
+- !!python/object:hooke.curve.Curve
+  path: Image0396.ibw

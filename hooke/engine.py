@@ -97,6 +97,10 @@ class CommandEngine (object):
         be ready to receive the next :class:`QueueMessage`.
         """
         log = logging.getLogger('hooke')
+        log.debug('engine starting')
+        for playlist in hooke.playlists:  # Curve._hooke is not pickled.
+            for curve in playlist:
+                curve.set_hooke(hooke)
         while True:
             log.debug('engine waiting for command')
             msg = ui_to_command_queue.get()

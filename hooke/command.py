@@ -94,6 +94,7 @@ class Command (object):
     Arguments:
     <BLANKLINE>
     help BOOL (bool) Print a help message.
+    stack BOOL (bool) Add this command to appropriate command stacks.
     <BLANKLINE>
     An example Command.
     ITEM:

@@ -24,7 +24,7 @@
 Setup a playlist to act on.
 
 >>> h = r.run_lines(h, ['load_playlist test/data/vclamp_picoforce/playlist'])
-<FilePlaylist playlist.hkp>
+<FilePlaylist PicoForce>
 Success
 <BLANKLINE>
 

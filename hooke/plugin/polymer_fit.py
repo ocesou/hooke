@@ -932,7 +932,7 @@ Name of the column (without units) to use as the polymer tension output.
                 ],
             arguments=[
                 Argument(name='fit parameters info name', type='string',
-                         default='surface deflection offset',
+                         default='polymer fit',
                          help="""
 Name (without units) for storing the fit parameters in the `.info` dictionary.
 """.strip()),

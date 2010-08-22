@@ -98,7 +98,7 @@ class WTKDriver (Driver):
             unlabeled_approach_data, params, 'approach')
         retract = self._scale_block(
             unlabeled_retract_data, params, 'retract')
-        info = {'filetype':self.name, 'experiment':experiment.VelocityClamp}
+        info = {'filetype':self.name, 'experiment':experiment.VelocityClamp()}
         return ([approach, retract], info)
 
     def _paths(self, path):

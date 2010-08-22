@@ -231,9 +231,9 @@ class HookeInfoCommand (Command):
         # loading curves.
         outqueue.put('drivers: %s'
                      % ', '.join([driver.name for driver in hooke.drivers]))
-        # hooke.playlists contains a
-        # :class:`hooke.playlist.NoteIndexList` of
-        # :class:`hooke.playlist.Playlist`\s.  Each playlist may
+        # hooke.playlists is a
+        # :class:`hooke.playlist.Playlists` instance full of
+        # :class:`hooke.playlist.FilePlaylist`\s.  Each playlist may
         # contain several :class:`hooke.curve.Curve`\s representing a
         # grouped collection of data.
         playlist = hooke.playlists.current()

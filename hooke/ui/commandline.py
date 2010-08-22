@@ -30,16 +30,24 @@ except ImportError, e:
     import logging
     logging.warn('could not import readline, bash-like line editing disabled.')
 import shlex
+import sys
 
 from ..command import CommandExit, Exit, Command, Argument, StoreValue
-from ..engine import CommandMessage
-from ..interaction import Request, ReloadUserInterfaceConfig
+from ..engine import CommandMessage, CloseEngine
+from ..interaction import EOFResponse, Request, ReloadUserInterfaceConfig
 from ..ui import UserInterface
 from ..util.convert import from_string
 from ..util.encoding import get_input_encoding, get_output_encoding
 
 
 # Define a few helper classes.
+
+class EOF (EOFError):
+    """Raise upon reaching the end of the input file.
+
+    After this point, no more user interaction is possible.
+    """
+    pass
 
 class Default (object):
     """Marker for options not given on the command line.
@@ -154,9 +162,12 @@ class DoCommand (CommandMethod):
                 self.cmd.ui.reload_config(msg.config)
                 continue
             elif isinstance(msg, Request):
-                self._handle_request(msg)
+                try:
+                    self._handle_request(msg)
+                except EOF:
+                    return True
                 continue
-            self.cmd.stdout.write(str(msg).rstrip()+'\n')
+            self.cmd.stdout.write(unicode(msg).rstrip()+'\n')
 
     def _parse_args(self, args):
         options,args = self.parser.parse_args(args)
@@ -226,7 +237,17 @@ class DoCommand (CommandMethod):
                 self.cmd.stdout.write(''.join([
                         error.__class__.__name__, ': ', str(error), '\n']))
             self.cmd.stdout.write(prompt_string)
-            value = parser(msg, self.cmd.stdin.readline())
+            stdin = sys.stdin
+            try:
+                sys.stdin = self.cmd.stdin
+                raw_response = raw_input()
+            except EOFError, e:
+                self.cmd.inqueue.put(EOFResponse())
+                self.cmd.inqueue.put(CloseEngine())
+                raise EOF
+            finally:
+                sys.stdin = stdin
+            value = parser(msg, raw_response)
             try:
                 response = msg.response(value)
                 break

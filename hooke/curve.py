@@ -26,6 +26,7 @@ import os.path
 import numpy
 
 from .command_stack import CommandStack
+from . import experiment
 
 
 class NotRecognized (ValueError):
@@ -86,6 +87,14 @@ class Data (numpy.ndarray):
            [ 20.,  21.]])
     >>> z.info
     {'columns': ['distance (m)', 'force (N)']}
+
+    The data-type is also YAMLable (see :mod:`hooke.util.yaml`).
+
+    >>> import yaml
+    >>> print yaml.dump(d)
+    !hooke.curve.DataInfo
+    columns: [distance (m), force (N)]
+    <BLANKLINE>
     """
     def __new__(subtype, shape, dtype=numpy.float, buffer=None, offset=0,
                 strides=None, order=None, info=None):
@@ -162,18 +171,67 @@ class Curve (object):
     Another important attribute is :attr:`command_stack`, which holds
     a :class:`~hooke.command_stack.CommandStack` listing the commands
     that have been applied to the `Curve` since loading.
+
+    The data-type is pickleable, to ensure we can move it between
+    processes with :class:`multiprocessing.Queue`\s.
+
+    >>> import pickle
+    >>> import yaml
+    >>> from .engine import CommandMessage
+    >>> c = Curve(path='some/path')
+
+    We add a recursive reference to `c` as you would get from
+    :meth:`hooke.plugin.curve.CurveCommand._add_to_command_stack`.
+
+    >>> c.command_stack.append(CommandMessage('curve info', {'curve':c}))
+
+    >>> s = pickle.dumps(c)
+    >>> z = pickle.loads(s)
+    >>> z
+    <Curve path>
+    >>> z.command_stack
+    [<CommandMessage curve info {curve: <Curve path>}>]
+    >>> z.command_stack[-1].arguments['curve'] == z
+    True
+    >>> print yaml.dump(c)  # doctest: +REPORT_UDIFF
+    &id001 !!python/object:hooke.curve.Curve
+    command_stack: !!python/object/new:hooke.command_stack.CommandStack
+      listitems:
+      - !!python/object:hooke.engine.CommandMessage
+        arguments:
+          curve: *id001
+        command: curve info
+    name: path
+    path: some/path
+    <BLANKLINE>
+
+    However, if we try and serialize the command stack first, we run
+    into `Python issue 1062277`_.
+
+    .. _Python issue 1062277: http://bugs.python.org/issue1062277
+
+    >>> pickle.dumps(c.command_stack)
+    Traceback (most recent call last):
+      ...
+        assert id(obj) not in self.memo
+    AssertionError
+
+    YAML still works, though.
+
+    >>> print yaml.dump(c.command_stack)  # doctest: +REPORT_UDIFF
+    &id001 !!python/object/new:hooke.command_stack.CommandStack
+    listitems:
+    - !!python/object:hooke.engine.CommandMessage
+      arguments:
+        curve: !!python/object:hooke.curve.Curve
+          command_stack: *id001
+          name: path
+          path: some/path
+      command: curve info
+    <BLANKLINE>
     """
     def __init__(self, path, info=None):
-        #the data dictionary contains: {name of data: list of data sets [{[x], [y]}]
-        self.path = path
-        self.driver = None
-        self.data = None
-        if info == None:
-            info = {}
-        self.info = info
-        self.name = os.path.basename(path)
-        self.command_stack = CommandStack()
-        self._hooke = None  # Hooke instance for Curve.load()
+        self.__setstate__({'path':path, 'info':info})
 
     def __str__(self):
         return str(self.__unicode__())
@@ -184,15 +242,40 @@ class Curve (object):
     def __repr__(self):
         return self.__str__()
 
-    def __getstate__(self):
-        data = dict(self.__dict__)
-        del(data['_hooke'])
-        return data
+    def set_path(self, path):
+        self.path = path
+        if self.name == None and path != None:
+            self.name = os.path.basename(path)
 
-    def __setstate__(self, data):
-        self._hooke = None
-        for key,value in data.items():
-            setattr(self, key, value)
+    def _setup_default_attrs(self):
+        # .data contains: {name of data: list of data sets [{[x], [y]}]
+        # ._hooke contains a Hooke instance for Curve.load()
+        self._default_attrs = {
+            '_hooke': None,
+            'command_stack': [],
+            'data': None,
+            'driver': None,
+            'info': {},
+            'name': None,
+            'path': None,
+            }
+
+    def __getstate__(self):
+        state = dict(self.__dict__)  # make a copy of the attribute dict.
+        del(state['_hooke'])
+        return state
+
+    def __setstate__(self, state):
+        self._setup_default_attrs()
+        self.__dict__.update(self._default_attrs)
+        if state == True:
+            return
+        self.__dict__.update(state)
+        self.set_path(getattr(self, 'path', None))
+        if self.info in [None, {}]:
+            self.info = {}
+        if type(self.command_stack) == list:
+            self.command_stack = CommandStack()
 
     def set_hooke(self, hooke=None):
         if hooke != None:

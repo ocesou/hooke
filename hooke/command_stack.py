@@ -39,8 +39,8 @@ class CommandStack (list):
     >>> c.append(CommandMessage('CommandB', {'param':'D'}))
 
     Implement a dummy :meth:`execute_command` for testing.
-    
-    >>> def execute_cmd(hooke, command_message):
+
+    >>> def execute_cmd(hooke, command_message, stack=None):
     ...     cm = command_message
     ...     print 'EXECUTE', cm.command, cm.arguments
     >>> c.execute_command = execute_cmd
@@ -59,11 +59,10 @@ class CommandStack (list):
     
     >>> def filter(hooke, command_message):
     ...     return command_message.command == 'CommandB'
-    >>> c.filter = filter
 
     Apply the stack to the current curve.
 
-    >>> c.execute(hooke=None)  # doctest: +ELLIPSIS
+    >>> c.execute(hooke=None, filter=filter)  # doctest: +ELLIPSIS
     EXECUTE CommandB {'param': 'B'}
     EXECUTE CommandB {'param': 'D'}
 
@@ -80,21 +79,115 @@ class CommandStack (list):
      '<CommandMessage CommandB {param: D}>',
      '<CommandMessage CommandC {param: E}>']
 
+    The data-type is also pickleable, which ensures we can move it
+    between processes with :class:`multiprocessing.Queue`\s and easily
+    save it to disk.  We must remove the unpickleable dummy executor
+    before testing though.
+
+    >>> c.execute_command  # doctest: +ELLIPSIS
+    <function execute_cmd at 0x...>
+    >>> del(c.__dict__['execute_command'])
+    >>> c.execute_command  # doctest: +ELLIPSIS
+    <bound method CommandStack.execute_command of ...>
+    
+    Lets also attach a child command message to demonstrate recursive
+    serialization (we can't append `c` itself because of
+    `Python issue 1062277`_).
+
+    .. _Python issue 1062277: http://bugs.python.org/issue1062277
+
+    >>> import copy
+    >>> c.append(CommandMessage('CommandD', {'param': copy.deepcopy(c)}))
+
+    Run the pickle (and YAML) tests.
+
+    >>> import pickle
+    >>> s = pickle.dumps(c)
+    >>> z = pickle.loads(s)
+    >>> print '\\n'.join([repr(cm) for cm in c]
+    ...     )  # doctest: +NORMALIZE_WHITESPACE,
+    <CommandMessage CommandA {param: A}>
+    <CommandMessage CommandB {param: B}>
+    <CommandMessage CommandA {param: C}>
+    <CommandMessage CommandB {param: D}>
+    <CommandMessage CommandC {param: E}>
+    <CommandMessage CommandD {param:
+      [<CommandMessage CommandA {param: A}>,
+       <CommandMessage CommandB {param: B}>,
+       <CommandMessage CommandA {param: C}>,
+       <CommandMessage CommandB {param: D}>,
+       <CommandMessage CommandC {param: E}>]}>
+    >>> import yaml
+    >>> print yaml.dump(c)
+    !!python/object/new:hooke.command_stack.CommandStack
+    listitems:
+    - !!python/object:hooke.engine.CommandMessage
+      arguments: {param: A}
+      command: CommandA
+    - !!python/object:hooke.engine.CommandMessage
+      arguments: {param: B}
+      command: CommandB
+    - !!python/object:hooke.engine.CommandMessage
+      arguments: {param: C}
+      command: CommandA
+    - !!python/object:hooke.engine.CommandMessage
+      arguments: {param: D}
+      command: CommandB
+    - !!python/object:hooke.engine.CommandMessage
+      arguments: {param: E}
+      command: CommandC
+    - !!python/object:hooke.engine.CommandMessage
+      arguments:
+        param: !!python/object/new:hooke.command_stack.CommandStack
+          listitems:
+          - !!python/object:hooke.engine.CommandMessage
+            arguments: {param: A}
+            command: CommandA
+          - !!python/object:hooke.engine.CommandMessage
+            arguments: {param: B}
+            command: CommandB
+          - !!python/object:hooke.engine.CommandMessage
+            arguments: {param: C}
+            command: CommandA
+          - !!python/object:hooke.engine.CommandMessage
+            arguments: {param: D}
+            command: CommandB
+          - !!python/object:hooke.engine.CommandMessage
+            arguments: {param: E}
+            command: CommandC
+      command: CommandD
+    <BLANKLINE>
+
     There is also a convenience function for clearing the stack.
 
     >>> c.clear()
     >>> print [repr(cm) for cm in c]
     []
+
+    YAMLize a curve argument.
+
+    >>> from .curve import Curve
+    >>> c.append(CommandMessage('curve info', {'curve': Curve(path=None)}))
+    >>> print yaml.dump(c)
+    !!python/object/new:hooke.command_stack.CommandStack
+    listitems:
+    - !!python/object:hooke.engine.CommandMessage
+      arguments:
+        curve: !!python/object:hooke.curve.Curve {}
+      command: curve info
+    <BLANKLINE>
     """
-    def execute(self, hooke, stack=False):
+    def execute(self, hooke, filter=None, stack=False):
         """Execute a stack of commands.
 
         See Also
         --------
-        _execute, filter
+        execute_command, filter
         """
+        if filter == None:
+            filter = self.filter
         for command_message in self:
-            if self.filter(hooke, command_message) == True:
+            if filter(hooke, command_message) == True:
                 self.execute_command(
                     hooke=hooke, command_message=command_message, stack=stack)
 
@@ -123,8 +216,13 @@ class FileCommandStack (CommandStack):
 
     def __init__(self, *args, **kwargs):
         super(FileCommandStack, self).__init__(*args, **kwargs)
-        self.name = None
-        self.path = None
+        self.name = self.path = None
+
+    def __setstate__(self, state):
+        self.name = self.path = None
+        for key,value in state.items():
+            setattr(self, key, value)
+        self.set_path(state.get('path', None))
 
     def set_path(self, path):
         """Set the path (and possibly the name) of the command  stack.

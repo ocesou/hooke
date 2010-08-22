@@ -84,11 +84,11 @@ Data([[ NaN,  NaN],
        [ NaN,  NaN],
        [ NaN,  NaN]])
 >>> retract[1097:1103,-2:]  # doctest: +ELLIPSIS
-Data([[             NaN,   5.234...e-10],
-       [             NaN,   5.612...e-10],
-       [             NaN,   6.132...e-10],
-       [             NaN,   6.292...e-10],
-       [             NaN,   7.105...e-10],
+Data([[             NaN,   5.2...e-10],
+       [             NaN,   5...e-10],
+       [             NaN,   6.1...e-10],
+       [             NaN,   6.2...e-10],
+       [             NaN,   7...e-10],
        [             NaN,              NaN]])
 >>> retract[-5:,-2:]
 Data([[ NaN,  NaN],

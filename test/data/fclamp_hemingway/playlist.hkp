@@ -1,26 +1,52 @@
-<?xml version="1.0" encoding="utf-8"?>
-<playlist index="0" version="0.1">
-  <curve note="" path="20080428_a53t-0-0-10.dat"/>
-  <curve note="" path="20080428_a53t-0-0-31.dat"/>
-  <curve note="" path="20080428_a53t-0-0-43.dat"/>
-  <curve note="" path="20080428_a53t-0-2-2.dat"/>
-  <curve note="" path="20080428_a53t-0-2-3.dat"/>
-  <curve note="" path="20080428_a53t-0-4-28.dat"/>
-  <curve note="" path="20080428_a53t-0-9-7.dat"/>
-  <curve note="" path="20080428_a53t-1-0-14.dat"/>
-  <curve note="" path="20080428_a53t-1-2-2.dat"/>
-  <curve note="" path="20080428_a53t-1-4-16.dat"/>
-  <curve note="" path="20080428_a53t-1-4-28.dat"/>
-  <curve note="" path="20080428_a53t-1-6-20.dat"/>
-  <curve note="" path="20080428_a53t-1-8-10.dat"/>
-  <curve note="" path="20080428_a53t-1-9-10.dat"/>
-  <curve note="" path="20080428_a53t-1-9-12.dat"/>
-  <curve note="" path="20080428_a53t-1-9-13.dat"/>
-  <curve note="" path="20080428_a53t-1-9-24.dat"/>
-  <curve note="" path="fclamp_i27-0-0-42.dat"/>
-  <curve note="" path="fclamp_i27-0-1-35.dat"/>
-  <curve note="" path="fclamp_i27-1-5-17.dat"/>
-  <curve note="" path="fclamp_i27-2-1-4.dat"/>
-  <curve note="" path="fclamp_i27-3-4-17.dat"/>
-  <curve note="" path="fclamp_i27-5-1-6.dat"/>
-</playlist>
+# Hooke playlist version 0.2
+!!python/object/new:hooke.playlist.FilePlaylist
+state:
+  version: '0.2'
+  name: Hemingway
+listitems:
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-0-0-10.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-0-0-31.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-0-0-43.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-0-2-2.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-0-2-3.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-0-4-28.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-0-9-7.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-0-14.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-2-2.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-4-16.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-4-28.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-6-20.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-8-10.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-9-10.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-9-12.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-9-13.dat
+- !!python/object:hooke.curve.Curve
+  path: 20080428_a53t-1-9-24.dat
+- !!python/object:hooke.curve.Curve
+  path: fclamp_i27-0-0-42.dat
+- !!python/object:hooke.curve.Curve
+  path: fclamp_i27-0-1-35.dat
+- !!python/object:hooke.curve.Curve
+  path: fclamp_i27-1-5-17.dat
+- !!python/object:hooke.curve.Curve
+  path: fclamp_i27-2-1-4.dat
+- !!python/object:hooke.curve.Curve
+  path: fclamp_i27-3-4-17.dat
+- !!python/object:hooke.curve.Curve
+  path: fclamp_i27-5-1-6.dat

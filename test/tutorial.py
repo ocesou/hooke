@@ -96,10 +96,14 @@ False
 >>> h = r.run_lines(h, ['save_playlist --output mylist'])
 Success
 <BLANKLINE>
+>>> h = r.run_lines(h, ['name_playlist my_old_list'])
+<FilePlaylist my_old_list>
+Success
+<BLANKLINE>
 >>> os.path.isfile('mylist.hkp')
 True
 >>> h = r.run_lines(h, ['load_playlist mylist.hkp'])
-<FilePlaylist mylist.hkp>
+<FilePlaylist mylist>
 Success
 <BLANKLINE>
 >>> if playlist_already_exists == False:
@@ -163,22 +167,24 @@ Success
 Success
 <BLANKLINE>
 
+>>> [p for p in h.playlists]
+[<FilePlaylist my_old_list>, <FilePlaylist mylist>]
 >>> h = r.run_lines(h, ['get_playlist'])
-<FilePlaylist mylist>
+<FilePlaylist my_old_list>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['next_playlist'])
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['get_playlist'])
-<FilePlaylist mylist.hkp>
+<FilePlaylist mylist>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['previous_playlist'])
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['get_playlist'])
-<FilePlaylist mylist>
+<FilePlaylist my_old_list>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['playlist_index'])
@@ -189,7 +195,7 @@ Success
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['get_playlist'])
-<FilePlaylist mylist.hkp>
+<FilePlaylist mylist>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['playlist_index'])
@@ -200,7 +206,7 @@ Success
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['get_playlist'])
-<FilePlaylist mylist>
+<FilePlaylist my_old_list>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['playlist_index'])
@@ -211,7 +217,7 @@ Success
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['get_playlist'])
-<FilePlaylist mylist.hkp>
+<FilePlaylist mylist>
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['playlist_index'])
@@ -242,8 +248,6 @@ See :file:`command_stack.py`,
 *Multiple curve analysis*
 
 See :file:`multiple_curve_analysis`.
-
-*Fast curve reviewing and saving*
 
 *Configuring Hooke*
 
