@@ -81,7 +81,8 @@ class CaptureCommand (CommandStackCommand):
                 return
             assert isinstance(msg, CommandMessage), type(msg)
             cmd = hooke.command_by_name[msg.command]
-            if isinstance(cmd, CommandStackCommand):
+            if (msg.explicit_user_call == False
+                or isinstance(cmd, CommandStackCommand)):
                 if isinstance(cmd, StopCaptureCommand):
                     outqueue = Queue()  # Grab StopCaptureCommand's completion.
                 cmd.run(hooke, inqueue, outqueue, **msg.arguments)
@@ -282,8 +283,6 @@ current stack.
 """.strip()),
                 ],
             help=self.__doc__, plugin=plugin)
-        stack = [a for a in self.arguments if a.name == 'stack'][0]
-        stack.default = False
 
     def _run(self, hooke, inqueue, outqueue, params):
         params = self.__setup_params(hooke=hooke, params=params)

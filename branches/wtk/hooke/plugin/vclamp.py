@@ -65,6 +65,25 @@ class SurfacePositionModel (ModelFitter):
     the `info` dict's `ignore non-contact before index` parameter to
     the index of the last surface- or protein-related feature.
     """
+    _fit_check_arguments = [
+        Argument('min slope ratio', type='float', default=10.,
+                 help="""
+Minimum `contact-slope/non-contact-slope` ratio for a "good" fit.
+""".strip()),
+        Argument('min contact fraction', type='float', default=0.02,
+                 help="""
+Minimum fraction of points in the contact region for a "good" fit.
+""".strip()),
+        Argument('max contact fraction', type='float', default=0.98,
+                 help="""
+Maximum fraction of points in the contact region for a "good" fit.
+""".strip()),
+        Argument('min slope guess ratio', type='float', default=0.5,
+                 help="""
+Minimum `fit-contact-slope/guessed-contact-slope` ratio for a "good" fit.
+""".strip()),
+        ]
+
     def model(self, params):
         """A continuous, bilinear model.
 
@@ -88,6 +107,7 @@ class SurfacePositionModel (ModelFitter):
             p.append(0.)  # restore the non-contact slope parameter
         r2 = numpy.round(abs(p[2]))
         if r2 >= 1:
+            r2 = min(r2, len(self._model_data))
             self._model_data[:r2] = p[0] + p[1] * numpy.arange(r2)
         if r2 < len(self._data)-1:
             self._model_data[r2:] = \
@@ -98,8 +118,11 @@ class SurfacePositionModel (ModelFitter):
 
     def set_data(self, data, info=None, *args, **kwargs):
         super(SurfacePositionModel, self).set_data(data, info, *args, **kwargs)
-        if self.info == None:
+        if info == None:
+            info = {}
+        if getattr(self, 'info', None) == None:
             self.info = {}
+        self.info.update(info)
         for key,value in [
             ('force zero non-contact slope', False),
             ('ignore non-contact before index', -1),
@@ -118,6 +141,9 @@ class SurfacePositionModel (ModelFitter):
             ]:
             if key not in self.info:
                 self.info[key] = value
+        for argument in self._fit_check_arguments:
+            if argument.name not in self.info:
+                self.info[argument.name] = argument.default
 
     def guess_initial_params(self, outqueue=None):
         """Guess the initial parameters.
@@ -125,16 +151,23 @@ class SurfacePositionModel (ModelFitter):
         Notes
         -----
         We guess initial parameters such that the offset (:math:`p_1`)
-        matches the minimum deflection, the kink (:math:`p_2`) occurs in
-        the middle of the data, the initial (contact) slope (:math:`p_0`)
-        produces the maximum deflection at the left-most point, and the
-        final (non-contact) slope (:math:`p_3`) is zero.
+        matches the minimum deflection, the kink (:math:`p_2`) occurs
+        at the first point that the deflection crosses the middle of
+        its range, the initial (contact) slope (:math:`p_0`) produces
+        the right-most deflection at the kink point, and the final
+        (non-contact) slope (:math:`p_3`) is zero.
+
+        In the event of a tie, :meth:`argmax` returns the lowest index
+        to the maximum value.
+        >>> (numpy.arange(10) >= 5).argmax()
+        5
         """
         left_offset = self.info['min deflection']
-        left_slope = 2*(self.info['deflection range']
-                        /self.info['position range'])
-        kink_position = (self.info['max position']
-                         +self.info['min position'])/2.0
+        middle_deflection = (self.info['min deflection']
+                             + self.info['deflection range']/2.)
+        kink_position = (self._data > middle_deflection).argmax()
+        left_slope = ((self._data[-1] - self.info['min deflection'])
+                      /kink_position)
         right_slope = 0
         self.info['guessed contact slope'] = left_slope
         params = [left_offset, left_slope, kink_position, right_slope]
@@ -161,23 +194,28 @@ class SurfacePositionModel (ModelFitter):
             params.append(0.)  # restore the non-contact slope parameter
 
         # check that the fit is reasonable, see the :meth:`model` docstring
-        # for parameter descriptions.  HACK: hardcoded cutoffs.
-        if abs(params[3]*10) > abs(params[1]) :
-            raise PoorFit('Slope in non-contact region, or no slope in contact')
-        if params[2] < self.info['min position']+0.02*self.info['position range']:
+        # for parameter descriptions.
+        slope_ratio = abs(params[1]/params[3])
+        if slope_ratio < self.info['min slope ratio']:
             raise PoorFit(
-                'No kink (kink %g less than %g, need more space to left)'
-                % (params[2],
-                   self.info['min position']+0.02*self.info['position range']))
-        if params[2] > self.info['max position']-0.02*self.info['position range']:
-            raise poorFit(
-                'No kink (kink %g more than %g, need more space to right)'
-                % (params[2],
-                   self.info['max position']-0.02*self.info['position range']))
+               'Slope in non-contact region, or no slope in contact (slope ratio %g less than %g)'
+               % (slope_ratio, self.info['min slope ratio']))
+        contact_fraction = ((params[2]-self.info['min position'])
+                            /self.info['position range'])
+        if contact_fraction < self.info['min contact fraction']:
+            raise PoorFit(
+                'No kink (contact fraction %g less than %g)'
+                % (contact_fraction, self.info['min contact fraction']))
+        if contact_fraction > self.info['max contact fraction']:
+            raise PoorFit(
+                'No kink (contact fraction %g greater than %g)'
+                % (contact_fraction, self.info['max contact fraction']))
+        slope_guess_ratio = abs(params[1]/self.info['guessed contact slope'])
         if (self.info['guessed contact slope'] != None
-            and abs(params[1]) < 0.5 * abs(self.info['guessed contact slope'])):
-            raise PoorFit('Too far (contact slope %g, but expected ~%g'
-                          % (params[3], self.info['guessed contact slope']))
+            and slope_guess_ratio < self.info['min slope guess ratio']):
+            raise PoorFit(
+                'Too far (contact slope off guess by %g less than %g)'
+                % (slope_guess_ratio, self.info['min slope guess ratio']))
         return params
 
 
@@ -211,6 +249,11 @@ class SurfaceContactCommand (ColumnAddingCommand):
     * wtk (:meth:`find_contact_point_wtk`)
     """
     def __init__(self, plugin):
+        self._wtk_fit_check_arguments = []
+        for argument in SurfacePositionModel._fit_check_arguments:
+            arg = copy.deepcopy(argument)
+            arg._help += '  (wtk model)'
+            self._wtk_fit_check_arguments.append(arg)
         super(SurfaceContactCommand, self).__init__(
             name='zero surface contact point',
             columns=[
@@ -256,7 +299,7 @@ Name (without units) for storing the deflection offset in the `.info` dictionary
                          help="""
 Name (without units) for storing fit parameters in the `.info` dictionary.
 """.strip()),
-                ],
+                ] + self._wtk_fit_check_arguments,
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
@@ -422,6 +465,8 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
         s = SurfacePositionModel(d_data, info={
                 'force zero non-contact slope':True},
                                  rescale=True)
+        for argument in self._wtk_fit_check_arguments:
+            s.info[argument.name] = params[argument.name]
         ignore_index = None
         if params['ignore index'] != None:
             ignore_index = params['ignore index']

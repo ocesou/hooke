@@ -165,7 +165,7 @@ class HookeFrame (wx.Frame):
                     commands=self.commands,
                     selected=self.gui.config['selected command'],
                     callbacks={
-                        'execute': self.execute_command,
+                        'execute': self.explicit_execute_command,
                         'select_plugin': self.select_plugin,
                         'select_command': self.select_command,
 #                        'selection_changed': self.panelProperties.select(self, method, command),  #SelectedTreeItem = selected_item,
@@ -243,17 +243,11 @@ class HookeFrame (wx.Frame):
         self.Bind(wx.EVT_ERASE_BACKGROUND, self._on_erase_background)
         self.Bind(wx.EVT_SIZE, self._on_size)
         self.Bind(wx.EVT_CLOSE, self._on_close)
-        self.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self._on_notebook_page_close)
+        self.Bind(aui.EVT_AUI_PANE_CLOSE, self._on_pane_close)
 
         return # TODO: cleanup
         treeCtrl = self._c['folders'].GetTreeCtrl()
         treeCtrl.Bind(wx.EVT_LEFT_DCLICK, self._on_dir_ctrl_left_double_click)
-        
-        #property editor
-        self.panelProperties.pg.Bind(wxpg.EVT_PG_CHANGED, self.OnPropGridChanged)
-        #results panel
-        self.panelResults.results_list.OnCheckItem = self.OnResultsCheck
 
     def _on_about(self, *args):
         dialog = wx.MessageDialog(
@@ -266,6 +260,9 @@ class HookeFrame (wx.Frame):
         dialog.ShowModal()
         dialog.Destroy()
 
+    def _on_size(self, event):
+        event.Skip()
+
     def _on_close(self, *args):
         self.log.info('closing GUI framework')
         # apply changes
@@ -276,6 +273,9 @@ class HookeFrame (wx.Frame):
         self._c['manager'].UnInit()
         del self._c['manager']
         self.Destroy()
+
+    def _on_erase_background(self, event):
+        event.Skip()
 
 
 
@@ -300,8 +300,14 @@ class HookeFrame (wx.Frame):
             raise Exception('Multiple commands named "%s"' % name)
         return cs[0]
 
+    def explicit_execute_command(self, _class=None, method=None,
+                                 command=None, args=None):
+        return self.execute_command(
+            _class=_class, method=method, command=command, args=args,
+            explicit_user_call=True)
+
     def execute_command(self, _class=None, method=None,
-                        command=None, args=None):
+                        command=None, args=None, explicit_user_call=False):
         if args == None:
             args = {}
         if ('property editor' in self._c
@@ -337,7 +343,11 @@ class HookeFrame (wx.Frame):
                     if len(args[arg.name]) == 0:
                         args[arg.name] = arg.default
         cm = CommandMessage(command.name, args)
-        self.gui._submit_command(cm, self.inqueue)
+        self.gui._submit_command(
+            cm, self.inqueue, explicit_user_call=explicit_user_call)
+        # TODO: skip responses for commands that were captured by the
+        # command stack.  We'd need to poll on each request, remember
+        # capture state, or add a flag to the response...
         return self._handle_response(command_message=cm)
 
     def _handle_response(self, command_message):
@@ -529,201 +539,6 @@ class HookeFrame (wx.Frame):
 
 
 
-    # TODO: cruft
-
-    def _GetActiveFileIndex(self):
-        lib.playlist.Playlist = self.GetActivePlaylist()
-        #get the selected item from the tree
-        selected_item = self._c['playlist']._c['tree'].GetSelection()
-        #test if a playlist or a curve was double-clicked
-        if self._c['playlist']._c['tree'].ItemHasChildren(selected_item):
-            return -1
-        else:
-            count = 0
-            selected_item = self._c['playlist']._c['tree'].GetPrevSibling(selected_item)
-            while selected_item.IsOk():
-                count += 1
-                selected_item = self._c['playlist']._c['tree'].GetPrevSibling(selected_item)
-            return count
-
-    def _GetPlaylistTab(self, name):
-        for index, page in enumerate(self._c['notebook']._tabs._pages):
-            if page.caption == name:
-                return index
-        return -1
-
-    def select_plugin(self, _class=None, method=None, plugin=None):
-        pass
-
-    def AddPlaylistFromFiles(self, files=[], name='Untitled'):
-        if files:
-            playlist = lib.playlist.Playlist(self, self.drivers)
-            for item in files:
-                playlist.add_curve(item)
-        if playlist.count > 0:
-            playlist.name = self._GetUniquePlaylistName(name)
-            playlist.reset()
-            self.AddTayliss(playlist)
-
-    def AppliesPlotmanipulator(self, name):
-        '''
-        Returns True if the plotmanipulator 'name' is applied, False otherwise
-        name does not contain 'plotmanip_', just the name of the plotmanipulator (e.g. 'flatten')
-        '''
-        return self.GetBoolFromConfig('core', 'plotmanipulators', name)
-
-    def ApplyPlotmanipulators(self, plot, plot_file):
-        '''
-        Apply all active plotmanipulators.
-        '''
-        if plot is not None and plot_file is not None:
-            manipulated_plot = copy.deepcopy(plot)
-            for plotmanipulator in self.plotmanipulators:
-                if self.GetBoolFromConfig('core', 'plotmanipulators', plotmanipulator.name):
-                    manipulated_plot = plotmanipulator.method(manipulated_plot, plot_file)
-            return manipulated_plot
-
-    def GetActiveFigure(self):
-        playlist_name = self.GetActivePlaylistName()
-        figure = self.playlists[playlist_name].figure
-        if figure is not None:
-            return figure
-        return None
-
-    def GetActiveFile(self):
-        playlist = self.GetActivePlaylist()
-        if playlist is not None:
-            return playlist.get_active_file()
-        return None
-
-    def GetActivePlot(self):
-        playlist = self.GetActivePlaylist()
-        if playlist is not None:
-            return playlist.get_active_file().plot
-        return None
-
-    def GetDisplayedPlot(self):
-        plot = copy.deepcopy(self.displayed_plot)
-        #plot.curves = []
-        #plot.curves = copy.deepcopy(plot.curves)
-        return plot
-
-    def GetDisplayedPlotCorrected(self):
-        plot = copy.deepcopy(self.displayed_plot)
-        plot.curves = []
-        plot.curves = copy.deepcopy(plot.corrected_curves)
-        return plot
-
-    def GetDisplayedPlotRaw(self):
-        plot = copy.deepcopy(self.displayed_plot)
-        plot.curves = []
-        plot.curves = copy.deepcopy(plot.raw_curves)
-        return plot
-
-    def GetDockArt(self):
-        return self._c['manager'].GetArtProvider()
-
-    def GetPlotmanipulator(self, name):
-        '''
-        Returns a plot manipulator function from its name
-        '''
-        for plotmanipulator in self.plotmanipulators:
-            if plotmanipulator.name == name:
-                return plotmanipulator
-        return None
-
-    def HasPlotmanipulator(self, name):
-        '''
-        returns True if the plotmanipulator 'name' is loaded, False otherwise
-        '''
-        for plotmanipulator in self.plotmanipulators:
-            if plotmanipulator.command == name:
-                return True
-        return False
-
-
-    def _on_dir_ctrl_left_double_click(self, event):
-        file_path = self.panelFolders.GetPath()
-        if os.path.isfile(file_path):
-            if file_path.endswith('.hkp'):
-                self.do_loadlist(file_path)
-        event.Skip()
-
-    def _on_erase_background(self, event):
-        event.Skip()
-
-    def _on_notebook_page_close(self, event):
-        ctrl = event.GetEventObject()
-        playlist_name = ctrl.GetPageText(ctrl._curpage)
-        self.DeleteFromPlaylists(playlist_name)
-
-    def OnPaneClose(self, event):
-        event.Skip()
-
-    def OnPropGridChanged (self, event):
-        prop = event.GetProperty()
-        if prop:
-            item_section = self.panelProperties.SelectedTreeItem
-            item_plugin = self._c['commands']._c['tree'].GetItemParent(item_section)
-            plugin = self._c['commands']._c['tree'].GetItemText(item_plugin)
-            config = self.gui.config[plugin]
-            property_section = self._c['commands']._c['tree'].GetItemText(item_section)
-            property_key = prop.GetName()
-            property_value = prop.GetDisplayedString()
-
-            config[property_section][property_key]['value'] = property_value
-
-    def OnResultsCheck(self, index, flag):
-        results = self.GetActivePlot().results
-        if results.has_key(self.results_str):
-            results[self.results_str].results[index].visible = flag
-            results[self.results_str].update()
-            self.UpdatePlot()
-
-
-    def _on_size(self, event):
-        event.Skip()
-
-    def UpdatePlaylistsTreeSelection(self):
-        playlist = self.GetActivePlaylist()
-        if playlist is not None:
-            if playlist.index >= 0:
-                self._c['status bar'].set_playlist(playlist)
-                self.UpdateNote()
-                self.UpdatePlot()
-
-    def _on_curve_select(self, playlist, curve):
-        #create the plot tab and add playlist to the dictionary
-        plotPanel = panel.plot.PlotPanel(self, ID_FirstPlot + len(self.playlists))
-        notebook_tab = self._c['notebook'].AddPage(plotPanel, playlist.name, True)
-        #tab_index = self._c['notebook'].GetSelection()
-        playlist.figure = plotPanel.get_figure()
-        self.playlists[playlist.name] = playlist
-        #self.playlists[playlist.name] = [playlist, figure]
-        self._c['status bar'].set_playlist(playlist)
-        self.UpdateNote()
-        self.UpdatePlot()
-
-
-    def _on_playlist_left_doubleclick(self):
-        index = self._c['notebook'].GetSelection()
-        current_playlist = self._c['notebook'].GetPageText(index)
-        if current_playlist != playlist_name:
-            index = self._GetPlaylistTab(playlist_name)
-            self._c['notebook'].SetSelection(index)
-        self._c['status bar'].set_playlist(playlist)
-        self.UpdateNote()
-        self.UpdatePlot()
-
-    def _on_playlist_delete(self, playlist):
-        notebook = self.Parent.plotNotebook
-        index = self.Parent._GetPlaylistTab(playlist.name)
-        notebook.SetSelection(index)
-        notebook.DeletePage(notebook.GetSelection())
-        self.Parent.DeleteFromPlaylists(playlist_name)
-
-
-
     # Command panel interface
 
     def select_command(self, _class, method, command):
@@ -760,6 +575,20 @@ class HookeFrame (wx.Frame):
                     argument)
 
         self._set_config('selected command', command.name)
+
+    def select_plugin(self, _class=None, method=None, plugin=None):
+        pass
+
+
+
+    # Folders panel interface
+
+    def _on_dir_ctrl_left_double_click(self, event):
+        file_path = self.panelFolders.GetPath()
+        if os.path.isfile(file_path):
+            if file_path.endswith('.hkp'):
+                self.do_loadlist(file_path)
+        event.Skip()
 
 
 
@@ -856,6 +685,13 @@ class HookeFrame (wx.Frame):
 
 
     # Panel display handling
+
+    def _on_pane_close(self, event):
+        pane = event.pane
+        view = self._c['menu bar']._c['view']
+        if pane.name in  view._c.keys():
+            view._c[pane.name].Check(False)
+        event.Skip()
 
     def _on_panel_visibility(self, _class, method, panel_name, visible):
         pane = self._c['manager'].GetPane(panel_name)

@@ -46,6 +46,12 @@ class CommandMessage (QueueMessage):
         if arguments == None:
             arguments = {}
         self.arguments = arguments
+        self.explicit_user_call = True
+        """Message is explicitly user-executed.  This is useful for
+        distinguishing auto-generated calls (for which
+        `explicit_user_call` should be `False` such as the GUIs
+        current status requests.
+        """
 
     def __str__(self):
         return str(self.__unicode__())

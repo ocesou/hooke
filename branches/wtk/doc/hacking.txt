@@ -12,12 +12,13 @@ Dependencies
 
 To clean up the internals, were going to go crazy on the
 object-oriented front, and try to keep the core functionality free of
-any dependencies other than the `Python Standard Library`_ and Numpy_
-/ Scipy_.
+any dependencies other than the `Python Standard Library`_, Numpy_,
+Scipy_, and PyYAML_.
 
 .. _Python Standard Library: http://docs.python.org/library/
 .. _Numpy: http://numpy.scipy.org/
 .. _Scipy: http://www.scipy.org/
+.. _PyYAML: http://pyyaml.org/
 
 To make a responsive user interface in parallel with data processing
 and possible GUIs, we'll use Python's multiprocessing_ module.  This

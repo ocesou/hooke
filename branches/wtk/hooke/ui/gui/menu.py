@@ -101,7 +101,7 @@ class ViewMenu (Menu):
         self._callbacks = callbacks
         self._c = {}
         for i,panelname in enumerate(sorted([p.managed_name for p in panels])):
-            text = '%s\tF%d' % (panelname, i+5)
+            text = '%s\tF%d' % (panelname, i+4)
             self._c[panelname] = self.AppendCheckItem(id=wx.ID_ANY, text=text)
         for item in self._c.values():
             item.Check()
@@ -187,9 +187,10 @@ class HookeMenuBar (MenuBar):
         # Attach *Menu() instances
         for key in ['file', 'view', 'perspective', 'help']:
             cap_key = key.capitalize()
+            hot_key = '&' + cap_key
             _class = globals()['%sMenu' % cap_key]
             kwargs = {}
             if key == 'view':
                 kwargs['panels'] = panels
             self._c[key] = _class(parent=self, callbacks=callbacks, **kwargs)
-            self.Append(self._c[key], cap_key)
+            self.Append(self._c[key], hot_key)

@@ -515,3 +515,21 @@ class PropertyEditor(wx.Panel):
 
     def OnReserved(self, event):
         pass
+
+
+
+#        #property editor
+#        self.panelProperties.pg.Bind(wxpg.EVT_PG_CHANGED, self.OnPropGridChanged)
+#    def OnPropGridChanged (self, event):
+#        prop = event.GetProperty()
+#        if prop:
+#            item_section = self.panelProperties.SelectedTreeItem
+#            item_plugin = self._c['commands']._c['tree'].GetItemParent(item_section)
+#            plugin = self._c['commands']._c['tree'].GetItemText(item_plugin)
+#            config = self.gui.config[plugin]
+#            property_section = self._c['commands']._c['tree'].GetItemText(item_section)
+#            property_key = prop.GetName()
+#            property_value = prop.GetDisplayedString()
+#
+#            config[property_section][property_key]['value'] = property_value
+

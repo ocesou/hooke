@@ -78,3 +78,30 @@ def caller_name(depth=1):
     """
     f = frame(depth=depth+1)
     return f.f_code.co_name
+
+def caller_names(depth=1):
+    """Iterate through the names of all functions up the call stack.
+
+    Examples
+    --------
+
+    >>> def x():
+    ...     y()
+    >>> def y():
+    ...     z()
+    >>> def z():
+    ...     print list(caller_names())
+    >>> x()  # doctest: +ELLIPSIS
+    ['z', 'y', 'x', ...]
+    >>> y()  # doctest: +ELLIPSIS
+    ['z', 'y', ...]
+    >>> z()  # doctest: +ELLIPSIS
+    ['z', ...]
+    """
+    depth = 2  # start at caller_names()'s caller.
+    while True:
+        try:
+            yield caller_name(depth=depth)
+        except AttributeError:
+            return
+        depth += 1
