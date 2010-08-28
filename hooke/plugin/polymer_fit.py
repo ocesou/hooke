@@ -1052,12 +1052,16 @@ Indicies of points bounding the selected data.
             p = info['persistence length (m)']
         else:
             p = params[1]
+            info['persistence length (m)'] = p
         L = params[0]
+        info['contour length (m)'] = L
         T = info['temperature (K)']
         fit_info = queue.get(block=False)
+        info['fit'] = fit_info
+        info.pop('x data (m)')
         f_data = numpy.ones(dist_data.shape, dtype=dist_data.dtype) * numpy.nan
         f_data[start:stop] = WLC_fn(dist_data[start:stop], T=T, L=L, p=p)
-        return [f_data, fit_info]
+        return [f_data, info]
 
 
 class PolymerFitPeaksCommand (ColumnAccessCommand):

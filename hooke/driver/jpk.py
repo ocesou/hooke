@@ -75,7 +75,7 @@ class JPKDriver (Driver):
             for i in range(len([p for p in f.namelist()
                                 if p.endswith('segment-header.properties')])):
                 segments.append(self._zip_segment(f, path, info, zip_info, i))
-        if zip_info['file-format-version'] not in ['0.5']:
+        if zip_info['file-format-version'] not in ['0.3', '0.4', '0.5']:
             raise NotImplementedError(
                 'JPK file version %s not supported (yet).'
                 % zip_info['file-format-version'])

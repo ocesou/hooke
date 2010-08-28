@@ -83,9 +83,15 @@ class UserInterface (object):
 
     # Assorted useful tidbits for subclasses
 
-    def _submit_command(self, command_message, ui_to_command_queue):
+    def _submit_command(self, command_message, ui_to_command_queue,
+                        explicit_user_call=True):
         log = logging.getLogger('hooke')
-        log.debug('executing %s' % command_message)
+        if explicit_user_call == True:
+            executor = 'user'
+        else:
+            executor = 'UI'
+        command_message.explicit_user_call = explicit_user_call
+        log.debug('executing (for the %s) %s' % (executor, command_message))
         ui_to_command_queue.put(command_message)
 
     def _set_config(self, option, value, ui_to_command_queue, response_handler,
@@ -100,7 +106,8 @@ class UserInterface (object):
             command='set config',
             arguments={'section': section, 'option': option, 'value': value})
         self._submit_command(command_message=cm,
-                             ui_to_command_queue=ui_to_command_queue)
+                             ui_to_command_queue=ui_to_command_queue,
+                             explicit_user_call=False)
         response_handler(command_message=cm)
 
     def _splash_text(self, extra_info, **kwargs):

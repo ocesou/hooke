@@ -14,12 +14,14 @@ You'll need the following Python modules:
 
 * Numpy_
 * Scipy_
+* PyYAML_ (for saving and loading playlists)
 * Matplotlib_ (for generating plots)
 * wxPython_ (for the GUI)
 
+.. _Python: http://www.python.org/
 .. _Numpy: http://numpy.scipy.org/
 .. _Scipy: http://www.scipy.org/
-.. _Python: http://www.python.org/
+.. _PyYAML: http://pyyaml.org/
 .. _Matplotlib: http://matplotlib.sourceforge.net/
 .. _wxPython: http://www.wxpython.org/
 

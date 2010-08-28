@@ -41,8 +41,8 @@ def props_from_argument(argument, curves=None, playlists=None):
     :class:`Property`\s.
     """
     type = argument.type
-    if type in ['driver', 'dict']:  # intentionally not handled (yet)
-        return None
+    if type in ['driver', 'dict', 'command stack']:
+        return None  # intentionally not handled (yet)
     count = argument.count
     if count == -1:
         count = 3  # HACK: should allow unlimited entries (somehow...)

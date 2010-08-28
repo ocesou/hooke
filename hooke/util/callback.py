@@ -21,6 +21,8 @@
 See :pep:`318` for an introduction to decorators.
 """
 
+import logging
+
 from .caller import caller_name
 
 
@@ -139,12 +141,14 @@ def callback(method):
     def new_m(self, *args, **kwargs):
         result = method(self, *args, **kwargs)
         callback = self._callbacks.get(method.func_name, None)
-        nm = getattr(self, method.func_name)
+        mn = getattr(self, method.func_name)
+        log = logging.getLogger('hooke')
+        log.debug('callback: %s (%s) calling %s' % (method.func_name, mn, callback))
         if is_iterable(callback):
             for cb in callback:
-                cb(self, nm, result)
+                cb(self, mn, result)
         elif callback != None:
-            callback(self, nm, result)
+            callback(self, mn, result)
         return result
     new_m.func_name = method.func_name
     new_m.func_doc = method.func_doc
@@ -238,9 +242,11 @@ def in_callback(self, *args, **kwargs):
     """
     method_name = caller_name(depth=2)
     callback = self._callbacks.get(method_name, None)
-    nm = getattr(self, method_name)
+    mn = getattr(self, method_name)
+    log = logging.getLogger('hooke')
+    log.debug('callback: %s (%s) calling %s' % (method_name, mn, callback))
     if is_iterable(callback):
         for cb in callback:
-            cb(self, nm, *args, **kwargs)
+            cb(self, mn, *args, **kwargs)
     elif callback != None:
-        callback(self, nm, *args, **kwargs)
+        callback(self, mn, *args, **kwargs)

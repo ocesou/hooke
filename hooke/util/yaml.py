@@ -54,10 +54,14 @@ import types
 import numpy
 import yaml
 import yaml.constructor
+from yaml.constructor import ConstructorError
 import yaml.representer
 
 from ..curve import Data, Curve
 from ..playlist import FilePlaylist
+
+
+DATA_INFO_TAG = u'!hooke.curve.DataInfo'
 
 
 if False: # YAML dump debugging code
@@ -95,7 +99,6 @@ else:
 def none_representer(dumper, data):
     return dumper.represent_none(None)
 yaml.add_representer(numpy.ndarray, none_representer)
-yaml.add_representer(numpy.dtype, none_representer)
 
 def bool_representer(dumper, data):
     return dumper.represent_bool(data)
@@ -120,8 +123,13 @@ def data_representer(dumper, data):
     for key in info.keys():
         if key.startswith('raw '):
             del(info[key])
-    return dumper.represent_mapping(u'!hooke.curve.DataInfo', info)
+    return dumper.represent_mapping(DATA_INFO_TAG, info)
 yaml.add_representer(Data, data_representer)
+
+def data_constructor(loader, node):
+    info = loader.construct_mapping(node)
+    return Data(shape=(0,0), dtype=numpy.float32, info=info)
+yaml.add_constructor(DATA_INFO_TAG, data_constructor)
 
 def object_representer(dumper, data):
     cls = type(data)
