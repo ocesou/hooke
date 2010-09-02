@@ -4,7 +4,11 @@ The GUI interface
 
 Orignially by Rolf Schmidt <rschmidt@alcor.concordia.ca>.
 
-Enable by selecting `gui` in your config file (see :doc:`config`)::
+Run the GUI with::
+
+    $ ./bin/hk.py --ui gui
+
+Alternatively, select `gui` in your config file (see :doc:`config`)::
 
     [user interfaces]
     command line = False

@@ -187,6 +187,12 @@ class ModelFitter (object):
         if self._rescale == True:
             params = [p*s for p,s in zip(params, self._param_scale_factors)]
         residual = self._data - self.model(params)
+        if False:  # fit debugging
+            if not hasattr(self, '_i_'):
+                self._i_ = 0
+            self._data.tofile('data.%d' % self._i_, sep='\n')
+            self.model(params).tofile('model.%d' % self._i_, sep='\n')
+            self._i_ += 1
         if self._rescale == True:
             residual /= self._data_scale_factor
         return residual

@@ -91,11 +91,12 @@ class NoteIndexList (list):
             return self._index
         return super(NoteIndexList, self).index(value, *args, **kwargs)
 
-    def current(self):
+    def current(self, load=True):
         if len(self) == 0:
             return None
         item = self[self._index]
-        self._setup_item(item)
+        if load == True:
+            self._setup_item(item)
         return item
 
     def jump(self, index):
@@ -160,14 +161,13 @@ class Playlist (NoteIndexList):
     def __init__(self, drivers, name=None):
         super(Playlist, self).__init__(name=name)
         self.drivers = drivers
-        self._max_loaded = 100 # curves to hold in memory simultaneously.
 
     def _set_default_attrs(self):
         super(Playlist, self)._set_default_attrs()
         self._default_attrs['drivers'] = []
         # List of loaded curves, see :meth:`._setup_item`.
         self._default_attrs['_loaded'] = []
-        self._default_attrs['_max_loaded'] = 100
+        self._default_attrs['_max_loaded'] = 100  # curves to hold in memory simultaneously.
 
     def __setstate__(self, state):
         super(Playlist, self).__setstate__(state)
@@ -200,6 +200,15 @@ class Playlist (NoteIndexList):
             if len(self._loaded) > self._max_loaded:
                 oldest = self._loaded.pop(0)
                 oldest.unload()
+
+    def unload(self, curve):
+        "Inverse of .`_setup_item`."
+        curve.unload()
+        try:
+            self._loaded.remove(curve)
+        except ValueError:
+            pass
+
 
 def playlist_path(path):
     """Normalize playlist path extensions.

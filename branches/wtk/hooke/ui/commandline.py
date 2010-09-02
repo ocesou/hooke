@@ -74,7 +74,8 @@ class CommandLineParser (optparse.OptionParser):
                         try:
                             self.add_option(
                                 '--disable-%s' % name, dest=name,
-                                default=Default, action='store_false')
+                                default=Default, action='store_false',
+                                help=self._argument_help(a))
                         except optparse.OptionConflictError, e:
                             logging.warn('error in %s: %s' % (command, e))
                             raise
@@ -84,7 +85,8 @@ class CommandLineParser (optparse.OptionParser):
                         try:
                             self.add_option(
                                 '--enable-%s' % name, dest=name,
-                                default=Default, action='store_true')
+                                default=Default, action='store_true',
+                                help=self._argument_help(a))
                         except optparse.OptionConflictError, e:
                             logging.warn('error in %s: %s' % (command, e))
                             raise
@@ -97,7 +99,8 @@ class CommandLineParser (optparse.OptionParser):
                     type = 'string'
                 try:
                     self.add_option(
-                        '--%s' % name, dest=name, type=type, default=Default)
+                        '--%s' % name, dest=name, type=type, default=Default,
+                        help=self._argument_help(a))
                 except optparse.OptionConflictError, e:
                     logging.warn('error in %s: %s' % (command, e))
                     raise
@@ -112,6 +115,10 @@ class CommandLineParser (optparse.OptionParser):
             infinite_counter = infinite_counters[0]
             self.command_args.remove(infinite_counter)
             self.command_args.append(infinite_counter)
+
+    def _argument_help(self, argument):
+        return '%s (%s)' % (argument._help, argument.default)
+        # default in the case of callbacks, config-backed values, etc.?
 
     def exit(self, status=0, msg=None):
         """Override :meth:`optparse.OptionParser.exit` which calls
@@ -336,14 +343,15 @@ class HelpCommand (CommandMethod):
         self.parser = CommandLineParser(self.command, self.name_fn)
 
     def __call__(self):
-        blocks = [self.command.help(name_fn=self.name_fn),
+        blocks = [self.parser.format_help(),
+                  self._command_message(),
                   '----',
                   'Usage: ' + self._usage_string(),
                   '']
         self.cmd.stdout.write('\n'.join(blocks))
 
-    def _message(self):
-        return self.command.help(name_fn=self.name_fn)
+    def _command_message(self):
+        return self.command._help
 
     def _usage_string(self):
         if len(self.parser.command_opts) == 0:

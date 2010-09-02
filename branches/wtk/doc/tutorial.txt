@@ -308,9 +308,24 @@ ways.::
     hooke> remove_cantilever_from_extension --block retract
     hooke> flat_peaks_to_polymer_peaks --block retract
     hooke> polymer_fit_peaks --block retract
-    hooke> export_block --block retract --output myblock.dat
+    hooke> block_info --block retract --output data.yaml name 'polymer peak [0-9]*'
 
-See each command's `Help`_ for details.
+This stores the fit parameters in the block's
+:attr:`~hooke.curve.Data.info` dictionary and also appends them to
+:file:`data.yaml` (see each command's `Help`_ for details).  To access
+the parameters, load :file:`data.yaml` with PyYAML_::
+
+    $ python
+    >>> import yaml
+    >>> import hooke.util.yaml
+    >>> data = yaml.load(open('data.yaml', 'r'))
+
+and extract your parameter::
+
+    >>> data['20071120a_i27_t33.100']['retract']['polymer peak 0']['contour length (m)']
+    2.124...e-08
+
+.. _PyYAML: http://pyyaml.org/
 
 Command stacks
 ~~~~~~~~~~~~~~
@@ -368,7 +383,7 @@ freely jointed chain fitting`_ and `Command stacks`_.::
     hooke> remove_cantilever_from_extension --block retract
     hooke> flat_peaks_to_polymer_peaks --block retract
     hooke> polymer_fit_peaks --block retract
-    hooke> export_block --block retract --output myblock.dat
+    hooke> block_info --block retract --output data.yaml name 'polymer peak [0-9]*'
     hooke> stop_command_capture
     hooke> apply_command_stack_to_playlist
 

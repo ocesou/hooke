@@ -144,7 +144,7 @@ Name for storing the list of peaks in the `.info` dictionary.
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._add_to_command_stack(params)
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         block = self._block(hooke=hooke, params=params)
         dist_data = self._get_column(hooke=hooke, params=params,
                                      column_name='distance column')
@@ -165,7 +165,7 @@ Name for storing the list of peaks in the `.info` dictionary.
                          values=peaks_to_mask(def_data, peaks) * def_data)
         outqueue.put(peaks)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         """Setup `params` from config and return the z piezo and
         deflection arrays.
         """

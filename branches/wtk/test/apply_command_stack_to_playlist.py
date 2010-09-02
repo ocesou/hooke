@@ -106,7 +106,8 @@ unloading curve 20071120a_i27_t33.102
 Test `apply command stack to playlist` without evaluating.
 
 >>> stack = CommandStack([
-...         CommandMessage('flat_filter_peaks --block retract --min_points 1'),
+...         CommandMessage('flat filter peaks',
+...                        {'block':'retract', 'min points':1}),
 ...         ])
 >>> h.run_command('apply command stack to playlist',
 ...     {'commands': stack, 'evaluate': False}
@@ -126,7 +127,7 @@ engine message from apply command stack to playlist
 ...     print c  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_UDIFF
 <CommandMessage zero surface contact point
   {..., curve: <Curve 20071120a_i27_t33.100>...}>
-<CommandMessage flat_filter_peaks --block retract --min_points 1>
+<CommandMessage flat filter peaks {block: retract, min points: 1}>
 
 Test `clear curve command stack`.
 

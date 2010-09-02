@@ -944,7 +944,7 @@ Indicies of points bounding the selected data.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        params = self.__setup_params(hooke, params)
+        params = self._setup_params(hooke, params)
         data = self._block(hooke, params)
         model = params['polymer model']
         dist_data = self._get_column(
@@ -960,7 +960,7 @@ Indicies of points bounding the selected data.
                          column_name='output tension column',
                          values=tension_data)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         for key,value in params.items():
             if value == None:  # Use configured default value.
                 params[key] = self.plugin.config[key]
