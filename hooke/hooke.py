@@ -228,6 +228,9 @@ def main():
         '-p', '--persist', dest='persist', action='store_true', default=False,
         help="Don't exit after running a script or commands.")
     p.add_option(
+        '-u', '--ui', dest='user_interface',
+        help="Override the configured user interface (for easy switching).")
+    p.add_option(
         '--save-config', dest='save_config',
         action='store_true', default=False,
         help="Automatically save a changed configuration on exit.")
@@ -251,6 +254,12 @@ def main():
         hooke.config.set(
             section='handler_hand1', option='level', value='NOTSET')
         hooke.load_log()
+    if options.user_interface not in [None, hooke.ui.name]:
+        hooke.config.set(
+            ui.USER_INTERFACE_SETTING_SECTION, hooke.ui.name, False)
+        hooke.config.set(
+            ui.USER_INTERFACE_SETTING_SECTION, options.user_interface, True)
+        hooke.load_ui()
     if options.script != None:
         with open(os.path.expanduser(options.script), 'r') as f:
             options.commands.extend(f.readlines())

@@ -165,7 +165,7 @@ Minimum `fit-contact-slope/guessed-contact-slope` ratio for a "good" fit.
         left_offset = self.info['min deflection']
         middle_deflection = (self.info['min deflection']
                              + self.info['deflection range']/2.)
-        kink_position = (self._data > middle_deflection).argmax()
+        kink_position = 2*(self._data > middle_deflection).argmax()
         left_slope = ((self._data[-1] - self.info['min deflection'])
                       /kink_position)
         right_slope = 0
@@ -304,7 +304,7 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._add_to_command_stack(params)
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         block = self._block(hooke=hooke, params=params)
         dist_data = self._get_column(hooke=hooke, params=params,
                                      column_name='distance column')
@@ -323,7 +323,7 @@ Name (without units) for storing fit parameters in the `.info` dictionary.
                          column_name='output deflection column',
                          values=def_data - def_offset)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         name,dist_unit = split_data_label(params['distance column'])
         name,def_unit = split_data_label(params['deflection column'])
         params['output distance column'] = join_data_label(
@@ -521,7 +521,7 @@ Name of the spring constant in the `.info` dictionary.
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._add_to_command_stack(params)
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         def_data = self._get_column(hooke=hooke, params=params,
                                     column_name='deflection column')
         out = def_data * def_data.info[params['spring constant info name']]
@@ -529,7 +529,7 @@ Name of the spring constant in the `.info` dictionary.
                          column_name='output deflection column',
                          values=out)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         name,in_unit = split_data_label(params['deflection column'])
         out_unit = 'N'  # HACK: extract target units from k_unit.
         params['output deflection column'] = join_data_label(
@@ -579,7 +579,7 @@ Name of the spring constant in the `.info` dictionary.
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._add_to_command_stack(params)
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         def_data = self._get_column(hooke=hooke, params=params,
                                     column_name='deflection column')
         dist_data = self._get_column(hooke=hooke, params=params,
@@ -592,7 +592,7 @@ Name of the spring constant in the `.info` dictionary.
                          column_name='output distance column',
                          values=dist_data - def_data / k)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         name,dist_unit = split_data_label(params['distance column'])
         name,def_unit = split_data_label(params['deflection column'])
         params['output distance column'] = join_data_label(
@@ -656,7 +656,7 @@ Name of the flattening information in the `.info` dictionary.
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._add_to_command_stack(params)
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         block = self._block(hooke=hooke, params=params)
         dist_data = self._get_column(hooke=hooke, params=params,
                                      column_name='distance column')
@@ -690,7 +690,7 @@ Name of the flattening information in the `.info` dictionary.
                          column_name='output deflection column',
                          values=out)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         d_name,d_unit = split_data_label(params['deflection column'])
         params['output deflection column'] = join_data_label(
             params['output deflection column'], d_unit)

@@ -195,10 +195,10 @@ engine running internal <CommandMessage debug {attribute: config, ...}>
 engine message from debug (<type 'instance'>):
  <hooke.config.HookeConfigParser instance at 0x...>
 engine message from debug (<class 'hooke.command.Success'>):
-engine running internal <CommandMessage version {stack: False}>
+engine running internal <CommandMessage version {...}>
 engine message from version (<type 'str'>): Hooke 1.0.0.alpha (Ninken)
 ----
 ...
 engine message from version (<class 'hooke.command.Success'>):
-engine message from execute command stack (<class 'hooke.command.Success'>):
+engine message from execute command stack (<class 'hooke.command.Success'>): 
 """

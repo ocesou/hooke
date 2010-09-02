@@ -25,8 +25,10 @@ associated :class:`hooke.command.Command`\s for handling
 """
 
 import copy
+import re
 
 import numpy
+import yaml
 
 from ..command import Command, Argument, Failure
 from ..command_stack import CommandStack
@@ -41,14 +43,19 @@ from .playlist import current_playlist_callback
 
 # Define common or complicated arguments
 
-def current_curve_callback(hooke, command, argument, value):
+def current_curve_callback(hooke, command, argument, value, load=True):
     if value != None:
         return value
     playlist = current_playlist_callback(hooke, command, argument, value)
-    curve = playlist.current()
+    curve = playlist.current(load=load)
     if curve == None:
         raise Failure('No curves in %s' % playlist)
     return curve
+
+def unloaded_current_curve_callback(hooke, command, argument, value):
+    return current_curve_callback(
+        hooke=hooke, command=command, argument=argument, value=value,
+        load=False)
 
 CurveArgument = Argument(
     name='curve', type='curve', callback=current_curve_callback,
@@ -132,7 +139,7 @@ class CurveCommand (Command):
                 pass  # no need to place duplicate calls on the stack.
             else:
                 curve.command_stack.append(CommandMessage(
-                        self.name, params))
+                        self.name, dict(params)))
 
 
 class BlockCommand (CurveCommand):
@@ -258,8 +265,8 @@ class CurvePlugin (Builtin):
     def __init__(self):
         super(CurvePlugin, self).__init__(name='curve')
         self._commands = [
-            GetCommand(self), InfoCommand(self), DeltaCommand(self),
-            ExportCommand(self), DifferenceCommand(self),
+            GetCommand(self), InfoCommand(self), BlockInfoCommand(self),
+            DeltaCommand(self), ExportCommand(self), DifferenceCommand(self),
             DerivativeCommand(self), PowerSpectrumCommand(self),
             ClearStackCommand(self)]
 
@@ -338,6 +345,59 @@ class InfoCommand (CurveCommand):
 
     def _get_block_sizes(self, curve):
         return [block.shape for block in curve.data]
+
+
+class BlockInfoCommand (BlockCommand):
+    """Get selected information about a :class:`hooke.curve.Curve` data block.
+    """
+    def __init__(self, plugin):
+        super(BlockInfoCommand, self).__init__(
+            name='block info', arguments=[
+                Argument(
+                    name='key', count=-1, optional=False,
+                    help='Dot-separted (.) key selection regexp.'),
+                Argument(
+                    name='output',
+                    help="""
+File name for the output (appended).
+""".strip()),
+                ],
+            help=self.__doc__, plugin=plugin)
+
+    def _run(self, hooke, inqueue, outqueue, params):
+        block = self._block(hooke, params)
+        values = {'index': self._block_index(hooke, params)}
+        for key in params['key']:
+            keys = [(0, key.split('.'), block.info)]
+            while len(keys) > 0:
+                index,key_stack,info = keys.pop(0)
+                regexp = re.compile(key_stack[index])
+                matched = False
+                for k,v in info.items():
+                    if regexp.match(k):
+                        matched = True
+                        new_stack = copy.copy(key_stack)
+                        new_stack[index] = k
+                        if index+1 == len(key_stack):
+                            vals = values
+                            for k in new_stack[:-1]:
+                                if k not in vals:
+                                    vals[k] = {}
+                                vals = vals[k]
+                            vals[new_stack[-1]] = v
+                        else:
+                            keys.append((index+1, new_stack, v))
+                if matched == False:
+                    raise ValueError('no match found for %s in %s'
+                                     % (key_stack[index], key))
+        if params['output'] != None:
+            curve = self._curve(hooke, params)
+            with open(params['output'], 'a') as f:
+                yaml.dump({curve.name:{
+                            'path': curve.path,
+                            block.info['name']: values
+                            }}, f)
+        outqueue.put(values)
 
 
 class DeltaCommand (BlockCommand):
@@ -446,7 +506,7 @@ Name of the new column for storing the difference (without units, defaults to
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._add_to_command_stack(params)
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         data_A = self._get_column(hooke=hooke, params=params,
                                   block_name='block A',
                                   column_name='column A')
@@ -459,7 +519,7 @@ Name of the new column for storing the difference (without units, defaults to
                          column_name='output column',
                          values=out)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         curve = self._curve(hooke, params)
         if params['block A'] == None:
             params['block A'] = curve.data[0].info['name']
@@ -521,7 +581,7 @@ central differencing.
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._add_to_command_stack(params)
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         x_data = self._get_column(hooke=hooke, params=params,
                                   column_name='x column')
         f_data = self._get_column(hooke=hooke, params=params,
@@ -532,7 +592,7 @@ central differencing.
                          column_name='output column',
                          values=d)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         curve = self._curve(hooke, params)
         x_name,x_unit = split_data_label(params['x column'])
         f_name,f_unit = split_data_label(params['f column'])
@@ -586,7 +646,7 @@ Otherwise, the chunks are end-to-end, and not overlapping.
 
     def _run(self, hooke, inqueue, outqueue, params):
         self._add_to_command_stack(params)
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         data = self._get_column(hooke=hooke, params=params)
         bounds = params['bounds']
         if bounds != None:
@@ -610,7 +670,7 @@ Otherwise, the chunks are end-to-end, and not overlapping.
                          values=power)
         outqueue.put(b)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         if params['output block'] in self._block_names(hooke, params):
             raise Failure('output block %s already exists in %s.'
                           % (params['output block'],
@@ -634,6 +694,11 @@ class ClearStackCommand (CurveCommand):
         super(ClearStackCommand, self).__init__(
             name='clear curve command stack',
             help=self.__doc__, plugin=plugin)
+        i,arg = [(i,arg) for i,arg in enumerate(self.arguments)
+                 if arg.name == 'curve'][0]
+        arg = copy.copy(arg)
+        arg.callback = unloaded_current_curve_callback
+        self.arguments[i] = arg
 
     def _run(self, hooke, inqueue, outqueue, params):
         curve = self._curve(hooke, params)

@@ -372,7 +372,7 @@ Evaluate the applied command stack immediately.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         p = self._playlist(hooke, params)
         if params['evaluate'] == True:
             exec_cmd = hooke.command_by_name['execute command stack']
@@ -385,9 +385,9 @@ Evaluate the applied command stack immediately.
                 for command in params['commands']:
                     curve.command_stack.append(command)
                 curve.set_hooke(hooke)
-                curve.unload()
+                p.unload(curve)
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         if params['commands'] == None:
             cstack_plugin = [p for p in hooke.plugins
                              if p.name == 'command_stack'][0]

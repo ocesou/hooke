@@ -1,4 +1,20 @@
-# Copyright
+# Copyright (C) 2010 W. Trevor King <wking@drexel.edu>
+#
+# This file is part of Hooke.
+#
+# Hooke is free software: you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# Hooke is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Hooke.  If not, see
+# <http://www.gnu.org/licenses/>.
 
 """Add representers to YAML to support Hooke.
 
@@ -18,7 +34,7 @@ The default behavior is to crash.
 
 >>> yaml.Dumper.yaml_representers.pop(numpy.ndarray)  # doctest: +ELLIPSIS
 <function none_representer at 0x...>
->>> print yaml.dump(a)
+>>> print yaml.dump(a)  # doctest: +REPORT_UDIFF
 !!python/object/apply:numpy.core.multiarray._reconstruct
 args:
 - !!python/name:numpy.ndarray ''
@@ -27,7 +43,9 @@ args:
 state: !!python/tuple
 - 1
 - !!python/tuple [3]
-- null
+- !!python/object/apply:numpy.dtype
+  args: [i4, 0, 1]
+  state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
 - false
 - "\\x01\\0\\0\\0\\x02\\0\\0\\0\\x03\\0\\0\\0"
 <BLANKLINE>
@@ -44,6 +62,19 @@ Must be because of the other representers I've loaded since.
 Restore the representer for future tests.
 
 >>> yaml.add_representer(numpy.ndarray, none_representer)
+
+We also avoid !!python/unicode tags by sacrificing the string/unicode
+distinction.
+
+>>> yaml.dump('ascii', allow_unicode=True)
+'ascii\\n...\\n'
+>>> yaml.dump(u'ascii', allow_unicode=True)
+'ascii\\n...\\n'
+>>> a = yaml.dump(u'Fran\\xe7ois', allow_unicode=True)
+>>> a
+'Fran\\xc3\\xa7ois\\n...\\n'
+>>> unicode(a, 'utf-8')
+u'Fran\\xe7ois\\n...\\n'
 """
 
 from __future__ import absolute_import
@@ -95,6 +126,9 @@ else:
     yaml.representer.SafeRepresenter.ignore_aliases = staticmethod(
         ignore_aliases)
 
+def unicode_representer(dumper, data):
+    return dumper.represent_scalar(u'tag:yaml.org,2002:str', data)
+yaml.add_representer(unicode, unicode_representer)
 
 def none_representer(dumper, data):
     return dumper.represent_none(None)

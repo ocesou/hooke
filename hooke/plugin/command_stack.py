@@ -228,10 +228,10 @@ input command stack.  If the command stack does not have an input file
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        params = self.__setup_params(hooke, params)
+        params = self._setup_params(hooke, params)
         self.plugin.command_stack.save(params['output'])
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         if params['output'] == None and self.plugin.command_stack.path == None:
             params['output'] = 'default'
         if params['output'] != None:
@@ -256,11 +256,11 @@ File name for the input command stack.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        params = self.__setup_params(hooke, params)
+        params = self._setup_params(hooke, params)
         self.plugin.command_stack.clear()
         self.plugin.command_stack.load(params['input'])
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         if params['input'] == None and self.plugin.command_stack.path == None:
             params['input'] = 'default'
         if params['input'] != None:
@@ -285,12 +285,12 @@ current stack.
             help=self.__doc__, plugin=plugin)
 
     def _run(self, hooke, inqueue, outqueue, params):
-        params = self.__setup_params(hooke=hooke, params=params)
+        params = self._setup_params(hooke=hooke, params=params)
         if len(params['commands']) == 0:
             return
         params['commands'].execute(hooke=hooke, stack=params['stack'])
 
-    def __setup_params(self, hooke, params):
+    def _setup_params(self, hooke, params):
         if params['commands'] == None:
             params['commands'] = self.plugin.command_stack
         return params

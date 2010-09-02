@@ -20,6 +20,8 @@
 storing force curves.
 """
 
+from copy_reg import dispatch_table
+from copy import _reconstruct, _copy_dispatch
 import logging
 import os.path
 
@@ -201,6 +203,7 @@ class Curve (object):
         arguments:
           curve: *id001
         command: curve info
+        explicit_user_call: true
     name: path
     path: some/path
     <BLANKLINE>
@@ -228,6 +231,7 @@ class Curve (object):
           name: path
           path: some/path
       command: curve info
+      explicit_user_call: true
     <BLANKLINE>
     """
     def __init__(self, path, info=None):
@@ -276,6 +280,101 @@ class Curve (object):
             self.info = {}
         if type(self.command_stack) == list:
             self.command_stack = CommandStack()
+
+    def __copy__(self):
+        """Set copy to preserve :attr:`_hooke`.
+
+        :meth:`getstate` drops :attr:`_hooke` for :mod:`pickle` and
+        :mod:`yaml` output, but it should be preserved (but not
+        duplicated) during copies.
+
+        >>> import copy
+        >>> class Hooke (object):
+        ...     pass
+        >>> h = Hooke()
+        >>> d = Data(shape=(3,2), info={'columns':['distance (m)', 'force (N)']})
+        >>> for i in range(3): # initialize d
+        ...    for j in range(2):
+        ...        d[i,j] = i*10 + j
+        >>> c = Curve(None)
+        >>> c.data = [d]
+        >>> c.set_hooke(h)
+        >>> c._hooke  # doctest: +ELLIPSIS
+        <hooke.curve.Hooke object at 0x...>
+        >>> c._hooke == h
+        True
+        >>> c2 = copy.copy(c)
+        >>> c2._hooke  # doctest: +ELLIPSIS
+        <hooke.curve.Hooke object at 0x...>
+        >>> c2._hooke == h
+        True
+        >>> c2.data
+        [Data([[  0.,   1.],
+               [ 10.,  11.],
+               [ 20.,  21.]])]
+        >>> d.info
+        {'columns': ['distance (m)', 'force (N)']}
+        >>> id(c2.data[0]) == id(d)
+        True
+        """
+        copier = _copy_dispatch.get(type(self))
+        if copier:
+            return copier(self)
+        reductor = dispatch_table.get(type(self))
+        if reductor:
+            rv = reductor(self)
+        else:
+            # :class:`object` implements __reduce_ex__, see :pep:`307`.
+            rv = self.__reduce_ex__(2)
+        y = _reconstruct(self, rv, 0)
+        y.set_hooke(self._hooke)
+        return y
+
+    def __deepcopy__(self, memo):
+        """Set deepcopy to preserve :attr:`_hooke`.
+
+        :meth:`getstate` drops :attr:`_hooke` for :mod:`pickle` and
+        :mod:`yaml` output, but it should be preserved (but not
+        duplicated) during copies.
+
+        >>> import copy
+        >>> class Hooke (object):
+        ...     pass
+        >>> h = Hooke()
+        >>> d = Data(shape=(3,2), info={'columns':['distance (m)', 'force (N)']})
+        >>> for i in range(3): # initialize d
+        ...    for j in range(2):
+        ...        d[i,j] = i*10 + j
+        >>> c = Curve(None)
+        >>> c.data = [d]
+        >>> c.set_hooke(h)
+        >>> c._hooke  # doctest: +ELLIPSIS
+        <hooke.curve.Hooke object at 0x...>
+        >>> c._hooke == h
+        True
+        >>> c2 = copy.deepcopy(c)
+        >>> c2._hooke  # doctest: +ELLIPSIS
+        <hooke.curve.Hooke object at 0x...>
+        >>> c2._hooke == h
+        True
+        >>> c2.data
+        [Data([[  0.,   1.],
+               [ 10.,  11.],
+               [ 20.,  21.]])]
+        >>> d.info
+        {'columns': ['distance (m)', 'force (N)']}
+        >>> id(c2.data[0]) == id(d)
+        False
+        """
+        reductor = dispatch_table.get(type(self))
+        if reductor:
+            rv = reductor(self)
+        else:
+            # :class:`object` implements __reduce_ex__, see :pep:`307`.
+            rv = self.__reduce_ex__(2)
+        y = _reconstruct(self, rv, 1, memo)
+        y.set_hooke(self._hooke)
+        return y
 
     def set_hooke(self, hooke=None):
         if hooke != None:

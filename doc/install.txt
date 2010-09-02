@@ -39,6 +39,7 @@ There is also a `GUI fork`_ (Rolf Schmidt)::
 And a `fork`_ versioned in Mercurial_ (W. Trevor King)::
 
     $ hg clone http://www.physics.drexel.edu/~wking/code/hg/hgwebdir.cgi/hooke/ hooke
+    $ hg update wtk
 
 There are also periodic bundled releases.  See the homepage for each
 fork for details.  For example, get the most recent snapshot of
