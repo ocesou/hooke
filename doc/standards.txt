@@ -1,0 +1,63 @@
+********************
+Standard experiments
+********************
+
+.. toctree::
+   :maxdepth: 2
+
+Overview
+========
+
+Force spectroscopy experiments are generally classified as "force
+clamp", "velocity clamp", etc..  While previous versions of Hooke
+attempted to reproduce such classification, I now believe this
+classification is counter-productive.  The type of experiment carried
+out by a given :class:`~hooke.curve.Curve` is determined by the
+sequence of :class:`~hooke.curve.Data` blocks in the curve.  For
+example, a classic velocity clamp experiment would look like::
+
+    hooke> curve_info --enable-block_names
+    block names: ['approach', 'pause', 'retract']
+
+And classic force clamp experiment would look like::
+
+    hooke> curve_info --enable-block_names
+    block names: ['approach', 'pause', 'retract', 'force clamp']
+
+However, the situation is complicated by refolding experiments such as::
+
+    hooke> curve_info --enable-block_names
+    block names: ['approach-0', 'pause-0', 'retract-0',
+                  'approach-1', 'pause-1', 'retract-1',
+                  'approach-2', 'pause-2', 'retract-2',
+		  ...]
+
+The benefit to classifying curves in Hooke is that each class of
+experiment has a standard analysis procedure (e.g. unfolding force
+extraction for velocity clamp experiments or survival time extraction
+for force clamp experiments).  However, the potential convenience of
+Hooke being able to guess a user's desired analysis is outweighed by
+the increased complexity and rigidity that such guessing requires.
+Instead we provide :class:`~hooke.command.Command`\s that can be
+applied to any data block, and leave it up to the user to construct a
+sequence of analysis commands that makes sense.  The risk to this
+flexible approach is confusion for both the user and the Hooke
+developer.  The remainder of this section lays out a scheme for
+maintaining developer sanity.  Users should read over the
+:doc:`analysis` section for an overview of analysis procedures
+that are standardized enough to have written documentation.
+
+Drivers
+=======
+
+.. todo:: Explain driver responsibilities.
+
+Commands
+========
+
+.. todo:: Explain command analysis and storage behaviour.
+
+Results
+=======
+
+.. todo:: Explain procedure for exporting analysis results.

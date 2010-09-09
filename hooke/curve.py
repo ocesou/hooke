@@ -28,7 +28,6 @@ import os.path
 import numpy
 
 from .command_stack import CommandStack
-from . import experiment
 
 
 class NotRecognized (ValueError):
@@ -156,23 +155,14 @@ class Curve (object):
     would consist of the approach data and the retract data.  Metadata
     would be the temperature, cantilever spring constant, etc.
 
-    Two important :attr:`info` settings are `filetype` and
-    `experiment`.  These are two strings that can be used by Hooke
-    commands/plugins to understand what they are looking at.
+    Each :class:`Data` block in :attr:`data` must contain an
+    :attr:`info['name']` setting with a unique (for the parent
+    curve) name identifying the data block.  This allows plugins 
+    and commands to access individual blocks.
 
-    * :attr:`info['filetype']` should contain the name of the exact
-      filetype defined by the driver (so that filetype-speciofic
-      commands can know if they're dealing with the correct filetype).
-    * :attr:`info['experiment']` should contain an instance of a
-      :class:`hooke.experiment.Experiment` subclass to identify the
-      experiment type.  For example, various
-      :class:`hooke.driver.Driver`\s can read in force-clamp data, but
-      Hooke commands could like to know if they're looking at force
-      clamp data, regardless of their origin.
-
-    Another important attribute is :attr:`command_stack`, which holds
-    a :class:`~hooke.command_stack.CommandStack` listing the commands
-    that have been applied to the `Curve` since loading.
+    Each curve maintiains a :class:`~hooke.command_stack.CommandStack`
+    (:attr:`command_stack`) listing the commands that have been
+    applied to the `Curve` since loading.
 
     The data-type is pickleable, to ensure we can move it between
     processes with :class:`multiprocessing.Queue`\s.

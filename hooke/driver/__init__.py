@@ -89,9 +89,7 @@ class Driver (object):
         The input `info` :class:`dict` may contain attributes read
         from the :class:`~hooke.playlist.FilePlaylist`.
 
-        The `info` :class:`dict` must contain values for the keys:
-        'filetype' and 'experiment'.  See :class:`hooke.curve.Curve`
-        for details.
+        See :class:`hooke.curve.Curve` for details.
         """
         raise NotImplementedError
 

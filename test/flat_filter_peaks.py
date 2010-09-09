@@ -27,7 +27,7 @@ Success
 >>> h = r.run_lines(h,
 ...     ['zero_surface_contact_point --block retract']
 ...     ) # doctest: +ELLIPSIS, +REPORT_UDIFF
-{'info':...}
+{'active fitted parameters':...}
 Success
 <BLANKLINE>
 >>> h = r.run_lines(h, ['flat_filter_peaks --block retract']

@@ -33,16 +33,15 @@ Documented commands (type help <topic>):
 ========================================
 ...
 >>> h = r.run_lines(h, ['help load_playlist'])
-Command: load_playlist
+Usage: load_playlist [options]
 <BLANKLINE>
-Arguments:
-<BLANKLINE>
-help BOOL (bool) Print a help message.
-stack BOOL (bool) Add this command to appropriate command stacks.
-output_playlist STRING (string) Name of the new playlist (defaults to
-    an auto-generated name).
-input FILE (file) File name for the input playlist.
-drivers DRIVER (driver) Drivers for loading curves.
+Options:
+  -h, --help            show this help message and exit
+  --disable-stack       Add this command to appropriate command stacks. (True)
+  --output_playlist=OUTPUT_PLAYLIST
+                        Name of the new playlist (defaults to an auto-
+                        generated name). (None)
+  --drivers=DRIVERS     Drivers for loading curves. (None)
 <BLANKLINE>
 Load a playlist.
 <BLANKLINE>

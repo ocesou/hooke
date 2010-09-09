@@ -28,8 +28,7 @@ several associated :class:`~hooke.command.Command`\s for removing flat
 
 See Also
 --------
-:mod:`~hooke.plugin.convfilt` for a convolution-based filter for
-:class:`~hooke.experiment.VelocityClamp` experiments.
+:mod:`~hooke.plugin.convfilt` for a convolution-based filter.
 """
 
 import copy
@@ -41,7 +40,6 @@ from scipy.signal.signaltools import medfilt
 from ..command import Argument, Success, Failure, UncaughtException
 from ..config import Setting
 from ..curve import Data
-from ..experiment import VelocityClamp
 from ..util.fit import PoorFit
 from ..util.peak import (find_peaks, peaks_to_mask,
                          find_peaks_arguments, Peak, _kwargs)
@@ -170,9 +168,6 @@ Name for storing the list of peaks in the `.info` dictionary.
         deflection arrays.
         """
         curve = self._curve(hooke=hooke, params=params)
-        if not isinstance(curve.info['experiment'], VelocityClamp):
-            raise Failure('%s operates on VelocityClamp experiments, not %s'
-                          % (self.name, curve.info['experiment']))
         for key,value in params.items():
             if value == None and key in self.plugin.config:
                 # Use configured default value.

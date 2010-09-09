@@ -196,7 +196,6 @@ class HookeFrame (wx.Frame):
                     size=wx.Size(150, 90),
                     style=wx.TE_READONLY|wx.NO_BORDER|wx.TE_MULTILINE),
              'bottom'),
-#            ('results', panel.results.Results(self), 'bottom'),
             ]:
             self._add_panel(p, style)
         self.execute_command(  # setup already loaded playlists

@@ -42,9 +42,6 @@ class mfp1dexportDriver(lhc.Driver):
         self.lines = list(self.filedata.readlines())
         self.filedata.close()
 
-        self.filetype='mfp1dexport'
-        self.experiment='smfs'
-
     def close_all(self):
         self.filedata.close()
 

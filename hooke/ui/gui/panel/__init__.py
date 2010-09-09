@@ -31,7 +31,6 @@ PANEL_MODULES = [
     'playlist',
     'plot',
     'propertyeditor',
-#    'results',
 #    'selection',
 #    'welcome',
     ]

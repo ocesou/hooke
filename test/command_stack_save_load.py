@@ -77,7 +77,7 @@ Success
 ['default']
 >>> with open(os.path.join(target_dir, 'default'), 'r') as f:
 ...     print f.read()
-- arguments: {input: !!python/unicode 'test/data/test'}
+- arguments: {input: test/data/test}
   command: load playlist
 - arguments: {}
   command: get curve
@@ -92,7 +92,7 @@ Success
 ['default', 'my_stack']
 >>> with open(os.path.join(target_dir, 'my_stack'), 'r') as f:
 ...     print f.read()
-- arguments: {input: !!python/unicode 'test/data/test'}
+- arguments: {input: test/data/test}
   command: load playlist
 - arguments: {}
   command: get curve
@@ -114,14 +114,14 @@ Success
 <BLANKLINE>
 >>> with open(os.path.join(target_dir, 'default'), 'r') as f:
 ...     print f.read()
-- arguments: {input: !!python/unicode 'test/data/test'}
+- arguments: {input: test/data/test}
   command: load playlist
 - arguments: {}
   command: get curve
 <BLANKLINE>
 >>> with open(os.path.join(target_dir, 'my_stack'), 'r') as f:
 ...     print f.read()
-- arguments: {input: !!python/unicode 'test/data/test'}
+- arguments: {input: test/data/test}
   command: load playlist
 - arguments: {}
   command: get curve

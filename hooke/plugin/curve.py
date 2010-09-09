@@ -292,8 +292,8 @@ class InfoCommand (CurveCommand):
             Argument(name='all', type='bool', default=False, count=1,
                      help='Get all curve information.'),
             ]
-        self.fields = ['name', 'path', 'experiment', 'driver', 'filetype',
-                       'note', 'command stack', 'blocks', 'block sizes']
+        self.fields = ['name', 'path', 'driver', 'note', 'command stack',
+                       'blocks', 'block names', 'block sizes']
         for field in self.fields:
             args.append(Argument(
                     name=field, type='bool', default=False, count=1,
@@ -325,14 +325,8 @@ class InfoCommand (CurveCommand):
     def _get_path(self, curve):
         return curve.path
 
-    def _get_experiment(self, curve):
-        return curve.info.get('experiment', None)
-
     def _get_driver(self, curve):
         return curve.driver
-
-    def _get_filetype(self, curve):
-        return curve.info.get('filetype', None)
 
     def _get_note(self, curve):
         return curve.info.get('note', None)
@@ -342,6 +336,9 @@ class InfoCommand (CurveCommand):
 
     def _get_blocks(self, curve):
         return len(curve.data)
+
+    def _get_block_names(self, curve):
+        return [block.info['name'] for block in curve.data]
 
     def _get_block_sizes(self, curve):
         return [block.shape for block in curve.data]
@@ -388,8 +385,9 @@ File name for the output (appended).
                         else:
                             keys.append((index+1, new_stack, v))
                 if matched == False:
-                    raise ValueError('no match found for %s in %s'
-                                     % (key_stack[index], key))
+                    raise ValueError(
+                        'no match found for %s (%s) in %s'
+                        % (key_stack[index], key, sorted(info.keys())))
         if params['output'] != None:
             curve = self._curve(hooke, params)
             with open(params['output'], 'a') as f:

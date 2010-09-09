@@ -58,9 +58,6 @@ class mfp1dDriver(lib.driver.Driver):
         self.lines = list(self.filedata.readlines())
         self.filedata.close()
 
-        self.filetype = 'mfp1d'
-        self.experiment = 'smfs'
-
     def _load_from_file(self, filename, extract_note=False):
         data = None
         f = open(filename, 'rb')

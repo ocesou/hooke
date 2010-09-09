@@ -37,9 +37,8 @@ import pprint
 import numpy
 
 from .. import curve as curve
-from .. import experiment as experiment
+from ..util.igorbinarywave import loadibw
 from . import Driver as Driver
-from .igorbinarywave import loadibw
 
 
 __version__='0.0.0.20100604'
@@ -72,8 +71,6 @@ class MFP3DDriver (Driver):
     def read(self, path, info=None):
         data,bin_info,wave_info = loadibw(path)
         blocks,info = self._translate_ibw(data, bin_info, wave_info)
-        info['filetype'] = self.name
-        info['experiment'] = experiment.VelocityClamp()
         return (blocks, info)
      
     def _translate_ibw(self, data, bin_info, wave_info):

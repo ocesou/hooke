@@ -29,12 +29,11 @@ Success
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: Line0004Point0000.ibw
 path: .../test/data/vclamp_mfp3d/Line0004Point0000.ibw
-experiment: <hooke.experiment.VelocityClamp object at 0x...>
 driver: <hooke.driver.mfp3d.MFP3DDriver object at 0x...>
-filetype: mfp3d
 note: None
 command stack: []
 blocks: 3
+block names: ['approach', 'retract', 'pause']
 block sizes: [(491, 2), (497, 2), (105, 2)]
 Success
 <BLANKLINE>
@@ -47,12 +46,11 @@ Success
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: Image0396.ibw
 path: .../test/data/vclamp_mfp3d/Image0396.ibw
-experiment: <hooke.experiment.VelocityClamp object at 0x...>
 driver: <hooke.driver.mfp3d.MFP3DDriver object at 0x...>
-filetype: mfp3d
 note: None
 command stack: []
 blocks: 3
+block names: ['approach', 'pause', 'retract']
 block sizes: [(506, 3), (6, 3), (496, 3)]
 Success
 <BLANKLINE>

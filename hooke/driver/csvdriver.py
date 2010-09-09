@@ -41,10 +41,6 @@ class csvdriverDriver(lib.driver.Driver):
         self.filedata = open(filename,'r')
         self.data = list(self.filedata)
         self.filedata.close()
-
-        self.filetype = 'generic'
-        self.experiment = ''
-
         self.filename=filename
 
     def close_all(self):

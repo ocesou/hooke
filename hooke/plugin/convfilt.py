@@ -40,7 +40,6 @@ import numpy
 
 from ..command import Command, Argument, Success, Failure
 from ..config import Setting
-from ..experiment import VelocityClamp
 from ..util.fit import PoorFit
 from ..util.peak import find_peaks, find_peaks_arguments, Peak, _kwargs
 from . import Plugin, argument_to_setting
@@ -149,9 +148,6 @@ class ConvolutionPeaksCommand (Command):
         deflection arrays.
         """
         curve = params['curve']
-        if not isinstance(curve.info['experiment'], VelocityClamp):
-            raise Failure('%s operates on VelocityClamp experiments, not %s'
-                          % (self.name, curve.info['experiment']))
         data = None
         for block in curve.data:
             if block.info['name'].startswith('retract'):
