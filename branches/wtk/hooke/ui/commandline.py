@@ -24,6 +24,7 @@ import codecs
 import cmd
 import logging
 import optparse
+import pprint
 try:
     import readline # including readline makes cmd.Cmd.cmdloop() smarter
 except ImportError, e:
@@ -152,7 +153,7 @@ class DoCommand (CommandMethod):
         try:
             args = self._parse_args(args)
         except optparse.OptParseError, e:
-            self.cmd.stdout.write(str(e).lstrip()+'\n')
+            self.cmd.stdout.write(unicode(e).lstrip()+'\n')
             self.cmd.stdout.write('Failure\n')
             return
         cm = CommandMessage(self.command.name, args)
@@ -163,7 +164,7 @@ class DoCommand (CommandMethod):
                 return True
             elif isinstance(msg, CommandExit):
                 self.cmd.stdout.write(msg.__class__.__name__+'\n')
-                self.cmd.stdout.write(str(msg).rstrip()+'\n')
+                self.cmd.stdout.write(unicode(msg).rstrip()+'\n')
                 break
             elif isinstance(msg, ReloadUserInterfaceConfig):
                 self.cmd.ui.reload_config(msg.config)
@@ -174,7 +175,11 @@ class DoCommand (CommandMethod):
                 except EOF:
                     return True
                 continue
-            self.cmd.stdout.write(unicode(msg).rstrip()+'\n')
+            if isinstance(msg, dict):
+                text = pprint.pformat(msg)
+            else:
+                text = unicode(msg)
+            self.cmd.stdout.write(text.rstrip()+'\n')
 
     def _parse_args(self, args):
         options,args = self.parser.parse_args(args)
@@ -242,7 +247,7 @@ class DoCommand (CommandMethod):
         while True:
             if error != None:
                 self.cmd.stdout.write(''.join([
-                        error.__class__.__name__, ': ', str(error), '\n']))
+                        error.__class__.__name__, ': ', unicode(error), '\n']))
             self.cmd.stdout.write(prompt_string)
             stdin = sys.stdin
             try:

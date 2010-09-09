@@ -234,7 +234,7 @@ class HookeConfigParser (configparser.RawConfigParser):
                     self._config_paths.append(filename)
         # Can't use super() because RawConfigParser is a classic class
         #return super(HookeConfigParser, self).read(filenames)
-        return configparser.RawConfigParser.read(self, filenames)
+        return configparser.RawConfigParser.read(self, self._config_paths)
 
     def _write_setting(self, fp, section=None, option=None, value=None,
                        **kwargs):

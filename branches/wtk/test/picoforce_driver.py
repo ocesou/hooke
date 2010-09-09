@@ -29,12 +29,11 @@ Success
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: 20071120a_i27_t33.100
 path: .../test/data/vclamp_picoforce/20071120a_i27_t33.100
-experiment: <hooke.experiment.VelocityClamp object at 0x...>
 driver: <hooke.driver.picoforce.PicoForceDriver object at 0x...>
-filetype: picoforce
 note: None
 command stack: []
 blocks: 2
+block names: ['approach', 'retract']
 block sizes: [(2048, 2), (2048, 2)]
 Success
 <BLANKLINE>
@@ -47,12 +46,11 @@ Success
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: 0x07200000
 path: .../test/data/vclamp_picoforce/0x07200000
-experiment: <hooke.experiment.VelocityClamp object at 0x...>
 driver: <hooke.driver.picoforce.PicoForceDriver object at 0x...>
-filetype: picoforce
 note: None
 command stack: []
 blocks: 2
+block names: ['approach', 'retract']
 block sizes: [(512, 2), (512, 2)]
 Success
 <BLANKLINE>
@@ -62,12 +60,11 @@ Success
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: 0x06130001
 path: .../test/data/vclamp_picoforce/0x06130001
-experiment: <hooke.experiment.VelocityClamp object at 0x...>
 driver: <hooke.driver.picoforce.PicoForceDriver object at 0x...>
-filetype: picoforce
 note: None
 command stack: []
 blocks: 2
+block names: ['approach', 'retract']
 block sizes: [(2048, 2), (2048, 2)]
 Success
 <BLANKLINE>

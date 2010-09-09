@@ -35,9 +35,6 @@ class hdf5Driver(lhc.Driver):
         self.lines=list(self.filedata.readlines())
         self.filedata.close()
         
-        self.filetype='hdf5'
-        self.experiment='smfs'
-        
     def close_all(self):
         self.filedata.close()
         

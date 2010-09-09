@@ -44,11 +44,9 @@ default path list is
 * :file:`./.hooke.cfg`
 
 but alternatives can be specified from the command line launching
-Hooke.
+Hooke (``--config FILE``).
 
 .. _Filesystem Hierarchy Standard: http://www.pathname.com/fhs/
-
-.. todo:: Implement command-line specified config file.
 
 .. warning:: Any changes you make to the configuration during a Hooke
   run will *not be saved* when Hooke exits.  To save the changes,

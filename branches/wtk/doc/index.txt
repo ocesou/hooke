@@ -28,9 +28,11 @@ Contents
 
    install
    tutorial
+   analysis
    config
    bugs
    hacking
+   standards
    hooke/hooke
    doc
 

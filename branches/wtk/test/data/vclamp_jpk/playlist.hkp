@@ -8,3 +8,11 @@ listitems:
   path: 2009.04.23-15.15.47.jpk
 - !!python/object:hooke.curve.Curve
   path: 2009.04.23-15.21.39.jpk
+- !!python/object:hooke.curve.Curve
+  path: force-scan-cycle-contact-AbsoluteZForceSettings-3D-TIPSCANNER-1250682991660.jpk-force
+- !!python/object:hooke.curve.Curve
+  path: force-scan-cycle-contact-AbsoluteZForceSettings-3D-hardwareFeedback-1282223571461.jpk-force
+- !!python/object:hooke.curve.Curve
+  path: force-scan-cycle-contact-RelativeForceSettings-3D-TIPSCANNER-1250682992080.jpk-force
+- !!python/object:hooke.curve.Curve
+  path: force-scan-cycle-contact-RelativeForceSettings-3D-hardwareFeedback-1282223571652.jpk-force

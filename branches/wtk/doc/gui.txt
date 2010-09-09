@@ -26,7 +26,6 @@ key toggles the visibility of the panel):
 * Output (`F8`)
 * Playlists (`F9`)
 * Properties (`F10`)
-* Results (`F11`)
 
 .. image:: img/gui_screenshot.jpg
 
@@ -118,17 +117,6 @@ floating point values.
 
 .. todo:: Document new, non-PropGrid
   :mod:`~hooke.ui.gui.panel.propertyeditor`.
-
-Results
-=======
-The results from the `autopeak` or `multidistance` commands are
-displayed here.  Initially, all results are checked (i.e. visible).  If
-you want to hide a result, simply uncheck it.  Hidden curves will not
-be exported either.  You can only display one type of fit result (WLC,
-FJC, etc.) at a time and you can switch between result types (results
-plugin - show_results).
-
-.. todo:: Results panel not yet re-implemented.
 
 Output
 ======

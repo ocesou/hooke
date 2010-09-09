@@ -101,6 +101,8 @@ class Hooke (object):
         # Don't attach the logger because it contains an unpicklable
         # thread.lock.  Instead, grab it directly every time you need it.
         #self.log = logging.getLogger('hooke')
+        log = logging.getLogger('hooke')
+        log.debug('config paths: %s' % self.config._config_paths)
 
     def load_plugins(self):
         self.plugins = plugin_mod.load_graph(
@@ -231,6 +233,9 @@ def main():
         '-u', '--ui', dest='user_interface',
         help="Override the configured user interface (for easy switching).")
     p.add_option(
+        '--config', dest='config', metavar='FILE',
+        help="Override the default config file chain.")
+    p.add_option(
         '--save-config', dest='save_config',
         action='store_true', default=False,
         help="Automatically save a changed configuration on exit.")
@@ -243,6 +248,9 @@ def main():
             % (sys.argv[0], arguments)
         p.print_help(sys.stderr)
         sys.exit(1)
+    if options.config != None:
+        config_mod.DEFAULT_PATHS = [
+            os.path.abspath(os.path.expanduser(options.config))]
 
     hooke = Hooke(debug=__debug__)
     runner = HookeRunner()

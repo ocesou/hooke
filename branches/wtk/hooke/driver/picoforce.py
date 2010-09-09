@@ -29,7 +29,6 @@ import time
 import numpy
 
 from .. import curve as curve # this module defines data containers.
-from .. import experiment as experiment # this module defines expt. types
 from . import Driver as Driver # this is the Driver base class
 
 
@@ -54,8 +53,6 @@ class PicoForceDriver (Driver):
         info = self._read_header_path(path)
         self._check_version(info)
         data = self._read_data_path(path, info)
-        info['filetype'] = self.name
-        info['experiment'] = experiment.VelocityClamp()
         return (data, info)
 
     def _read_header_path(self, path):

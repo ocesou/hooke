@@ -1,0 +1,85 @@
+******************
+Analysis templates
+******************
+
+.. toctree::
+   :maxdepth: 2
+
+Overview
+========
+
+Hooke is a large, flexible beast, and the number of available commands
+can be intimidating.  In this section, we'll lay out the procedure for
+analyzing a number of common experiment types.  The experiment types
+are arranged in the order that they were developed, citating the first
+known paper in each class.  If we've got a citation wrong, please
+submit a bug report (:doc:`bugs`).
+
+
+Velocity clamp force spectroscopy
+=================================
+
+Developed by Rief et al. [#rief1997]_, velocity clamp spectroscopy
+measures domain unfolding forces as the tip is moved away from the
+surface at a constant velocity.
+
+.. todo:: Velocity clamp example plot.
+
+Basic analysis is something like::
+
+    hooke> zero_surface_contact_point --block retract
+    hooke> flat_filter_peaks --block retract --min_points 1
+    hooke> zero_surface_contact_point --block retract
+    ...        --ignore_after_last_peak_info_name 'flat filter peaks'
+    hooke> convert_distance_to_force --block retract
+    ...        --deflection_column 'surface deflection (m)'
+    hooke> remove_cantilever_from_extension --block retract
+    hooke> flat_peaks_to_polymer_peaks --block retract
+    hooke> polymer_fit_peaks --block retract
+    hooke> block_info --block retract --output data.yaml name 'polymer peak [0-9]*'
+
+The unfolding forces should be grouped by pull velocity, and the resulting
+distributions can be fit to specific unfolding models by comparison with
+monte-carlo simulations (see, for example, sawsim_).
+
+.. [#rief1997] M. Rief, M. Gautel, F. Oesterhelt, J.M. Fernandez,
+  H.E. Gaub.
+  "Reversible Unfolding of Individual Titin Immunoglobulin Domains by AFM."
+  Science, 1997.
+  doi: `10.1126/science.276.5315.1109 <http://dx.doi.org/10.1126/science.276.5315.1109>`_
+
+.. _sawsim: http://www.physics.drexel.edu/~wking/sawsim/
+
+Force clamp spectroscopy
+========================
+
+Developed by Fernandez and Li [#fernandez2004]_, force clamp spectroscopy
+measures the lifetime of a domain's folded state while subject to a constant
+tension.
+
+.. todo:: Force clamp example plot.
+
+.. todo:: Force clamp example analysis.
+
+.. [#fernandez2004] J.M. Fernandez, H. Li.
+  "Force-Clamp Spectroscopy Monitors the Folding Trajectory of a
+  Single Protein."
+  Science, 2004.
+  doi: `10.1126/science.1092497 <http://dx.doi.org/10.1126/science.1092497>`_
+
+Two-color fluorescence coincidence spectroscopy
+===============================================
+
+Developed by Clarke et al. [#clarke2007]_,...
+
+.. todo:: TCCS explanation.
+
+.. todo:: TCCS example plot.
+
+.. todo:: TCCS example analysis.
+
+.. [#clarke2007] R.W. Clarke, A. Orte, D. Klenerman.
+  "Optimized Threshold Selection for Single-Molecule Two-Color
+  Fluorescence Coincidence Spectroscopy."
+  Anal. Chem., 2007.
+  doi: `10.1021/ac062188w <http://dx.doi.org/10.1021/ac062188w>`_

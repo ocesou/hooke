@@ -29,12 +29,11 @@ Success
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: 20080428_a53t-0-0-10.dat
 path: .../test/data/fclamp_hemingway/20080428_a53t-0-0-10.dat
-experiment: <hooke.experiment.ForceClamp object at 0x...>
 driver: <hooke.driver.hemingway.HemingwayDriver object at 0x...>
-filetype: hemingway
 note: None
 command stack: []
 blocks: 1
+block names: ['force clamp']
 block sizes: [(14798, 5)]
 Success
 <BLANKLINE>

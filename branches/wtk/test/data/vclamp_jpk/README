@@ -15,3 +15,13 @@ but can be overridden by an attrubute in the XML playlist,
   <CHANNEL-NAME>_<SOURCE-CONVERSION-NAME>_to_<CONVERSION-NAME>_calibration_file
   height_nominal_to_calibrated_calibration_file="default.cal"
 Relative paths are rooted in the same directory as the curve file.
+
+
+On Fri, Sep 03, 2010 at 02:30:37PM +0200, Michael Haggerty wrote:
+> I have attached a few sample files.  The main directory contains a
+> couple of typical force scan files from the oldest and newest public
+> versions of this file format.  The "Data1D" subdirectory contains files
+> showing the layout of the "data" part of force segments.  Please note
+> that your program *will not* be able to read the Data1D examples because
+> they are fragments that are usually nested in a force file.  They are
+> rather to give you an idea of what the different data types look like.

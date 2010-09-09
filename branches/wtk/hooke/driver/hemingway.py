@@ -24,7 +24,6 @@ import os.path
 import numpy
 
 from .. import curve as curve
-from .. import experiment as experiment
 from ..util.util import Closing as Closing
 from . import Driver as Driver
 
@@ -72,7 +71,5 @@ class HemingwayDriver (Driver):
         ret.info['name'] = 'force clamp'
         # assume 1 ms timestep
         ret[:,0] = numpy.arange(0, 1e-3*data.shape[0], 1e-3, dtype=ret.dtype)
-        
-        file_info['filetype'] = self.name
-        file_info['experiment'] = experiment.ForceClamp()
+
         return ([ret,], file_info)

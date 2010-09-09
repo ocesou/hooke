@@ -31,22 +31,26 @@ Success
 >>> block_info_already_exists = os.path.exists(file_name)
 >>> block_info_already_exists
 False
->>> h = r.run_lines(h, ['block_info --output %s name columns "raw info.file*"'
+>>> h = r.run_lines(h, ['block_info --output %s name columns "raw info.Scanner list.Serial n*"'
 ...                     % file_name]) # doctest: +ELLIPSIS, +REPORT_UDIFF
-{'index': 0, 'name': 'approach', 'columns': ['z piezo (m)', 'deflection (m)'], 'raw info': {'filetype': 'picoforce'}}
+{'columns': ['z piezo (m)', 'deflection (m)'],
+ 'index': 0,
+ 'name': 'approach',
+ 'raw info': {'Scanner list': {'Serial number': '196PF'}}}
 Success
 <BLANKLINE>
 >>> with open(file_name, 'r') as f:
 ...     text = f.read()
 >>> if block_info_already_exists == False:
 ...    os.remove(file_name)
->>> print text
+>>> print text  # doctest: +ELLIPSIS, +REPORT_UDIFF
 picoforce.000:
   approach:
     columns: [z piezo (m), deflection (m)]
     index: 0
     name: approach
-    raw info: {filetype: picoforce}
-  path: /tmp/hooke/test/data/picoforce.000
+    raw info:
+      Scanner list: {Serial number: 196PF}
+  path: .../test/data/picoforce.000
 <BLANKLINE>
 """

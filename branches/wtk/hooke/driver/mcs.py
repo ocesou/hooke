@@ -53,9 +53,6 @@ class mcsDriver(lib.driver.Driver):
         self.bluedata=self.filebluedata.read()
         self.filebluedata.close()
 
-        self.filetype = 'mcs'
-        self.experiment = 'smfluo'
-
     def close_all(self):
         self.filedata.close()
         self.filebluedata.close()

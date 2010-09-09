@@ -66,7 +66,6 @@ import os.path
 # The following are relative imports.  See PEP 328 for details
 #   http://www.python.org/dev/peps/pep-0328/
 from .. import curve as curve # this module defines data containers.
-from .. import experiment as experiment # this module defines expt. types
 from ..config import Setting # configurable setting class
 from . import Driver as Driver # this is the Driver base class
 
@@ -136,5 +135,5 @@ class TutorialDriver (Driver):
         f.close() # remember to close the file
 
         data = curve.Data()
-        info = {'filetype':'tutorial', 'experiment':experiment.Experiment()}
+        info = {}
         return (data, info)

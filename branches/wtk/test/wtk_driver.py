@@ -44,12 +44,11 @@ Success
 >>> h = r.run_lines(h, ['curve_info']) # doctest: +ELLIPSIS, +REPORT_UDIFF
 name: 20100504144209_unfold
 path: .../test/data/vclamp_wtk/unfold/20100504/20100504144209_unfold
-experiment: <hooke.experiment.VelocityClamp object at 0x...>
 driver: <hooke.driver.wtk.WTKDriver object at 0x...>
-filetype: wtk
 note: None
 command stack: []
 blocks: 2
+block names: ['approach', 'retract']
 block sizes: [(810, 2), (8001, 2)]
 Success
 <BLANKLINE>
