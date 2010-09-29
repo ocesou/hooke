@@ -18,11 +18,17 @@
 
 import wx
 
+"""Define :class:`BooleanHandler` to handle
+:class:`~hooke.interaction.BooleanRequest`\s.
+"""
+
 from . import Handler
 
 
 class BooleanHandler (Handler):
-    
+    def __init__(self):
+        super(BooleanHandler, self).__init__(name='boolean')
+
     def run(self, hooke_frame, msg):
         if msg.default == True:
             default = wx.YES_DEFAULT
@@ -36,4 +42,3 @@ class BooleanHandler (Handler):
         dialog.ShowModal()
         dialog.Destroy()
         return value
-

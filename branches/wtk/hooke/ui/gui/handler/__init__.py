@@ -16,7 +16,7 @@
 # License along with Hooke.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-from ....util.pluggable import IsSubclass, construct_graph
+from ....util.pluggable import IsSubclass, construct_odict
 
 
 HANDLER_MODULES = [
@@ -44,12 +44,13 @@ class Handler (object):
 
     def _cancel(self, *args, **kwargs):
         # TODO: somehow abort the running command
+        pass
 
 
 HANDLERS = construct_odict(
     this_modname=__name__,
-    submodnames=USER_INTERFACE_MODULES,
-    class_selector=IsSubclass(UserInterface, blacklist=[UserInterface]))
+    submodnames=HANDLER_MODULES,
+    class_selector=IsSubclass(Handler, blacklist=[Handler]))
 """:class:`hooke.compat.odict.odict` of :class:`Handler`
 instances keyed by `.name`.
 """

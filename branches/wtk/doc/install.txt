@@ -68,6 +68,25 @@ to install Hooke.  Run::
 
 to see a list of installation options you may want to configure.
 
+If you install Hooke, you should probably setup a system- or user-wide
+configuration file (:doc:`config`), and replace any relative paths
+with appropriate absolute paths.  For example::
+
+    # Commands for managing a command stack (similar to macros).
+    [command_stack plugin]
+    # Directory containing command stack files.
+    path = resources/command_stack
+
+    # wxWindows graphical user interface.
+    [gui user interface]
+    # Path to the hooke icon image.
+    icon image = /usr/share/hooke/doc/img/microscope.ico
+    # Path to the Hooke splash screen image.
+    splash screen image = /usr/share/hooke/doc/img/hooke.jpg
+    # Directory containing perspective files.
+    perspective path = ~/.hooke/resources/gui/perspective
+
+
 Running Hooke from the source directory
 =======================================
 

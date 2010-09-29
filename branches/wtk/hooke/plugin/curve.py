@@ -25,6 +25,7 @@ associated :class:`hooke.command.Command`\s for handling
 """
 
 import copy
+import os.path
 import re
 
 import numpy
@@ -459,7 +460,7 @@ True if you want the column-naming header line.
     def _run(self, hooke, inqueue, outqueue, params):
         data = self._block(hooke, params)
 
-        with open(params['output'], 'w') as f:
+        with open(os.path.expanduser(params['output']), 'w') as f:
             if params['header'] == True:
                 f.write('# %s \n' % ('\t'.join(data.info['columns'])))
             numpy.savetxt(f, data, delimiter='\t')

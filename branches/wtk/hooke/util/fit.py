@@ -89,10 +89,10 @@ class ModelFitter (object):
     >>> outqueue = Queue()
     >>> slope,offset = m.fit(outqueue=outqueue)
     >>> info = outqueue.get(block=False)
-    >>> pprint(info)  # doctest: +ELLIPSIS, +REPORT_UDIFF
+    >>> pprint(info)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_UDIFF
     {'active fitted parameters': array([  6.999..., -32.889...]),
      'active parameters': array([  6.999..., -32.889...]),
-     'convergence flag': 2,
+     'convergence flag': ...,
      'covariance matrix': array([[  1.199...e-08,  -5.993...e-06],
            [ -5.993...e-06,   3.994...e-03]]),
      'data scale factor': 1.0,
@@ -101,9 +101,9 @@ class ModelFitter (object):
               'fvec': array([...]),
               'ipvt': array([1, 2]),
               'nfev': 7,
-              'qtf': array([  2.851...e-07,   1.992...e-06])},
+              'qtf': array([...])},
      'initial parameters': [6.992..., -33.0],
-     'message': 'The relative error between two consecutive iterates is at most 0.000...',
+     'message': '...relative error between two consecutive iterates is at most 0.000...',
      'rescaled': False,
      'scale': [0.100..., 6.123...]}
 

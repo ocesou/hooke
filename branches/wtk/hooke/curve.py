@@ -237,6 +237,8 @@ class Curve (object):
         return self.__str__()
 
     def set_path(self, path):
+        if path != None:
+            path = os.path.expanduser(path)
         self.path = path
         if self.name == None and path != None:
             self.name = os.path.basename(path)

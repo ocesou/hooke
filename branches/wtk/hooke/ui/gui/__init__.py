@@ -71,7 +71,9 @@ class HookeFrame (wx.Frame):
         self._perspectives = {}  # {name: perspective_str}
         self._c = {}
 
-        self.SetIcon(wx.Icon(self.gui.config['icon image'], wx.BITMAP_TYPE_ICO))
+        self.SetIcon(wx.Icon(
+                os.path.expanduser(self.gui.config['icon image']),
+                wx.BITMAP_TYPE_ICO))
 
         # setup frame manager
         self._c['manager'] = aui.AuiManager()
@@ -707,7 +709,7 @@ class HookeFrame (wx.Frame):
         self._perspectives = {
             'Default': self._c['manager'].SavePerspective(),
             }
-        path = self.gui.config['perspective path']
+        path = os.path.expanduser(self.gui.config['perspective path'])
         if os.path.isdir(path):
             files = sorted(os.listdir(path))
             for fname in files:
@@ -784,7 +786,7 @@ class HookeFrame (wx.Frame):
         if name == 'Default':
             name = 'New perspective'
         name = select_save_file(
-            directory=self.gui.config['perspective path'],
+            directory=os.path.expanduser(self.gui.config['perspective path']),
             name=name,
             extension=self.gui.config['perspective extension'],
             parent=self,
@@ -793,7 +795,8 @@ class HookeFrame (wx.Frame):
         if name == None:
             return
         self._save_perspective(
-            perspective, self.gui.config['perspective path'], name=name,
+            perspective,
+            os.path.expanduser(self.gui.config['perspective path']), name=name,
             extension=self.gui.config['perspective extension'])
 
     def _on_delete_perspective(self, *args, **kwargs):
@@ -814,8 +817,8 @@ class HookeFrame (wx.Frame):
         names = [options[i] for i in dialog.selected]
         dialog.Destroy()
         self._delete_perspectives(
-            self.gui.config['perspective path'], names=names,
-            extension=self.gui.config['perspective extension'])
+            os.path.expanduser(self.gui.config['perspective path']),
+            names=names, extension=self.gui.config['perspective extension'])
 
     def _on_select_perspective(self, _class, method, name):
         self._restore_perspective(name)
@@ -867,7 +870,7 @@ class HookeApp (wx.App):
 
     def _setup_splash_screen(self):
         if self.gui.config['show splash screen'] == True:
-            path = self.gui.config['splash screen image']
+            path = os.path.expanduser(self.gui.config['splash screen image'])
             if os.path.isfile(path):
                 duration = self.gui.config['splash screen duration']
                 wx.SplashScreen(

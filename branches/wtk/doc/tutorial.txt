@@ -106,12 +106,19 @@ and you want to analyze them all.
 
 You then can ``cd`` (change directory) to the directory::
 
-    hooke> cd --path c:\curves
+    hooke> cd --path "c:\curves"
 
-Type ``pwd`` (print working directory) to check the directory is correct.::
+Hooke parses it's commandline using `POSIX rules`_, so you need to
+quote arguments with backslashes to keep them from being expanded as
+escape sequences (e.g. ``\t`` → ``TAB``).
+
+Type ``pwd`` (print working directory) to check the directory is
+correct.::
 
     hooke> pwd
     c:\curves
+
+.. _POSIX rules: http://docs.python.org/library/shlex#parsing-rules
 
 You can list the files in the directory using ``ls`` or ``dir``
 (they’re synonyms).::

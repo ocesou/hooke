@@ -404,11 +404,13 @@ class FilePlaylist (Playlist):
             - !!python/object:hooke.engine.CommandMessage
               arguments: {arg 0: 0, arg 1: X}
               command: command A
+              explicit_user_call: true
             - !!python/object:hooke.engine.CommandMessage
               arguments:
                 arg 0: 1
                 curve: *id001
               command: command B
+              explicit_user_call: true
           info: {attr with spaces: 'The second curve
         <BLANKLINE>
               with endlines'}
@@ -436,11 +438,13 @@ class FilePlaylist (Playlist):
             - !!python/object:hooke.engine.CommandMessage
               arguments: {arg 0: 0, arg 1: X}
               command: command A
+              explicit_user_call: true
             - !!python/object:hooke.engine.CommandMessage
               arguments:
                 arg 0: 1
                 curve: *id001
               command: command B
+              explicit_user_call: true
           info: {attr with spaces: 'The second curve
         <BLANKLINE>
               with endlines'}

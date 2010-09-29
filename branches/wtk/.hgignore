@@ -1,5 +1,7 @@
 syntax: glob
 
+.svn
+
 *.pyc
 doc/build/
 doc/hooke/

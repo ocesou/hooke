@@ -25,8 +25,6 @@ import wx
 from . import Handler
 
 
-
-
 class StringHandler (Handler):
     def __init__(self):
         super(StringHandler, self).__init__(name='string')
@@ -43,4 +41,3 @@ class StringHandler (Handler):
 
     def _string_request_parser(self, msg, response):
         return response.strip()
-

@@ -22,6 +22,8 @@
 :class:`CutCommand`.
 """
 
+import os.path
+
 import numpy
 
 from ..command import Command, Argument, Failure
@@ -97,7 +99,7 @@ True if you want the column-naming header line.
         cut_data = data[i_min:i_max+1,:] # slice rows from row-major data
         # +1 to include data[i_max] row
 
-        f = open(params['output'], 'w')
+        f = open(os.path.expanduser(params['output']), 'w')
         if params['header'] == True:
             f.write('# %s \n' % ('\t'.join(cut_data.info['columns'])))
         numpy.savetxt(f, cut_data, delimiter='\t')

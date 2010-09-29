@@ -21,6 +21,7 @@ associated :class:`hooke.command.Command`\s for handling
 :mod:`hooke.config` classes.
 """
 
+import os.path
 from StringIO import StringIO
 
 from ..command import Command, Argument, Failure
@@ -126,7 +127,7 @@ most local loaded config file.
         f = None
         try:
             if params['output'] != None:
-                f = open(params['output'], 'w')
+                f = open(os.path.expanduser(params['output']), 'w')
             hooke.config.write(fp=f)
         finally:
             if f != None:

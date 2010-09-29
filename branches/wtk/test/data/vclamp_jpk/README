@@ -2,9 +2,9 @@
 
 Posted to
   http://code.google.com/p/hooke/issues/detail?id=22
-by albedomanu on Oct 16, 2009.
+by Manuel Gensler on Oct 16, 2009.
 
-default.cal is albedomanu's piezo calibration file
+default.cal is Manuel Gensler's piezo calibration file
   /etc/opt/jpkspm-config-3.3.1/instruments/JPK00343/calibrations/default.cal
 The path is stored in the force curve zip file in
   segments/*/segment-header.properties

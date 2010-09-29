@@ -236,7 +236,8 @@ input command stack.  If the command stack does not have an input file
             params['output'] = 'default'
         if params['output'] != None:
             params['output'] = os.path.join(
-                self.plugin.config['path'], params['output'])
+                os.path.expanduser(self.plugin.config['path']),
+                params['output'])
         return params
 
 class LoadCommand (CommandStackCommand):
@@ -265,7 +266,8 @@ File name for the input command stack.
             params['input'] = 'default'
         if params['input'] != None:
             params['input'] = os.path.join(
-                self.plugin.config['path'], params['input'])
+                os.path.expanduser(self.plugin.config['path']),
+                params['input'])
         return params
 
 
