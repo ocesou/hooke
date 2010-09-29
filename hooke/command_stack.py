@@ -118,24 +118,29 @@ class CommandStack (list):
        <CommandMessage CommandB {param: D}>,
        <CommandMessage CommandC {param: E}>]}>
     >>> import yaml
-    >>> print yaml.dump(c)
+    >>> print yaml.dump(c)  # doctest: +REPORT_UDIFF
     !!python/object/new:hooke.command_stack.CommandStack
     listitems:
     - !!python/object:hooke.engine.CommandMessage
       arguments: {param: A}
       command: CommandA
+      explicit_user_call: true
     - !!python/object:hooke.engine.CommandMessage
       arguments: {param: B}
       command: CommandB
+      explicit_user_call: true
     - !!python/object:hooke.engine.CommandMessage
       arguments: {param: C}
       command: CommandA
+      explicit_user_call: true
     - !!python/object:hooke.engine.CommandMessage
       arguments: {param: D}
       command: CommandB
+      explicit_user_call: true
     - !!python/object:hooke.engine.CommandMessage
       arguments: {param: E}
       command: CommandC
+      explicit_user_call: true
     - !!python/object:hooke.engine.CommandMessage
       arguments:
         param: !!python/object/new:hooke.command_stack.CommandStack
@@ -143,19 +148,25 @@ class CommandStack (list):
           - !!python/object:hooke.engine.CommandMessage
             arguments: {param: A}
             command: CommandA
+            explicit_user_call: true
           - !!python/object:hooke.engine.CommandMessage
             arguments: {param: B}
             command: CommandB
+            explicit_user_call: true
           - !!python/object:hooke.engine.CommandMessage
             arguments: {param: C}
             command: CommandA
+            explicit_user_call: true
           - !!python/object:hooke.engine.CommandMessage
             arguments: {param: D}
             command: CommandB
+            explicit_user_call: true
           - !!python/object:hooke.engine.CommandMessage
             arguments: {param: E}
             command: CommandC
+            explicit_user_call: true
       command: CommandD
+      explicit_user_call: true
     <BLANKLINE>
 
     There is also a convenience function for clearing the stack.
@@ -168,13 +179,14 @@ class CommandStack (list):
 
     >>> from .curve import Curve
     >>> c.append(CommandMessage('curve info', {'curve': Curve(path=None)}))
-    >>> print yaml.dump(c)
+    >>> print yaml.dump(c)  # doctest: +REPORT_UDIFF
     !!python/object/new:hooke.command_stack.CommandStack
     listitems:
     - !!python/object:hooke.engine.CommandMessage
       arguments:
         curve: !!python/object:hooke.curve.Curve {}
       command: curve info
+      explicit_user_call: true
     <BLANKLINE>
     """
     def execute(self, hooke, filter=None, stack=False):

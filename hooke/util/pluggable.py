@@ -97,7 +97,12 @@ def construct_odict(this_modname, submodnames, class_selector,
             obj = getattr(submod, objname)
             if class_selector(obj):
                 if instantiate == True:
-                    obj = obj()
+                    try:
+                        obj = obj()
+                    except Exception, e:
+                        logging.error('could not instantiate %s from %s: %s'
+                                      % (obj, submodname, e))
+                        raise
                 name = getattr(obj, 'name', submodname)
                 objs[name] = obj
     return objs
@@ -121,7 +126,12 @@ def construct_graph(this_modname, submodnames, class_selector,
         for objname in dir(submod):
             obj = getattr(submod, objname)
             if class_selector(obj):
-                instance = obj()
+                try:
+                    instance = obj()
+                except Exception, e:
+                    logging.error('could not instantiate %s from %s: %s'
+                                  % (obj, submodname, e))
+                    raise
                 if assert_name_match == True and instance.name != submodname:
                     raise Exception(
                         'Instance name %s does not match module name %s'

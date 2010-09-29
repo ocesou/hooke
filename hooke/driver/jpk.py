@@ -35,6 +35,46 @@ from ..util.si import join_data_label, split_data_label
 from . import Driver as Driver
 
 
+def slash_join(*args):
+    r"""Join path components with forward slashes regardless of OS.
+
+    Notes
+    -----
+    From the `PKZIP Application Note`_, section J (Explanation of fields):
+
+      file name: (Variable)
+
+        ... All slashes should be forward slashes ``/`` as opposed to
+        backwards slashes ``\`` for compatibility with Amiga and UNIX
+        file systems etc. ...
+
+    .. _PKZIP Application Note:
+      http://www.pkware.com/documents/casestudies/APPNOTE.TXT
+
+    Examples
+    --------
+
+    >>> sep = os.path.sep
+    >>> os.path.sep = '/'
+    >>> print slash_join('abc', 'def/ghi', 'jkl\\mno')
+    abc/def/ghi/jkl\mno
+    >>> os.path.sep = '\\'
+    >>> print slash_join('abc', 'def/ghi', 'jkl\\mno')
+    abc/def/ghi/jkl\mno
+    >>> os.path.sep = sep
+
+    Note that when :const:`os.path.sep` is ``/`` (e.g. UNIX),
+    ``def/ghi`` is a compound segment, but when :const:`os.path.sep`
+    is ``\`` (e.g. Windows), ``def/ghi`` is a single segment.
+    """
+    sep = os.path.sep
+    try:
+        os.path.sep = '/'
+        return os.path.join(*args)
+    finally:
+        os.path.sep = sep
+
+
 class JPKDriver (Driver):
     """Handle JPK ForceRobot's data format.
     """
@@ -113,7 +153,7 @@ class JPKDriver (Driver):
             return info
 
     def _zip_segment(self, zipfile, path, info, zip_info, index, version):
-        with Closing(zipfile.open(os.path.join(
+        with Closing(zipfile.open(slash_join(
                     'segments', str(index), 'segment-header.properties'))
                      ) as f:
             prop = self._parse_params(f.readlines())
@@ -147,7 +187,7 @@ class JPKDriver (Driver):
     def _zip_channel(self, zipfile, segment_index, channel_name, chan_info):
         if chan_info['data']['type'] in ['constant-data', 'raster-data']:
             return self._zip_calculate_channel(chan_info)
-        with Closing(zipfile.open(os.path.join(
+        with Closing(zipfile.open(slash_join(
                     'segments', str(segment_index),
                     chan_info['data']['file']['name']), 'r')) as f:
             assert chan_info['data']['file']['format'] == 'raw', \

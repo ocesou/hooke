@@ -1,5 +1,10 @@
-class StringPopup (wx.Dialog):
+# Copyright
 
+import wx
+
+
+class StringPopup (wx.Dialog):
+    def __init__(self):
         self._c = {
             'text': wx.StaticText(
                 parent=self, label=message, style=wx.ALIGN_CENTRE),

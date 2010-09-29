@@ -109,6 +109,6 @@ class SelectionDialog (wx.Dialog):
             selected = self._c['listbox'].GetSelection()
         else:
             assert self._selection_style == 'multiple', self._selection_style
-            selected = self._c['listbox'].GetChecked())
+            selected = self._c['listbox'].GetChecked()
         in_callback(self, options=self._options, selected=selected)
         self.EndModal(wx.ID_CLOSE)
