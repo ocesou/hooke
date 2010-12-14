@@ -96,7 +96,7 @@ class fitCommands:
         def dist(px,py,linex,liney):
             distancesx=scipy.array([(px-x)**2 for x in linex])
             minindex=np.argmin(distancesx)
-            print px, linex[0], linex[-1]
+            #print px, linex[0], linex[-1]
             return (py-liney[minindex])**2
         
         def f_wlc(params,x,T=T):
@@ -242,7 +242,7 @@ class fitCommands:
         def dist(px,py,linex,liney):
             distancesx=scipy.array([(px-x)**2 for x in linex])
             minindex=np.argmin(distancesx)
-            print minindex, px, linex[0], linex[-1]
+            #print minindex, px, linex[0], linex[-1]
             return (py-liney[minindex])**2
         
         def coth(z):
