@@ -50,7 +50,7 @@ class curvetoolsCommands:
 
 
 
-      def find_current_peaks(self,noflatten, a=True, maxpeak=True):
+      def find_current_peaks(self,noflatten, a=True, maxpeak=True, nocontact=False):
 	    #Find peaks.
 	    if a==True:
 		  a=self.convfilt_config['mindeviation']
@@ -64,7 +64,7 @@ class curvetoolsCommands:
 	    if not noflatten:
 		flatten=self._find_plotmanip('flatten') #Extract flatten plotmanip
 		defplot=flatten(defplot, self.current, customvalue=1) #Flatten curve before feeding it to has_peaks
-	    pk_location,peak_size=self.has_peaks(defplot, abs_devs, maxpeak)
+	    pk_location,peak_size=self.has_peaks(defplot, abs_devs, maxpeak, 10, nocontact)
 	    return pk_location, peak_size
 
 

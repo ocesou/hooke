@@ -148,7 +148,7 @@ class flatfiltsCommands:
     #-----Convolution-based peak recognition and filtering.
     #Requires the libpeakspot.py library
     
-    def has_peaks(self, plot, abs_devs=None, maxpeak=True, window=10):
+    def has_peaks(self, plot, abs_devs=None, maxpeak=True, window=10, nocontact=False):
         '''
         Finds peak position in a force curve.
         FIXME: should be moved in libpeakspot.py
@@ -162,8 +162,12 @@ class flatfiltsCommands:
         #Calculate convolution.
         convoluted=lps.conv_dx(yret, self.convfilt_config['convolution'])
         
-        #surely cut everything before the contact point
+        #cut everything before the contact point
         cut_index=self.find_contact_point(plot)
+	#with the curves without a contact region we don't want any cut
+	if nocontact==True:
+	  cut_index=0
+
         #cut even more, before the blind window
         start_x=xret[cut_index]
         blind_index=0

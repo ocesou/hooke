@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 '''
 a library of helping functions for spotting force spectroscopy peaks
@@ -33,7 +34,12 @@ def absdev(arr):
     med=np.mean(arr)
     for j in arr:
         absD+=abs(j-med)
-    return absD/len(arr)
+
+    try:
+      return absD/len(arr)
+    except:
+      return 0
+
  
 def noise_absdev(data,positive=False,maxcut=0.2,stable=0.005):
     '''
@@ -50,7 +56,7 @@ def noise_absdev(data,positive=False,maxcut=0.2,stable=0.005):
         out.reverse()
         
     temp_absdev=absdev(out)
-    
+    cut_absdev=0
     for index in range(len(out)):
         cutindex=(index+1)*5
         cut_absdev=absdev(out[cutindex:]) #we jump five points after five points...
