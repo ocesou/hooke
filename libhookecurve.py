@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 
 class HookeCurve(object):
@@ -13,7 +14,11 @@ class HookeCurve(object):
         identifies a curve and returns the corresponding object
         '''
         for driver in drivers:
-            tempcurve=driver(self.path)
+	    try:
+              tempcurve=driver(self.path)
+	    except:
+	      print "Error in the playlist of the files."
+	      return False
             if tempcurve.is_me():
                 #bring on all the driver, with his load of methods etc.
                 #so we can access the whole of it.
