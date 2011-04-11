@@ -57,7 +57,9 @@ class autopeakCommands:
         usepoints : fit interval by number of points instead than by nanometers
         
         noflatten : does not use the "flatten" plot manipulator
-        
+
+	nocontact : when there is a curve without the contact region we have to put this flag
+
         When you first issue the command, it will ask for the filename. If you are giving the filename
         of an existing file, autopeak will resume it and append measurements to it. If you are giving
         a new filename, it will create the file and append to it until you close Hooke.
@@ -94,7 +96,8 @@ class autopeakCommands:
         delta_force=10
         rebase=False #if true=we select rebase
         noflatten=False #if true=we avoid flattening
-        
+	nocontact=False
+
         #initialize output data vectors
         c_lengths=[]
         p_lengths=[]
@@ -122,7 +125,11 @@ class autopeakCommands:
         
         if 'noflatten' in args:
             noflatten=True
-        
+
+        if 'nocontact' in args:
+            nocontact=True 
+	    #print "nocontact TRUE"
+
         #--Custom persistent length / custom temperature
         for arg in args.split():
             #look for a persistent length argument.
@@ -157,7 +164,7 @@ class autopeakCommands:
         
 
         if not manualpoints:
-           peak_location, peak_size = self.find_current_peaks(noflatten)
+           peak_location, peak_size = self.find_current_peaks(noflatten, True, True, nocontact)
 	else:
 	   peak_location=[]
            for i in range(manualpoints):
