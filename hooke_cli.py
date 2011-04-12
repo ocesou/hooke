@@ -472,8 +472,12 @@ Syntax: next, n
     
     def help_n(self):
         self.help_next()
+
     def do_n(self,args):
-        self.do_next(args)
+	try:
+          self.do_next(args)
+        except:
+	  print "Error in the playlist, have you correctly generated it?"
         
     def help_previous(self,args):
         print '''
