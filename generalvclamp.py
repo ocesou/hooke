@@ -122,6 +122,69 @@ class generalvclampCommands:
         to_dump='forcebase '+self.current.path+' '+str(forcebase*(10**12))+' pN'
         self.outlet.push(to_dump)
 
+
+    def do_aveforce(self,args):
+        '''
+        AVEFORCE
+        (generalvclamp.py)
+        Measures the average force for two region and give in output their difference
+	with an estimation of the error (using the standard deviation of the average).
+        The error is the sum of the standard deviation of the average of the two region.
+
+        ------------
+        Syntax: aveforce [set]
+                set: Integer number that represent the graph on which we want to operate.
+   
+        '''
+
+        
+        plot=self._get_displayed_plot()
+	
+	
+        whatset=0 #fixme: for all sets
+	if len(args)== 0:
+	  whatset=0
+	if len(args)>0:
+	  try:
+	    whatset=int(args)
+	  except:
+	    print "Non integer number in argument."
+	    return 0
+       
+	control=1
+	print 'Select baseline'
+	while(control==1):
+          self.basepoints=self._measure_N_points(N=2, whatset=whatset)
+          self.basecurrent=self.current.path
+	  if(abs(self.basepoints[0].index-self.basepoints[1].index)>2):
+	    control=0
+	  else:
+	    print "The region is too short, try again."
+
+        control=1
+        #we find the two index of the baseline
+        boundaries=[self.basepoints[0].index, self.basepoints[1].index]
+        boundaries.sort()
+        to_base_average=plot.vectors[whatset][1][boundaries[0]:boundaries[1]] #y points to average
+	#calculating average and standard deviation of the average for the baseline
+        avg_base=np.mean(to_base_average)
+	std_avg_base=np.std(to_base_average)/np.sqrt(len(to_base_average))
+
+	print 'Select two points'
+	while(control==1):
+	  points=self._measure_N_points(N=2, whatset=whatset)
+	  if(abs(points[0].index-points[1].index)>2):
+	    control=0
+	  else:
+	    print "The region is too short, try again."
+
+        boundpoints=[points[0].index, points[1].index]
+	boundpoints.sort()
+	to_meas_average=plot.vectors[whatset][1][boundpoints[0]:boundpoints[1]]
+	avg_meas=np.mean(to_meas_average)
+	std_avg_meas=np.std(to_meas_average)/np.sqrt(len(to_meas_average))
+
+
     def plotmanip_multiplier(self, plot, current):
         '''
         Multiplies all the Y values of an SMFS curve by a value stored in the 'force_multiplier'
