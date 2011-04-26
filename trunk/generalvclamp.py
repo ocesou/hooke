@@ -166,9 +166,11 @@ class generalvclampCommands:
         boundaries=[self.basepoints[0].index, self.basepoints[1].index]
         boundaries.sort()
         to_base_average=plot.vectors[whatset][1][boundaries[0]:boundaries[1]] #y points to average
+
 	#calculating average and standard deviation of the average for the baseline
         avg_base=np.mean(to_base_average)
 	std_avg_base=np.std(to_base_average)/np.sqrt(len(to_base_average))
+	
 
 	print 'Select two points'
 	while(control==1):
@@ -183,6 +185,9 @@ class generalvclampCommands:
 	to_meas_average=plot.vectors[whatset][1][boundpoints[0]:boundpoints[1]]
 	avg_meas=np.mean(to_meas_average)
 	std_avg_meas=np.std(to_meas_average)/np.sqrt(len(to_meas_average))
+        forcebase=abs(avg_base-avg_meas)
+	error=(std_avg_meas**2 + std_avg_base**2)**0.5  # pitagora error 
+        print "%.1f +/- %.2f pN"%(10**12*forcebase,10**12*error)
 
 
     def plotmanip_multiplier(self, plot, current):
